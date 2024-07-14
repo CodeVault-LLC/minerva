@@ -9,8 +9,7 @@ import { getUserByEmail } from "~/controller/user.controller";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "");
 
-const endpointSecret =
-  "whsec_94e9586f77147b574b473ec3f03c9caa0c7ec86333c79b1dcbb5b944d088a3aa";
+const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET ?? "";
 
 const app = Router();
 

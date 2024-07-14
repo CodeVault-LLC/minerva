@@ -10,11 +10,13 @@ import {
   getUserSubscription,
 } from "./controller/subscription.controller";
 import { stripeWebhook } from "./webhooks/stripe";
+import { scanRouter } from "./routes/scan";
 
 config();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "");
 
 const app: Express = express();
+
 app.use(
   session({
     secret: "secret-key",
@@ -114,8 +116,9 @@ app.post("/subscribe", async (req, res) => {
     res.status(500).send("Internal server error");
   }
 });
-
 app.use("/webhook", stripeWebhook);
+
+app.use("/scan", scanRouter);
 
 app.listen(3000, () => {
   // eslint-disable-next-line no-console -- This is a server
