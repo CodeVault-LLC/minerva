@@ -1,13 +1,17 @@
 import { scanSchema } from "~/schemas/scan-schemas";
 import type { Secret } from "../types";
 import { type RegexResult, scanSecrets } from "./secrets";
-import { scanDatabase } from "./database";
+import { scanDatabase, scanDatabaseLogins } from "./database";
 import { scanObfuscations } from "./obfuscation";
 
 interface Output {
   secrets: Secret[];
   // client sided databases such as Firebase, AWS, etc
   databases: {
+    name: string;
+    results: RegexResult[];
+  }[];
+  databaseLogins: {
     name: string;
     results: RegexResult[];
   }[];
@@ -26,10 +30,12 @@ export const analyze = async (body): Promise<Output> => {
   const foundSecrets = scanSecrets(scripts);
   const databases = scanDatabase(scripts);
   const obfuscations = scanObfuscations(scripts);
+  const databaseLogins = scanDatabaseLogins(scripts);
 
   return {
     secrets: foundSecrets,
     databases,
+    databaseLogins,
     obfuscations,
   };
 

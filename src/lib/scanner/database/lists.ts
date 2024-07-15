@@ -81,3 +81,49 @@ export const regexes = [
     ],
   },
 ];
+
+export const loginRegexes = [
+  // Firebase Auth Config (ApiKey, AuthDomain, ProjectId etc.)
+  {
+    name: "Firebase Auth Config",
+    patterns: [
+      /apiKey\s*:\s*['"`][A-Za-z0-9_-]+['"`]/g,
+      /authDomain\s*:\s*['"`][A-Za-z0-9_\-.]+['"`]/g,
+      /databaseURL\s*:\s*['"`][A-Za-z0-9_\-:./]+['"`]/g,
+      /projectId\s*:\s*['"`][A-Za-z0-9_-]+['"`]/g,
+      /storageBucket\s*:\s*['"`][A-Za-z0-9_\-.]+['"`]/g,
+      /messagingSenderId\s*:\s*['"`][0-9]+['"`]/g,
+      /appId\s*:\s*['"`][A-Za-z0-9_\-:.]+['"`]/g,
+      /measurementId\s*:\s*['"`][A-Za-z0-9_-]+['"`]/g,
+    ],
+  },
+  // AWS Cognito Config (UserPoolId, ClientId etc.)
+  {
+    name: "AWS Cognito Config",
+    patterns: [
+      /userPoolId:\s*['"][\w-]+['"]/g,
+      /userPoolWebClientId:\s*['"][\w-]+['"]/g,
+    ],
+  },
+
+  // Google Auth Config (ClientId, ApiKey etc.)
+  {
+    name: "Google Auth Config",
+    patterns: [/clientId:\s*['"][\w-]+['"]/g, /apiKey:\s*['"][\w-]+['"]/g],
+  },
+
+  // Azure AD B2C Config (ClientId, Authority etc.)
+  {
+    name: "Azure AD B2C Config",
+    patterns: [/clientId:\s*['"][\w-]+['"]/g, /authority:\s*['"][\w-]+['"]/g],
+  },
+
+  // GitHub Auth Config (ClientId, ClientSecret etc.)
+  {
+    name: "GitHub Auth Config",
+    patterns: [
+      /clientId:\s*['"][\w-]+['"]/g,
+      /clientSecret:\s*['"][\w-]+['"]/g,
+    ],
+  },
+];

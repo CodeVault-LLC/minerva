@@ -1,5 +1,5 @@
 import { regexHandler, type RegexResult } from "../secrets";
-import { ClientDatabases, regexes } from "./lists";
+import { ClientDatabases, loginRegexes, regexes } from "./lists";
 
 export const scanDatabase = (
   scripts: {
@@ -41,4 +41,38 @@ export const scanDatabase = (
   });
 
   return foundDatabases;
+};
+
+export const scanDatabaseLogins = (
+  scripts: {
+    src: string;
+    content: string;
+  }[]
+): {
+  name: string;
+  results: RegexResult[];
+}[] => {
+  // Look for certain patterns in the script
+
+  // for each script go through the contents and then run the regex checks.
+  const foundLogins: {
+    name: string;
+    results: RegexResult[];
+  }[] = [];
+
+  scripts.forEach((script) => {
+    loginRegexes.forEach((regex) => {
+      regex.patterns.forEach((pattern) => {
+        const matches = regexHandler(script, pattern);
+        if (matches.length > 0) {
+          foundLogins.push({
+            name: regex.name,
+            results: matches,
+          });
+        }
+      });
+    });
+  });
+
+  return foundLogins;
 };

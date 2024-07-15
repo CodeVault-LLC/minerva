@@ -28,4 +28,9 @@ export enum SubCategory {
   AJAX = "AJAX",
   BLOCK_COMMENT = "Block Comment",
   LINE_COMMENT = "Line Comment",
+  IMAGE = "Image",
+  AUDIO = "Audio",
+  VIDEO = "Video",
+  APPLICATION = "Application",
+  TRACKING_ID = "Tracking ID",
 }
