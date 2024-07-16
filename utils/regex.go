@@ -2,8 +2,9 @@ package utils
 
 import (
 	"log"
-	"regexp"
 	"strings"
+
+	"github.com/codevault-llc/humblebrag-api/config"
 )
 
 type Script struct {
@@ -11,24 +12,20 @@ type Script struct {
 	Content string `json:"content"`
 }
 
-func GenericScan(pattern RegexPattern, script Script) []Match {
-	// Compile the regex pattern
-	re := regexp.MustCompile(pattern.Pattern)
+func GenericScan(rule config.Rule, script Script) []Match {
 	// Find all matches in the script content
-	matches := re.FindAllString(script.Content, -1)
+	matches := rule.Regex.FindAllString(script.Content, -1)
 
 	// Initialize the return structure
 	var result RegexReturn
-	result.Name = pattern.Name
+	result.Name = rule.RuleID
 	result.Matches = make([]Match, 0, len(matches))
 
 	// Process each match
 	for _, match := range matches {
 		if match != "" {
 			log.Println("Match found: ", match)
-			// Get the line containing the match
 			line := findMatchingLine(script.Content, match)
-			// Append the match details to the result
 			result.Matches = append(result.Matches, Match{Match: match, Line: line, Source: script.Src})
 		} else {
 			log.Println("Match is empty")

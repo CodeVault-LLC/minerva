@@ -26,6 +26,7 @@ func main() {
 	constants.InitDB(parseUrl)
 	constants.InitAuth()
 	constants.InitSessionManager()
+	constants.InitConfig()
 
 	router.Start()
 }
