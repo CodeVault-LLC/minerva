@@ -2,8 +2,9 @@ package config
 
 import (
 	_ "embed"
-	"regexp"
 	"strings"
+
+	regexp "github.com/wasilibs/go-re2"
 
 	"github.com/spf13/viper"
 )
@@ -15,10 +16,10 @@ type ViperConfig struct {
 	Description string
 
 	Rules []struct {
-		ID string
+		ID          string
 		Description string
-		Regex string
-		Keywords []string
+		Regex       string
+		Keywords    []string
 	}
 }
 
@@ -46,9 +47,9 @@ func (vc *ViperConfig) OrderRules() []Rule {
 	for i, rule := range vc.Rules {
 		rules[i] = Rule{
 			Description: rule.Description,
-			RuleID: rule.ID,
-			Regex: regexp.MustCompile(rule.Regex),
-			Keywords: rule.Keywords,
+			RuleID:      rule.ID,
+			Regex:       regexp.MustCompile(rule.Regex),
+			Keywords:    rule.Keywords,
 		}
 	}
 

@@ -8,29 +8,34 @@ type Scan struct {
 	gorm.Model
 
 	UserID uint
-	User User
+	User   User
 
-	Url string `gorm:"not null"`
-	Status string `gorm:"not null"`
+	WebsiteUrl  string `gorm:"not null"`
+	WebsiteName string `gorm:"not null"`
+	Status      string `gorm:"not null"`
 
-	Scripts []Script `gorm:"foreignKey:ScanID"`
+	Findings []Finding `gorm:"foreignKey:ScanID"`
 }
 
 type ScanRequest struct {
-	Url string `json:"url"`
-	Depth int `json:"depth"`
-
-	DoScripts bool `json:"doScripts"`
-	DoLinks bool `json:"doLinks"`
-	DoImages bool `json:"doImages"`
-	DoStyles bool `json:"doStyles"`
+	WebsiteUrl  string `json:"websiteUrl"`
+	WebsiteName string `json:"websiteName"`
 
 	Scripts []ScriptRequest `json:"scripts"`
 }
 
 type ScanResponse struct {
 	ID uint `json:"id"`
-	UserID uint `json:"user_id"`
-	Url string `json:"url"`
+
+	User UserMinimalResponse `json:"user"`
+
+	WebsiteUrl  string `json:"website_url"`
+	WebsiteName string `json:"website_name"`
+
 	Status string `json:"status"`
+
+	Findings int64 `json:"findings"`
+
+	CreatedAt string `json:"created_at"`
+	UpdatedAt string `json:"updated_at"`
 }

@@ -36,3 +36,15 @@ func CreateUser(user models.User) (models.User, error) {
 
 	return user, nil
 }
+
+func IsValidUserToken(token string) (models.UserToken, error) {
+	var userToken models.UserToken
+
+	if err := constants.DB.Where("token = ?", token).
+		First(&userToken).
+		Error; err != nil {
+		return userToken, err
+	}
+
+	return userToken, nil
+}

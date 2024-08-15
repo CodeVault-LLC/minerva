@@ -4,32 +4,35 @@ import (
 	"log"
 	"strings"
 
+	regexp "github.com/wasilibs/go-re2"
+
 	"github.com/codevault-llc/humblebrag-api/config"
 )
 
 type Script struct {
-	Src string `json:"src"`
+	Src     string `json:"src"`
 	Content string `json:"content"`
 }
 
 func GenericScan(rule config.Rule, script Script) []Match {
-	// Find all matches in the script content
-	matches := rule.Regex.FindAllString(script.Content, -1)
+	re, err := regexp.Compile(rule.Regex.String())
+	if err != nil {
+		log.Fatalf("Failed to compile regex: %v", err)
+	}
 
-	// Initialize the return structure
 	var result RegexReturn
 	result.Name = rule.RuleID
-	result.Matches = make([]Match, 0, len(matches))
+	result.Description = rule.Description
+	result.Matches = make([]Match, 0)
 
-	// Process each match
+	matches := re.FindAllIndex([]byte(script.Content), -1)
+
 	for _, match := range matches {
-		if match != "" {
-			log.Println("Match found: ", match)
-			line := findMatchingLine(script.Content, match)
-			result.Matches = append(result.Matches, Match{Match: match, Line: line, Source: script.Src})
-		} else {
-			log.Println("Match is empty")
-			continue
+		matchStr := script.Content[match[0]:match[1]]
+
+		if matchStr != "" {
+			line := findMatchingLine(script.Content, matchStr)
+			result.Matches = append(result.Matches, Match{Match: matchStr, Line: line, Source: script.Src})
 		}
 	}
 
@@ -40,10 +43,9 @@ func GenericScan(rule config.Rule, script Script) []Match {
 func findMatchingLine(content, match string) int {
 	lines := strings.Split(content, "\n")
 
-	// Iterate over each line to find the one containing the match
-	for _, line := range lines {
+	for i, line := range lines {
 		if strings.Contains(line, match) {
-			return strings.Index(content, line) + 1
+			return i + 1
 		}
 	}
 

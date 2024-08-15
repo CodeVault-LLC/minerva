@@ -1,7 +1,7 @@
 package rules
 
 import (
-	"regexp"
+	regexp "github.com/wasilibs/go-re2"
 
 	"github.com/codevault-llc/humblebrag-api/config"
 )

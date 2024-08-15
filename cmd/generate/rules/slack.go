@@ -2,7 +2,7 @@ package rules
 
 import (
 	"fmt"
-	"regexp"
+	regexp "github.com/wasilibs/go-re2"
 
 	"github.com/codevault-llc/humblebrag-api/cmd/generate/secrets"
 	"github.com/codevault-llc/humblebrag-api/config"

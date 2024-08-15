@@ -326,6 +326,13 @@ keywords = [
     "eztk",
 ]
 [[rules]]
+id = "email-token"
+description = "Identifies Emails in the codebase."
+regex = '''[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'''
+keywords = [
+    "email","gmail","@",
+]
+[[rules]]
 id = "etsy-access-token"
 description = "Found an Etsy Access Token, potentially compromising Etsy shop management and customer data."
 regex = '''(?i)(?:etsy)(?:[0-9a-z\-_\t .]{0,20})(?:[\s|']|[\s|"]){0,3}(?:=|>|:{1,3}=|\|\|:|<=|=>|:|\?=)(?:'|\"|\s|=|\x60){0,5}([a-z0-9]{24})(?:['|\"|\n|\r|\s|\x60|;]|$)'''
@@ -426,6 +433,41 @@ description = "Uncovered a GCP API key, which could lead to unauthorized access 
 regex = '''(?i)\b(AIza[0-9A-Za-z\\-_]{35})(?:['|\"|\n|\r|\s|\x60|;]|$)'''
 keywords = [
     "aiza",
+]
+[[rules]]
+id = "gcp-ga"
+description = "Uncovered a Google Analytics key, which could lead to unauthorized access to Google Cloud services and data breaches."
+regex = '''(?i)\b(UA-[0-9]+-[0-9]+)(?:['|\"|\n|\r|\s|\x60|;]|$)'''
+keywords = [
+    "ua-",
+]
+[[rules]]
+id = "gcp-ga2"
+description = "Uncovered a Google Analytics key, which could lead to unauthorized access to Google Cloud services and data breaches."
+regex = '''(?i)\b(G-[0-9A-Z]{10})(?:['|\"|\n|\r|\s|\x60|;]|$)'''
+keywords = [
+    "g-",
+]
+[[rules]]
+id = "gcp-gtm"
+description = "Uncovered a Google Tag Manager key, which could lead to unauthorized access to Google Cloud services and data breaches."
+regex = '''(?i)\b(GTM-[0-9A-Z]{7})(?:['|\"|\n|\r|\s|\x60|;]|$)'''
+keywords = [
+    "gtm",
+]
+[[rules]]
+id = "gcp-oauth"
+description = "Uncovered a GCP OAuth key, which could lead to unauthorized access to Google Cloud services and data breaches."
+regex = '''(?i)\b([0-9]+-[0-9A-Za-z_]{32}\.apps\.googleusercontent\.com)(?:['|\"|\n|\r|\s|\x60|;]|$)'''
+keywords = [
+    "googleusercontent.com",
+]
+[[rules]]
+id = "gcp-service-account"
+description = "Google (GCP) Service-account"
+regex = '''\"type\": \"service_account\"'''
+keywords = [
+    "\"type\": \"service_account\"",
 ]
 [[rules]]
 id = "generic-api-key"
@@ -1179,6 +1221,13 @@ description = "Uncovered a Typeform API token, which could lead to unauthorized 
 regex = '''(?i)(?:typeform)(?:[0-9a-z\-_\t .]{0,20})(?:[\s|']|[\s|"]){0,3}(?:=|>|:{1,3}=|\|\|:|<=|=>|:|\?=)(?:'|\"|\s|=|\x60){0,5}(tfp_[a-z0-9\-_\.=]{59})(?:['|\"|\n|\r|\s|\x60|;]|$)'''
 keywords = [
     "tfp_",
+]
+[[rules]]
+id = "url-token"
+description = "Identifies different kinds of URLs in the codebase."
+regex = '''(http|https):\/\/[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,}(\/\S*)?'''
+keywords = [
+    "http","https",
 ]
 [[rules]]
 id = "vault-batch-token"

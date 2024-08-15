@@ -12,6 +12,7 @@ type Match struct {
 }
 
 type RegexReturn struct {
-	Name    string  `json:"name"`
-	Matches []Match `json:"matches"`
+	Name        string  `json:"name"`
+	Description string  `json:"description"`
+	Matches     []Match `json:"matches"`
 }

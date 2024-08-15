@@ -14,7 +14,7 @@ const (
 	templatePath = "rules/config.tmpl"
 )
 
-//go:generate go run $GOFILE ../../../config/humblebrag.toml
+//go:generate go run $GOFILE ../../config/humblebrag.toml
 
 func main() {
 	if len(os.Args) < 2 {
@@ -85,8 +85,14 @@ func main() {
 		rules.FreshbooksAccessToken(),
 		rules.GoCardless(),
 		// TODO figure out what makes sense for GCP
-		// rules.GCPServiceAccount(),
+
+		rules.GCPServiceAccount(),
 		rules.GCPAPIKey(),
+		rules.GCPOAuth(),
+		rules.GCPGTM(),
+		rules.GCPGA(),
+		rules.GCPGA2(),
+
 		rules.GitHubPat(),
 		rules.GitHubFineGrainedPat(),
 		rules.GitHubOauth(),
@@ -200,6 +206,12 @@ func main() {
 		rules.ZendeskSecretKey(),
 		rules.GenericCredential(),
 		rules.InfracostAPIToken(),
+
+		rules.URLToken(),
+		rules.EmailToken(),
+
+		//todo: Need to fix false positives
+		//rules.PhoneToken(),
 	}
 
 	// ensure rules have unique ids

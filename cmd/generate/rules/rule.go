@@ -2,8 +2,9 @@ package rules
 
 import (
 	"fmt"
-	"regexp"
 	"strings"
+
+	regexp "github.com/wasilibs/go-re2"
 
 	"github.com/codevault-llc/humblebrag-api/config"
 	"github.com/codevault-llc/humblebrag-api/utils"
@@ -82,7 +83,7 @@ func validate(r config.Rule, truePositives []string, falsePositives []string) *c
 	rules[r.RuleID] = r
 	for _, tp := range truePositives {
 		if len(utils.GenericScan(r, utils.Script{
-			Src: 	 "validate.js",
+			Src:     "validate.js",
 			Content: tp,
 		})) != 1 {
 			log.Fatal().Msgf("Failed to validate. For rule ID [%s], true positive [%s] was not detected by regexp [%s]", r.RuleID, tp, r.Regex)
@@ -90,7 +91,7 @@ func validate(r config.Rule, truePositives []string, falsePositives []string) *c
 	}
 	for _, fp := range falsePositives {
 		if len(utils.GenericScan(r, utils.Script{
-			Src: 	 "validate.js",
+			Src:     "validate.js",
 			Content: fp,
 		})) != 0 {
 			log.Fatal().Msgf("Failed to validate. For rule ID [%s], false positive [%s] was detected by regexp [%s]", r.RuleID, fp, r.Regex)
