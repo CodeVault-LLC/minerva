@@ -15,6 +15,7 @@ type Scan struct {
 	Status      string `gorm:"not null"`
 
 	Findings []Finding `gorm:"foreignKey:ScanID"`
+	Contents []Content `gorm:"foreignKey:ScanID"`
 }
 
 type ScanRequest struct {
