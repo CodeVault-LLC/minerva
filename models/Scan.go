@@ -14,8 +14,13 @@ type Scan struct {
 	WebsiteName string `gorm:"not null"`
 	Status      string `gorm:"not null"`
 
-	Findings []Finding `gorm:"foreignKey:ScanID"`
-	Contents []Content `gorm:"foreignKey:ScanID"`
+	Sha256 string `gorm:"not null"`
+	SHA1   string `gorm:"not null"`
+	MD5    string `gorm:"not null"`
+
+	Findings     []Finding     `gorm:"foreignKey:ScanID"`
+	Contents     []Content     `gorm:"foreignKey:ScanID"`
+	Certificates []Certificate `gorm:"foreignKey:ScanID"`
 }
 
 type ScanRequest struct {
@@ -32,10 +37,14 @@ type ScanResponse struct {
 
 	WebsiteUrl  string `json:"website_url"`
 	WebsiteName string `json:"website_name"`
+	Status      string `json:"status"`
 
-	Status string `json:"status"`
+	Sha256 string `json:"sha256"`
+	SHA1   string `json:"sha1"`
+	MD5    string `json:"md5"`
 
-	Findings int64 `json:"findings"`
+	Findings     int64                 `json:"findings"`
+	Certificates []CertificateResponse `json:"certificates"`
 
 	CreatedAt string `json:"created_at"`
 	UpdatedAt string `json:"updated_at"`

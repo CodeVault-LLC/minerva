@@ -2,10 +2,12 @@ package scan
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/codevault-llc/humblebrag-api/controller"
 	"github.com/codevault-llc/humblebrag-api/models"
+	"github.com/codevault-llc/humblebrag-api/scanner/certificate"
 	"github.com/codevault-llc/humblebrag-api/scanner/secrets"
 	"github.com/codevault-llc/humblebrag-api/utils"
 	"github.com/gorilla/mux"
@@ -34,8 +36,13 @@ func CreateScan(w http.ResponseWriter, r *http.Request) {
 	scanModel := models.Scan{
 		WebsiteUrl:  scan.WebsiteUrl,
 		WebsiteName: scan.WebsiteName,
-		Status:      "pending",
-		UserID:      user.ID,
+
+		Sha256: fmt.Sprintf("%x", utils.SHA256(scan.WebsiteUrl)),
+		SHA1:   fmt.Sprintf("%x", utils.SHA1(scan.WebsiteUrl)),
+		MD5:    fmt.Sprintf("%x", utils.MD5(scan.WebsiteUrl)),
+
+		Status: "pending",
+		UserID: user.ID,
 	}
 
 	scanResponse, err := controller.CreateScan(scanModel)
@@ -58,6 +65,24 @@ func CreateScan(w http.ResponseWriter, r *http.Request) {
 			utils.RespondWithError(w, 500, "Failed to create content")
 			return
 		}
+	}
+
+	certificate, err := certificate.GetCertificateWebsite(scan.WebsiteUrl, 443)
+	if err != nil {
+		utils.RespondWithError(w, 500, "Failed to create certificate")
+		return
+	}
+
+	for _, cert := range certificate {
+		certificate := models.Certificate{
+			ScanID:    scanResponse.ID,
+			Issuer:    cert.Issuer.CommonName,
+			Subject:   cert.Subject.CommonName,
+			NotBefore: cert.NotBefore,
+			NotAfter:  cert.NotAfter,
+		}
+
+		controller.CreateCertificate(scanResponse.ID, certificate)
 	}
 
 	utils.RespondWithJSON(w, 200, scanResponse)

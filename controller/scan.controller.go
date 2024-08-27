@@ -32,6 +32,20 @@ func CreateFindings(scanID uint, secrets []utils.RegexReturn) {
 	}
 }
 
+func CreateCertificate(scanID uint, cert models.Certificate) {
+	certificate := models.Certificate{
+		ScanID:             scanID,
+		Issuer:             cert.Issuer,
+		Subject:            cert.Subject,
+		NotBefore:          cert.NotBefore,
+		NotAfter:           cert.NotAfter,
+		SignatureAlgorithm: cert.SignatureAlgorithm,
+		PublicKeyAlgorithm: cert.PublicKeyAlgorithm,
+	}
+
+	constants.DB.Create(&certificate)
+}
+
 func CreateContent(content models.Content) (models.Content, error) {
 	if err := constants.DB.Create(&content).Error; err != nil {
 		return content, err
@@ -53,7 +67,7 @@ func GetScans() ([]models.ScanResponse, error) {
 func GetScan(scanID string) (models.ScanResponse, error) {
 	var scan models.Scan
 
-	if err := constants.DB.Where("id = ?", scanID).
+	if err := constants.DB.Where("id = ?", scanID).Preload("User").Preload("Findings").Preload("Contents").Preload("Certificates").
 		First(&scan).
 		Error; err != nil {
 		return utils.ConvertScan(scan), err

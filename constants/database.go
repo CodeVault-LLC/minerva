@@ -15,6 +15,6 @@ func InitDB(DATABASE_URL string) {
 		panic("failed to connect database")
 	}
 
-	db.AutoMigrate(&models.User{}, &models.Subscription{}, &models.Scan{}, &models.Finding{}, &models.History{}, &models.UserToken{}, &models.Content{})
+	db.AutoMigrate(&models.User{}, &models.Subscription{}, &models.Scan{}, &models.Finding{}, &models.Certificate{}, &models.History{}, &models.UserToken{}, &models.Content{})
 	DB = db
 }

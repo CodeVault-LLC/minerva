@@ -32,8 +32,13 @@ func ConvertScan(scan models.Scan) models.ScanResponse {
 		WebsiteUrl:  scan.WebsiteUrl,
 		WebsiteName: scan.WebsiteName,
 		Status:      scan.Status,
-		CreatedAt:   scan.CreatedAt.Format("2006-01-02 15:04:05"),
-		UpdatedAt:   scan.UpdatedAt.Format("2006-01-02 15:04:05"),
+		Sha256:      scan.Sha256,
+		SHA1:        scan.SHA1,
+		MD5:         scan.MD5,
+
+		Certificates: ConvertCertificates(scan.Certificates),
+		CreatedAt:    scan.CreatedAt.Format("2006-01-02 15:04:05"),
+		UpdatedAt:    scan.UpdatedAt.Format("2006-01-02 15:04:05"),
 	}
 }
 
@@ -67,6 +72,36 @@ func ConvertFindings(findings []models.Finding) []models.FindingResponse {
 	}
 
 	return findingResponses
+}
+
+func ConvertCertificate(certificate models.Certificate) models.CertificateResponse {
+	return models.CertificateResponse{
+		ID:                 certificate.ID,
+		Issuer:             certificate.Issuer,
+		Subject:            certificate.Subject,
+		NotBefore:          certificate.NotBefore,
+		NotAfter:           certificate.NotAfter,
+		SignatureAlgorithm: certificate.SignatureAlgorithm,
+		PublicKeyAlgorithm: certificate.PublicKeyAlgorithm,
+	}
+}
+
+func ConvertCertificates(certificates []models.Certificate) []models.CertificateResponse {
+	var certificateResponses []models.CertificateResponse
+
+	for _, certificate := range certificates {
+		certificateResponses = append(certificateResponses, models.CertificateResponse{
+			ID:                 certificate.ID,
+			Issuer:             certificate.Issuer,
+			Subject:            certificate.Subject,
+			NotBefore:          certificate.NotBefore,
+			NotAfter:           certificate.NotAfter,
+			SignatureAlgorithm: certificate.SignatureAlgorithm,
+			PublicKeyAlgorithm: certificate.PublicKeyAlgorithm,
+		})
+	}
+
+	return certificateResponses
 }
 
 func ConvertContents(content []models.Content) []models.ContentResponse {
