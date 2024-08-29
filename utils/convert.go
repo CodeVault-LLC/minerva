@@ -15,6 +15,20 @@ func ConvertUser(user models.User) models.UserResponse {
 	}
 }
 
+func ConvertSubscription(subscription models.Subscription) models.SubscriptionResponse {
+	return models.SubscriptionResponse{
+		ID:                 subscription.ID,
+		PlanName:           subscription.PlanName,
+		Price:              subscription.Price,
+		Currency:           subscription.Currency,
+		Interval:           subscription.Interval,
+		Status:             subscription.Status,
+		CurrentPeriodStart: subscription.CurrentPeriodStart,
+		CurrentPeriodEnd:   subscription.CurrentPeriodEnd,
+		CancelAtPeriodEnd:  subscription.CancelAtPeriodEnd,
+	}
+}
+
 func ConvertUserMinimal(user models.User) models.UserMinimalResponse {
 	return models.UserMinimalResponse{
 		ID:       user.ID,
@@ -81,8 +95,8 @@ func ConvertCertificate(certificate models.Certificate) models.CertificateRespon
 		Subject:            certificate.Subject,
 		NotBefore:          certificate.NotBefore,
 		NotAfter:           certificate.NotAfter,
-		SignatureAlgorithm: certificate.SignatureAlgorithm,
-		PublicKeyAlgorithm: certificate.PublicKeyAlgorithm,
+		SignatureAlgorithm: certificate.SignatureAlgorithm.String(),
+		PublicKeyAlgorithm: certificate.PublicKeyAlgorithm.String(),
 	}
 }
 
@@ -96,8 +110,8 @@ func ConvertCertificates(certificates []models.Certificate) []models.Certificate
 			Subject:            certificate.Subject,
 			NotBefore:          certificate.NotBefore,
 			NotAfter:           certificate.NotAfter,
-			SignatureAlgorithm: certificate.SignatureAlgorithm,
-			PublicKeyAlgorithm: certificate.PublicKeyAlgorithm,
+			SignatureAlgorithm: certificate.SignatureAlgorithm.String(),
+			PublicKeyAlgorithm: certificate.PublicKeyAlgorithm.String(),
 		})
 	}
 

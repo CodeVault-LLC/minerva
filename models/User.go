@@ -13,7 +13,8 @@ type User struct {
 
 	AccessToken string `gorm:"not null"`
 
-	Provider string `gorm:"not null"`
+	Provider         string `gorm:"not null"`
+	StripeCustomerID string `gorm:"not null"`
 
 	History       []History      `gorm:"foreignKey:UserID"`
 	Subscriptions []Subscription `gorm:"foreignKey:UserID"`
@@ -26,6 +27,8 @@ type UserResponse struct {
 	Email     string `json:"email"`
 	Avatar    string `json:"avatar"`
 	AvatarURL string `json:"avatar_url"`
+
+	Subscription SubscriptionResponse `json:"subscription"`
 
 	CreatedAt string `json:"created_at"`
 	UpdatedAt string `json:"updated_at"`

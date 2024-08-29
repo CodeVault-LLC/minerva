@@ -31,9 +31,9 @@ func UserRouter(router *mux.Router) {
 	router.HandleFunc("/auth/discord/callback", AuthenticateDiscord).Methods("GET")
 	router.HandleFunc("/auth/discord/callback/extension", AuthenticateDiscordExtension).Methods("GET")
 
+	router.HandleFunc("/users/create-checkout-session", handleCreateCheckoutSession).Methods("POST")
 }
 
-// Authenticate for popup windows for our Chrome Extension
 func AuthenticateDiscordExtension(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Authenticating Discord for Chrome Extension")
 	if r.FormValue("state") != "random" {
@@ -89,15 +89,16 @@ func AuthenticateDiscordExtension(w http.ResponseWriter, r *http.Request) {
 
 	if user.ID == 0 {
 		user = models.User{
-			DiscordId:     discordUser.Id,
-			Username:      discordUser.Username,
-			Email:         discordUser.Email,
-			Avatar:        discordUser.Avatar,
-			AccessToken:   token.AccessToken,
-			Provider:      "discord",
-			History:       []models.History{},
-			Subscriptions: []models.Subscription{},
-			Scans:         []models.Scan{},
+			DiscordId:        discordUser.Id,
+			Username:         discordUser.Username,
+			Email:            discordUser.Email,
+			Avatar:           discordUser.Avatar,
+			AccessToken:      token.AccessToken,
+			Provider:         "discord",
+			StripeCustomerID: "",
+			History:          []models.History{},
+			Subscriptions:    []models.Subscription{},
+			Scans:            []models.Scan{},
 		}
 
 		user, err = controller.CreateUser(user)
@@ -114,12 +115,20 @@ func AuthenticateDiscordExtension(w http.ResponseWriter, r *http.Request) {
 func GetCurrentUser(w http.ResponseWriter, r *http.Request) {
 	user := r.Context().Value("user").(models.User)
 
-	response := utils.ConvertUser(user)
+	subscriptionsFromUser, err := controller.GetSubscriptionFromUser(user.ID)
+	if err != nil {
+		utils.RespondWithError(w, 500, "Error getting subscriptions")
+		return
+	}
 
-	utils.RespondWithJSON(w, 200, response)
+	subscription := utils.ConvertSubscription(subscriptionsFromUser)
+
+	response := utils.ConvertUser(user)
+	response.Subscription = subscription
+
+	json.NewEncoder(w).Encode(response)
 }
 
-// Authenticate for default browsers
 func AuthenticateDiscord(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Authenticating Discord")
 	if r.FormValue("state") != "random" {
@@ -176,15 +185,16 @@ func AuthenticateDiscord(w http.ResponseWriter, r *http.Request) {
 
 	if user.ID == 0 {
 		user = models.User{
-			DiscordId:     discordUser.Id,
-			Username:      discordUser.Username,
-			Email:         discordUser.Email,
-			Avatar:        discordUser.Avatar,
-			AccessToken:   token.AccessToken,
-			Provider:      "discord",
-			History:       []models.History{},
-			Subscriptions: []models.Subscription{},
-			Scans:         []models.Scan{},
+			DiscordId:        discordUser.Id,
+			Username:         discordUser.Username,
+			Email:            discordUser.Email,
+			Avatar:           discordUser.Avatar,
+			AccessToken:      token.AccessToken,
+			Provider:         "discord",
+			StripeCustomerID: "",
+			History:          []models.History{},
+			Subscriptions:    []models.Subscription{},
+			Scans:            []models.Scan{},
 		}
 
 		user, err = controller.CreateUser(user)
@@ -211,4 +221,54 @@ func AuthenticateDiscord(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.Redirect(w, r, fmt.Sprintf("http://localhost:5173/auth?token=%s", userToken), http.StatusTemporaryRedirect)
+}
+
+func handleCreateCheckoutSession(w http.ResponseWriter, r *http.Request) {
+	user := r.Context().Value("user").(models.User)
+	if user.ID == 0 {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	fmt.Println("Creating checkout session")
+
+	type PriceRequest struct {
+		PriceID string `json:"priceId"`
+	}
+
+	var priceRequest PriceRequest
+	err := json.NewDecoder(r.Body).Decode(&priceRequest)
+	if err != nil {
+		http.Error(w, "Invalid request", http.StatusBadRequest)
+		return
+	}
+
+	fmt.Println("Price ID: ", priceRequest.PriceID)
+
+	if priceRequest.PriceID == "" {
+		http.Error(w, "Missing price_id", http.StatusBadRequest)
+		return
+	}
+
+	fmt.Println("Price ID: ", priceRequest.PriceID)
+
+	stripeCustomerID, err := controller.GetOrCreateStripeCustomer(user.ID)
+	if err != nil {
+		log.Printf("Error getting/creating Stripe customer: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Println("Stripe Customer ID: ", stripeCustomerID)
+
+	session, err := utils.CreateCheckoutSession(priceRequest.PriceID, stripeCustomerID)
+	if err != nil {
+		log.Printf("Error creating checkout session: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Println("Checkout Session ID: ", session.ID)
+
+	json.NewEncoder(w).Encode(map[string]string{"id": session.ID})
 }

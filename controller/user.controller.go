@@ -5,6 +5,18 @@ import (
 	"github.com/codevault-llc/humblebrag-api/models"
 )
 
+func GetUserById(id uint) (models.User, error) {
+	var user models.User
+
+	if err := constants.DB.Where("id = ?", id).
+		First(&user).
+		Error; err != nil {
+		return user, err
+	}
+
+	return user, nil
+}
+
 func GetUserByEmail(email string) (models.User, error) {
 	var user models.User
 
@@ -47,4 +59,12 @@ func IsValidUserToken(token string) (models.UserToken, error) {
 	}
 
 	return userToken, nil
+}
+
+func UpdateUser(user models.User) (models.User, error) {
+	if err := constants.DB.Save(&user).Error; err != nil {
+		return user, err
+	}
+
+	return user, nil
 }

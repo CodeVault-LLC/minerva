@@ -51,6 +51,20 @@ func CreateScan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	certificate, err := certificate.GetCertificateWebsite(scan.WebsiteUrl, 443)
+	if err != nil {
+		utils.RespondWithError(w, 500, "Failed to create certificate")
+		return
+	}
+
+	for _, cert := range certificate {
+		err = controller.CreateCertificate(scanResponse.ID, *cert)
+		if err != nil {
+			utils.RespondWithError(w, 500, "Failed to create certificate")
+			return
+		}
+	}
+
 	controller.CreateFindings(scanResponse.ID, secrets)
 
 	for _, script := range scan.Scripts {
@@ -65,24 +79,6 @@ func CreateScan(w http.ResponseWriter, r *http.Request) {
 			utils.RespondWithError(w, 500, "Failed to create content")
 			return
 		}
-	}
-
-	certificate, err := certificate.GetCertificateWebsite(scan.WebsiteUrl, 443)
-	if err != nil {
-		utils.RespondWithError(w, 500, "Failed to create certificate")
-		return
-	}
-
-	for _, cert := range certificate {
-		certificate := models.Certificate{
-			ScanID:    scanResponse.ID,
-			Issuer:    cert.Issuer.CommonName,
-			Subject:   cert.Subject.CommonName,
-			NotBefore: cert.NotBefore,
-			NotAfter:  cert.NotAfter,
-		}
-
-		controller.CreateCertificate(scanResponse.ID, certificate)
 	}
 
 	utils.RespondWithJSON(w, 200, scanResponse)
