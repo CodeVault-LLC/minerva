@@ -9,6 +9,7 @@ import (
 	"github.com/codevault-llc/humblebrag-api/models"
 	"github.com/codevault-llc/humblebrag-api/scanner/certificate"
 	"github.com/codevault-llc/humblebrag-api/scanner/secrets"
+	"github.com/codevault-llc/humblebrag-api/scanner/websites"
 	"github.com/codevault-llc/humblebrag-api/utils"
 	"github.com/gorilla/mux"
 )
@@ -31,15 +32,22 @@ func CreateScan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	secrets := secrets.ScanSecrets(scan.Scripts)
+	website, err := websites.ScanWebsite(scan.Url)
+	if err != nil {
+		fmt.Println(err)
+		utils.RespondWithError(w, 500, "Failed to scan website")
+		return
+	}
+
+	secrets := secrets.ScanSecrets(website.Scripts)
 
 	scanModel := models.Scan{
-		WebsiteUrl:  scan.WebsiteUrl,
-		WebsiteName: scan.WebsiteName,
+		WebsiteUrl:  scan.Url,
+		WebsiteName: website.WebsiteName,
 
-		Sha256: fmt.Sprintf("%x", utils.SHA256(scan.WebsiteUrl)),
-		SHA1:   fmt.Sprintf("%x", utils.SHA1(scan.WebsiteUrl)),
-		MD5:    fmt.Sprintf("%x", utils.MD5(scan.WebsiteUrl)),
+		Sha256: fmt.Sprintf("%x", utils.SHA256(scan.Url)),
+		SHA1:   fmt.Sprintf("%x", utils.SHA1(scan.Url)),
+		MD5:    fmt.Sprintf("%x", utils.MD5(scan.Url)),
 
 		Status: "pending",
 		UserID: user.ID,
@@ -51,7 +59,7 @@ func CreateScan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	certificate, err := certificate.GetCertificateWebsite(scan.WebsiteUrl, 443)
+	certificate, err := certificate.GetCertificateWebsite(scan.Url, 443)
 	if err != nil {
 		utils.RespondWithError(w, 500, "Failed to create certificate")
 		return
@@ -67,7 +75,7 @@ func CreateScan(w http.ResponseWriter, r *http.Request) {
 
 	controller.CreateFindings(scanResponse.ID, secrets)
 
-	for _, script := range scan.Scripts {
+	for _, script := range website.Scripts {
 		content := models.Content{
 			ScanID:  scanResponse.ID,
 			Name:    script.Src,

@@ -37,8 +37,8 @@ func ConvertUserMinimal(user models.User) models.UserMinimalResponse {
 	}
 }
 
-func ConvertScan(scan models.Scan) models.ScanResponse {
-	return models.ScanResponse{
+func ConvertScan(scan models.Scan) models.ScanAPIResponse {
+	return models.ScanAPIResponse{
 		ID:       scan.ID,
 		User:     ConvertUserMinimal(scan.User),
 		Findings: int64(len(scan.Findings)),
@@ -56,8 +56,8 @@ func ConvertScan(scan models.Scan) models.ScanResponse {
 	}
 }
 
-func ConvertScans(scans []models.Scan) []models.ScanResponse {
-	var scanResponses []models.ScanResponse
+func ConvertScans(scans []models.Scan) []models.ScanAPIResponse {
+	var scanResponses []models.ScanAPIResponse
 
 	for _, scan := range scans {
 		scanResponses = append(scanResponses, ConvertScan(scan))

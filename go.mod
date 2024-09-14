@@ -15,6 +15,7 @@ require (
 	github.com/spf13/viper v1.19.0
 	github.com/stripe/stripe-go/v79 v79.3.0
 	github.com/wasilibs/go-re2 v1.6.0
+	golang.org/x/net v0.23.0
 	golang.org/x/oauth2 v0.21.0
 	gorm.io/driver/postgres v1.5.9
 	gorm.io/gorm v1.25.11

@@ -87,7 +87,7 @@ func CreateContent(content models.Content) (models.Content, error) {
 	return content, nil
 }
 
-func GetScans() ([]models.ScanResponse, error) {
+func GetScans() ([]models.ScanAPIResponse, error) {
 	var scans []models.Scan
 
 	if err := constants.DB.Preload("User").Preload("Findings").Find(&scans).Error; err != nil {
@@ -97,7 +97,7 @@ func GetScans() ([]models.ScanResponse, error) {
 	return utils.ConvertScans(scans), nil
 }
 
-func GetScan(scanID string) (models.ScanResponse, error) {
+func GetScan(scanID string) (models.ScanAPIResponse, error) {
 	var scan models.Scan
 
 	if err := constants.DB.Where("id = ?", scanID).Preload("User").Preload("Findings").Preload("Certificates").

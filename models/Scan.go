@@ -24,13 +24,17 @@ type Scan struct {
 }
 
 type ScanRequest struct {
+	Url string `json:"url"`
+}
+
+type ScanResponse struct {
 	WebsiteUrl  string `json:"websiteUrl"`
 	WebsiteName string `json:"websiteName"`
 
 	Scripts []ScriptRequest `json:"scripts"`
 }
 
-type ScanResponse struct {
+type ScanAPIResponse struct {
 	ID uint `json:"id"`
 
 	User UserMinimalResponse `json:"user"`
