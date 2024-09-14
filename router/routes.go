@@ -10,6 +10,6 @@ import (
 
 func GlobalRouter(router *mux.Router) {
 	scan.ScanRouter(router)
-	user.UserRouter(router)
+	user.RegisterUserRoutes(router)
 	webhook.WebhookRouter(router)
 }

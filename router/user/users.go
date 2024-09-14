@@ -1,10 +1,8 @@
 package user
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 
@@ -15,222 +13,102 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func UserRouter(router *mux.Router) {
-	router.HandleFunc("/users/me", GetCurrentUser).Methods("GET")
-
-	router.HandleFunc("/auth/discord", func(w http.ResponseWriter, r *http.Request) {
-		url := constants.DiscordConfig.AuthCodeURL("random")
-		http.Redirect(w, r, url, http.StatusTemporaryRedirect)
-	}).Methods("GET")
-
-	router.HandleFunc("/auth/discord/extension", func(w http.ResponseWriter, r *http.Request) {
-		url := constants.DiscordConfigExtension.AuthCodeURL("random")
-		http.Redirect(w, r, url, http.StatusTemporaryRedirect)
-	}).Methods("GET")
-
-	router.HandleFunc("/auth/discord/callback", AuthenticateDiscord).Methods("GET")
-	router.HandleFunc("/auth/discord/callback/extension", AuthenticateDiscordExtension).Methods("GET")
-
-	router.HandleFunc("/users/create-checkout-session", handleCreateCheckoutSession).Methods("POST")
+func RegisterUserRoutes(router *mux.Router) {
+	router.HandleFunc("/users/me", getCurrentUserHandler).Methods("GET")
+	router.HandleFunc("/auth/discord", discordAuthRedirectHandler).Methods("GET")
+	router.HandleFunc("/auth/discord/extension", discordExtensionAuthRedirectHandler).Methods("GET")
+	router.HandleFunc("/auth/discord/callback", discordAuthCallbackHandler).Methods("GET")
+	router.HandleFunc("/auth/discord/callback/extension", discordExtensionCallbackHandler).Methods("GET")
+	router.HandleFunc("/users/create-checkout-session", createCheckoutSessionHandler).Methods("POST")
+	router.HandleFunc("/users/cancel-subscription", cancelSubscriptionHandler).Methods("POST")
+	router.HandleFunc("/users/logout", logoutHandler).Methods("POST")
 }
 
-func AuthenticateDiscordExtension(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Authenticating Discord for Chrome Extension")
+func discordAuthRedirectHandler(w http.ResponseWriter, r *http.Request) {
+	url := constants.DiscordConfig.AuthCodeURL("random")
+	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+}
+
+func discordExtensionAuthRedirectHandler(w http.ResponseWriter, r *http.Request) {
+	url := constants.DiscordConfigExtension.AuthCodeURL("random")
+	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+}
+
+func discordExtensionCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	if r.FormValue("state") != "random" {
-		utils.RespondWithError(w, 400, "Invalid State")
+		utils.RespondWithError(w, http.StatusBadRequest, "Invalid state parameter")
 		return
 	}
 
 	token, err := constants.DiscordConfigExtension.Exchange(r.Context(), r.FormValue("code"))
 	if err != nil {
-		log.Println(err)
-		utils.RespondWithError(w, 500, "Error exchanging token")
+		log.Println("Error exchanging token:", err)
+		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to exchange token")
 		return
 	}
 
-	res, err := constants.DiscordConfigExtension.Client(context.Background(), token).Get("https://discord.com/api/users/@me")
-	if err != nil || res.StatusCode != 200 {
-		w.WriteHeader(http.StatusInternalServerError)
-		if err != nil {
-			w.Write([]byte(err.Error()))
-		} else {
-			w.Write([]byte(res.Status))
-		}
-		return
-	}
-	defer res.Body.Close()
-	body, err := ioutil.ReadAll(res.Body)
+	userInfo, err := controller.FetchDiscordUserInfo(*token)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
+		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to retrieve user info")
 		return
 	}
 
-	type DiscordUser struct {
-		Id            string `json:"id"`
-		Username      string `json:"username"`
-		Discriminator string `json:"discriminator"`
-		Avatar        string `json:"avatar"`
-		Verified      bool   `json:"verified"`
-		Email         string `json:"email"`
-		Flags         int    `json:"flags"`
-	}
-
-	var discordUser DiscordUser
-	err = json.Unmarshal(body, &discordUser)
+	user, err := controller.FindOrCreateUserFromDiscord(*userInfo, token)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
+		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to create or find user")
 		return
-	}
-
-	user := models.User{}
-	constants.DB.Where("discord_id = ?", discordUser.Id).First(&user)
-
-	if user.ID == 0 {
-		user = models.User{
-			DiscordId:        discordUser.Id,
-			Username:         discordUser.Username,
-			Email:            discordUser.Email,
-			Avatar:           discordUser.Avatar,
-			AccessToken:      token.AccessToken,
-			Provider:         "discord",
-			StripeCustomerID: "",
-			History:          []models.History{},
-			Subscriptions:    []models.Subscription{},
-			Scans:            []models.Scan{},
-		}
-
-		user, err = controller.CreateUser(user)
-		if err != nil {
-			utils.RespondWithError(w, 500, "Error creating user")
-			return
-		}
 	}
 
 	constants.SessionManager.Put(r.Context(), "user", user)
 	w.Write([]byte("<script>window.close()</script>"))
 }
 
-func GetCurrentUser(w http.ResponseWriter, r *http.Request) {
-	user := r.Context().Value("user").(models.User)
-
-	subscriptionsFromUser, err := controller.GetSubscriptionFromUser(user.ID)
-	if err != nil {
-		utils.RespondWithError(w, 500, "Error getting subscriptions")
-		return
-	}
-
-	subscription := utils.ConvertSubscription(subscriptionsFromUser)
-
-	response := utils.ConvertUser(user)
-	response.Subscription = subscription
-
-	json.NewEncoder(w).Encode(response)
-}
-
-func AuthenticateDiscord(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Authenticating Discord")
+func discordAuthCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	if r.FormValue("state") != "random" {
-		utils.RespondWithError(w, 400, "Invalid State")
+		utils.RespondWithError(w, http.StatusBadRequest, "Invalid state parameter")
 		return
 	}
 
 	token, err := constants.DiscordConfig.Exchange(r.Context(), r.FormValue("code"))
 	if err != nil {
-		log.Println(err)
-		utils.RespondWithError(w, 500, "Error exchanging token")
+		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to exchange token")
 		return
 	}
 
-	res, err := constants.DiscordConfig.Client(context.Background(), token).Get("https://discord.com/api/users/@me")
-	if err != nil || res.StatusCode != 200 {
-		w.WriteHeader(http.StatusInternalServerError)
-		if err != nil {
-			w.Write([]byte(err.Error()))
-		} else {
-			w.Write([]byte(res.Status))
-		}
-		return
-	}
-
-	defer res.Body.Close()
-	body, err := ioutil.ReadAll(res.Body)
+	userInfo, err := controller.FetchDiscordUserInfo(*token)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
+		fmt.Println(err)
+		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to retrieve user info")
 		return
 	}
 
-	type DiscordUser struct {
-		Id            string `json:"id"`
-		Username      string `json:"username"`
-		Discriminator string `json:"discriminator"`
-		Avatar        string `json:"avatar"`
-		Verified      bool   `json:"verified"`
-		Email         string `json:"email"`
-		Flags         int    `json:"flags"`
-	}
+	user, err := controller.FindOrCreateUserFromDiscord(*userInfo, token)
 
-	var discordUser DiscordUser
-	err = json.Unmarshal(body, &discordUser)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
+		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to create or find user")
 		return
-	}
-
-	user := models.User{}
-	constants.DB.Where("discord_id = ?", discordUser.Id).First(&user)
-
-	if user.ID == 0 {
-		user = models.User{
-			DiscordId:        discordUser.Id,
-			Username:         discordUser.Username,
-			Email:            discordUser.Email,
-			Avatar:           discordUser.Avatar,
-			AccessToken:      token.AccessToken,
-			Provider:         "discord",
-			StripeCustomerID: "",
-			History:          []models.History{},
-			Subscriptions:    []models.Subscription{},
-			Scans:            []models.Scan{},
-		}
-
-		user, err = controller.CreateUser(user)
-		if err != nil {
-			utils.RespondWithError(w, 500, "Error creating user")
-			return
-		}
 	}
 
 	userToken, err := utils.GenerateJWT(user)
 	if err != nil {
-		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to generate token")
+		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to generate JWT")
 		return
 	}
 
-	tokenModel := models.UserToken{
-		Token:  userToken,
-		UserID: user.ID,
-	}
-
-	if err := constants.DB.Create(&tokenModel).Error; err != nil {
-		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to create token")
+	if err := controller.SaveUserToken(userToken, user.ID); err != nil {
+		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to save user token")
 		return
 	}
 
 	http.Redirect(w, r, fmt.Sprintf("http://localhost:5173/auth?token=%s", userToken), http.StatusTemporaryRedirect)
 }
 
-func handleCreateCheckoutSession(w http.ResponseWriter, r *http.Request) {
+func createCheckoutSessionHandler(w http.ResponseWriter, r *http.Request) {
 	user := r.Context().Value("user").(models.User)
 	if user.ID == 0 {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
-
-	fmt.Println("Creating checkout session")
 
 	type PriceRequest struct {
 		PriceID string `json:"priceId"`
@@ -243,14 +121,10 @@ func handleCreateCheckoutSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println("Price ID: ", priceRequest.PriceID)
-
 	if priceRequest.PriceID == "" {
 		http.Error(w, "Missing price_id", http.StatusBadRequest)
 		return
 	}
-
-	fmt.Println("Price ID: ", priceRequest.PriceID)
 
 	stripeCustomerID, err := controller.GetOrCreateStripeCustomer(user.ID)
 	if err != nil {
@@ -259,8 +133,6 @@ func handleCreateCheckoutSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println("Stripe Customer ID: ", stripeCustomerID)
-
 	session, err := utils.CreateCheckoutSession(priceRequest.PriceID, stripeCustomerID)
 	if err != nil {
 		log.Printf("Error creating checkout session: %v", err)
@@ -268,7 +140,78 @@ func handleCreateCheckoutSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println("Checkout Session ID: ", session.ID)
-
 	json.NewEncoder(w).Encode(map[string]string{"id": session.ID})
+}
+
+func cancelSubscriptionHandler(w http.ResponseWriter, r *http.Request) {
+	user := r.Context().Value("user").(models.User)
+	if user.ID == 0 {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	subscriptionFromUser, err := controller.GetActiveSubscriptionForUser(user.ID)
+	if err != nil {
+		log.Printf("Error getting subscriptions: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	if subscriptionFromUser.ID == 0 {
+		http.Error(w, "No active subscriptions", http.StatusBadRequest)
+		return
+	}
+
+	err = controller.CancelExistingSubscription(subscriptionFromUser)
+	if err != nil {
+		log.Printf("Error cancelling subscription: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func getCurrentUserHandler(w http.ResponseWriter, r *http.Request) {
+	user, ok := r.Context().Value("user").(models.User)
+	if !ok {
+		utils.RespondWithError(w, http.StatusUnauthorized, "User not found in context")
+		return
+	}
+
+	subscription, err := controller.GetActiveSubscriptionForUser(user.ID)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to retrieve subscriptions")
+		return
+	}
+
+	userResponse := utils.ConvertUser(user)
+	userResponse.Subscription = utils.ConvertSubscription(*subscription)
+
+	if err := json.NewEncoder(w).Encode(userResponse); err != nil {
+		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to encode user response")
+	}
+}
+
+func logoutHandler(w http.ResponseWriter, r *http.Request) {
+	user := r.Context().Value("user").(models.User)
+	if user.ID == 0 {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	token := r.Header.Get("Authorization")
+	if token == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	token = token[7:]
+
+	if err := controller.RemoveUserToken(token); err != nil {
+		log.Printf("Error removing user token: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }

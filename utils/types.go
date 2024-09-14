@@ -16,3 +16,13 @@ type RegexReturn struct {
 	Description string  `json:"description"`
 	Matches     []Match `json:"matches"`
 }
+
+type DiscordUser struct {
+		Id            string `json:"id"`
+		Username      string `json:"username"`
+		Discriminator string `json:"discriminator"`
+		Avatar        string `json:"avatar"`
+		Verified      bool   `json:"verified"`
+		Email         string `json:"email"`
+		Flags         int    `json:"flags"`
+	}
