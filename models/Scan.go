@@ -4,15 +4,20 @@ import (
 	"gorm.io/gorm"
 )
 
+type ScanStatus string
+
+const (
+	ScanStatusArchived ScanStatus = "archived"
+	ScanStatusComplete ScanStatus = "complete"
+	ScanStatusFailed   ScanStatus = "failed"
+)
+
 type Scan struct {
 	gorm.Model
 
-	UserID uint
-	User   User
-
-	WebsiteUrl  string `gorm:"not null"`
-	WebsiteName string `gorm:"not null"`
-	Status      string `gorm:"not null"`
+	WebsiteUrl  string     `gorm:"not null"`
+	WebsiteName string     `gorm:"not null"`
+	Status      ScanStatus `gorm:"not null" default:"complete"`
 
 	Sha256 string `gorm:"not null"`
 	SHA1   string `gorm:"not null"`
@@ -36,8 +41,6 @@ type ScanResponse struct {
 
 type ScanAPIResponse struct {
 	ID uint `json:"id"`
-
-	User UserMinimalResponse `json:"user"`
 
 	WebsiteUrl  string `json:"website_url"`
 	WebsiteName string `json:"website_name"`

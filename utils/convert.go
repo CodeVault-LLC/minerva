@@ -40,12 +40,11 @@ func ConvertUserMinimal(user models.User) models.UserMinimalResponse {
 func ConvertScan(scan models.Scan) models.ScanAPIResponse {
 	return models.ScanAPIResponse{
 		ID:       scan.ID,
-		User:     ConvertUserMinimal(scan.User),
 		Findings: int64(len(scan.Findings)),
 
 		WebsiteUrl:  scan.WebsiteUrl,
 		WebsiteName: scan.WebsiteName,
-		Status:      scan.Status,
+		Status:      string(scan.Status),
 		Sha256:      scan.Sha256,
 		SHA1:        scan.SHA1,
 		MD5:         scan.MD5,
@@ -113,6 +112,10 @@ func ConvertCertificates(certificates []models.Certificate) []models.Certificate
 			SignatureAlgorithm: certificate.SignatureAlgorithm.String(),
 			PublicKeyAlgorithm: certificate.PublicKeyAlgorithm.String(),
 		})
+	}
+
+	if len(certificateResponses) == 0 {
+		return []models.CertificateResponse{}
 	}
 
 	return certificateResponses

@@ -91,7 +91,6 @@ func FindOrCreateUserFromDiscord(discordUser utils.DiscordUser, token *oauth2.To
 			StripeCustomerID: "",
 			History:          []models.History{},
 			Subscriptions:    []models.Subscription{},
-			Scans:            []models.Scan{},
 		}
 
 		user, err := CreateUser(user)

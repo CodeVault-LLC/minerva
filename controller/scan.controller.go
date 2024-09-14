@@ -12,6 +12,8 @@ import (
 )
 
 func CreateScan(scan models.Scan) (models.Scan, error) {
+	constants.DB.Model(&models.Scan{}).Where("website_url = ?", scan.WebsiteUrl).Update("status", models.ScanStatusArchived)
+
 	if err := constants.DB.Create(&scan).Error; err != nil {
 		return scan, err
 	}
@@ -90,7 +92,7 @@ func CreateContent(content models.Content) (models.Content, error) {
 func GetScans() ([]models.ScanAPIResponse, error) {
 	var scans []models.Scan
 
-	if err := constants.DB.Preload("User").Preload("Findings").Find(&scans).Error; err != nil {
+	if err := constants.DB.Preload("Findings").Where("status = ?", models.ScanStatusComplete).Find(&scans).Error; err != nil {
 		return utils.ConvertScans(scans), err
 	}
 
@@ -100,9 +102,7 @@ func GetScans() ([]models.ScanAPIResponse, error) {
 func GetScan(scanID string) (models.ScanAPIResponse, error) {
 	var scan models.Scan
 
-	if err := constants.DB.Where("id = ?", scanID).Preload("User").Preload("Findings").Preload("Certificates").
-		First(&scan).
-		Error; err != nil {
+	if err := constants.DB.Where("id = ?", scanID).Preload("Findings").Preload("Certificates").Where("status = ?", models.ScanStatusComplete).First(&scan).Error; err != nil {
 		return utils.ConvertScan(scan), err
 	}
 

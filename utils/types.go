@@ -18,11 +18,11 @@ type RegexReturn struct {
 }
 
 type DiscordUser struct {
-		Id            string `json:"id"`
-		Username      string `json:"username"`
-		Discriminator string `json:"discriminator"`
-		Avatar        string `json:"avatar"`
-		Verified      bool   `json:"verified"`
-		Email         string `json:"email"`
-		Flags         int    `json:"flags"`
-	}
+	Id            string `json:"id"`
+	Username      string `json:"username"`
+	Discriminator string `json:"discriminator"`
+	Avatar        string `json:"avatar"`
+	Verified      bool   `json:"verified"`
+	Email         string `json:"email"`
+	Flags         int    `json:"flags"`
+}

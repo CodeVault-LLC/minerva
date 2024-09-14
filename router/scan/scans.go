@@ -23,14 +23,14 @@ func ScanRouter(router *mux.Router) {
 }
 
 func CreateScan(w http.ResponseWriter, r *http.Request) {
-	var user = r.Context().Value("user").(models.User)
-
 	var scan models.ScanRequest
 	err := json.NewDecoder(r.Body).Decode(&scan)
 	if err != nil {
 		utils.RespondWithError(w, 400, "Invalid request")
 		return
 	}
+
+	scan.Url = utils.NormalizeURL(scan.Url)
 
 	website, err := websites.ScanWebsite(scan.Url)
 	if err != nil {
@@ -49,8 +49,7 @@ func CreateScan(w http.ResponseWriter, r *http.Request) {
 		SHA1:   fmt.Sprintf("%x", utils.SHA1(scan.Url)),
 		MD5:    fmt.Sprintf("%x", utils.MD5(scan.Url)),
 
-		Status: "pending",
-		UserID: user.ID,
+		Status: models.ScanStatusComplete,
 	}
 
 	scanResponse, err := controller.CreateScan(scanModel)
