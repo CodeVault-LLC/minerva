@@ -17,7 +17,7 @@ func InitDB(DATABASE_URL string) {
 
 	registerGlobalCallbacks(db)
 
-	db.AutoMigrate(&models.User{}, &models.Subscription{}, &models.Scan{}, &models.Finding{}, &models.Certificate{}, &models.History{}, &models.UserToken{}, &models.Content{})
+	db.AutoMigrate(&models.User{}, &models.Subscription{}, &models.Scan{}, &models.Detail{}, &models.Finding{}, &models.Certificate{}, &models.History{}, &models.UserToken{}, &models.Content{})
 	DB = db
 }
 

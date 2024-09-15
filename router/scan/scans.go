@@ -2,16 +2,11 @@ package scan
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/codevault-llc/humblebrag-api/controller"
 	"github.com/codevault-llc/humblebrag-api/models"
-	"github.com/codevault-llc/humblebrag-api/scanner/certificate"
-	"github.com/codevault-llc/humblebrag-api/scanner/http_req"
-	"github.com/codevault-llc/humblebrag-api/scanner/ip"
-	"github.com/codevault-llc/humblebrag-api/scanner/secrets"
-	"github.com/codevault-llc/humblebrag-api/scanner/websites"
+	"github.com/codevault-llc/humblebrag-api/scanner"
 	"github.com/codevault-llc/humblebrag-api/utils"
 	"github.com/gorilla/mux"
 )
@@ -28,103 +23,19 @@ func CreateScan(w http.ResponseWriter, r *http.Request) {
 	var scan models.ScanRequest
 	err := json.NewDecoder(r.Body).Decode(&scan)
 	if err != nil {
-		utils.RespondWithError(w, 400, "Invalid request")
+		utils.RespondWithError(w, http.StatusBadRequest, "Invalid request")
 		return
 	}
 
 	scan.Url = utils.NormalizeURL(scan.Url)
 
-	website, err := websites.ScanWebsite(scan.Url)
+	scanResponse, err := scanner.ScanWebsite(scan.Url)
 	if err != nil {
-		fmt.Println(err)
-		utils.RespondWithError(w, 500, "Failed to scan website")
+		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to scan website")
 		return
 	}
 
-	secrets := secrets.ScanSecrets(website.Scripts)
-
-	scanModel := models.Scan{
-		WebsiteUrl:  scan.Url,
-		WebsiteName: website.WebsiteName,
-
-		Sha256: fmt.Sprintf("%x", utils.SHA256(scan.Url)),
-		SHA1:   fmt.Sprintf("%x", utils.SHA1(scan.Url)),
-		MD5:    fmt.Sprintf("%x", utils.MD5(scan.Url)),
-
-		Status: models.ScanStatusComplete,
-	}
-
-	scanResponse, err := controller.CreateScan(scanModel)
-	if err != nil {
-		utils.RespondWithError(w, 500, "Failed to create scan")
-		return
-	}
-
-	certificate, err := certificate.GetCertificateWebsite(scan.Url, 443)
-	if err != nil {
-		utils.RespondWithError(w, 500, "Failed to create certificate")
-		return
-	}
-
-	for _, cert := range certificate {
-		err = controller.CreateCertificate(scanResponse.ID, *cert)
-		if err != nil {
-			utils.RespondWithError(w, 500, "Failed to create certificate")
-			return
-		}
-	}
-
-	controller.CreateFindings(scanResponse.ID, secrets)
-
-	for _, script := range website.Scripts {
-		content := models.Content{
-			ScanID:  scanResponse.ID,
-			Name:    script.Src,
-			Content: script.Content,
-		}
-
-		_, err := controller.CreateContent(content)
-		if err != nil {
-			utils.RespondWithError(w, 500, "Failed to create content")
-			return
-		}
-	}
-
-	ipAddresses, err := ip.ScanIP(scan.Url)
-	if err != nil {
-		utils.RespondWithError(w, 500, "Failed to scan IP")
-		return
-	}
-
-	ipRanges, err := ip.ScanIPRange(scan.Url)
-	if err != nil {
-		utils.RespondWithError(w, 500, "Failed to scan IP range")
-		return
-	}
-
-	scanHTTPHeaders, err := http_req.ScanHTTPHeaders(scan.Url)
-	if err != nil {
-		utils.RespondWithError(w, 500, "Failed to scan HTTP headers")
-		return
-	}
-
-	details := models.Detail{
-		ScanID:       scanResponse.ID,
-		IPAddresses:  ipAddresses,
-		HTTPHeaders:  []string{string(scanHTTPHeaders)},
-		IPRanges:     ipRanges,
-		DNSNames:     []string{},
-		PermittedDNS: []string{},
-		ExcludedDNS:  []string{},
-	}
-
-	_, err = controller.CreateDetail(details)
-	if err != nil {
-		utils.RespondWithError(w, 500, "Failed to create detail")
-		return
-	}
-
-	utils.RespondWithJSON(w, 200, scanResponse)
+	utils.RespondWithJSON(w, http.StatusOK, scanResponse)
 }
 
 func GetScans(w http.ResponseWriter, r *http.Request) {

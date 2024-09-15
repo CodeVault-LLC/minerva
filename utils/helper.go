@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"encoding/json"
+	"fmt"
 	"net"
 	"net/url"
 )
@@ -27,4 +29,13 @@ func IPNetsToStrings(ipnets []*net.IPNet) []string {
 		result = append(result, ipnet.String())
 	}
 	return result
+}
+
+func ConvertToStringSlice(rawMsg json.RawMessage) []string {
+	var strSlice []string
+	err := json.Unmarshal(rawMsg, &strSlice)
+	if err != nil {
+		fmt.Println("Failed to convert HTTPHeaders to []string:", err)
+	}
+	return strSlice
 }

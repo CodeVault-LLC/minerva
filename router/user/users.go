@@ -83,7 +83,6 @@ func discordAuthCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user, err := controller.FindOrCreateUserFromDiscord(*userInfo, token)
-
 	if err != nil {
 		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to create or find user")
 		return

@@ -77,26 +77,30 @@ func UpdateUser(user models.User) (models.User, error) {
 }
 
 func FindOrCreateUserFromDiscord(discordUser utils.DiscordUser, token *oauth2.Token) (models.User, error) {
-	user := models.User{}
-	constants.DB.Where("discord_id = ?", discordUser.Id).First(&user)
+	user, err := GetUserByDiscordId(fmt.Sprint(discordUser.Id))
+	if err != nil {
+		return models.User{}, err
+	}
 
-	if user.ID == 0 {
-		user = models.User{
-			DiscordId:        fmt.Sprint(discordUser.Id),
-			Username:         discordUser.Username,
-			Email:            discordUser.Email,
-			Avatar:           discordUser.Avatar,
-			AccessToken:      token.AccessToken,
-			Provider:         "discord",
-			StripeCustomerID: "",
-			History:          []models.History{},
-			Subscriptions:    []models.Subscription{},
-		}
+	if user.ID != 0 {
+		return user, nil
+	}
 
-		user, err := CreateUser(user)
-		if err != nil {
-			return user, err
-		}
+	userModel := models.User{
+		DiscordId:        fmt.Sprint(discordUser.Id),
+		Username:         discordUser.Username,
+		Email:            discordUser.Email,
+		Avatar:           discordUser.Avatar,
+		AccessToken:      token.AccessToken,
+		Provider:         "discord",
+		StripeCustomerID: "",
+		History:          []models.History{},
+		Subscriptions:    []models.Subscription{},
+	}
+
+	user, err = CreateUser(userModel)
+	if err != nil {
+		return models.User{}, err
 	}
 
 	return user, nil

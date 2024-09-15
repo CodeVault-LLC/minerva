@@ -21,5 +21,5 @@ type Detail struct {
 	ExcludedDNS  []string `gorm:"type:text[]"` // PostgreSQL array
 
 	// HTTP fields
-	HTTPHeaders []string `gorm:"type:text[]"` // PostgreSQL array
+	HTTPHeaders map[string][]string `gorm:"type:jsonb"` // Store as JSONB
 }
