@@ -8,6 +8,8 @@ import (
 	"github.com/codevault-llc/humblebrag-api/controller"
 	"github.com/codevault-llc/humblebrag-api/models"
 	"github.com/codevault-llc/humblebrag-api/scanner/certificate"
+	"github.com/codevault-llc/humblebrag-api/scanner/http_req"
+	"github.com/codevault-llc/humblebrag-api/scanner/ip"
 	"github.com/codevault-llc/humblebrag-api/scanner/secrets"
 	"github.com/codevault-llc/humblebrag-api/scanner/websites"
 	"github.com/codevault-llc/humblebrag-api/utils"
@@ -86,6 +88,40 @@ func CreateScan(w http.ResponseWriter, r *http.Request) {
 			utils.RespondWithError(w, 500, "Failed to create content")
 			return
 		}
+	}
+
+	ipAddresses, err := ip.ScanIP(scan.Url)
+	if err != nil {
+		utils.RespondWithError(w, 500, "Failed to scan IP")
+		return
+	}
+
+	ipRanges, err := ip.ScanIPRange(scan.Url)
+	if err != nil {
+		utils.RespondWithError(w, 500, "Failed to scan IP range")
+		return
+	}
+
+	scanHTTPHeaders, err := http_req.ScanHTTPHeaders(scan.Url)
+	if err != nil {
+		utils.RespondWithError(w, 500, "Failed to scan HTTP headers")
+		return
+	}
+
+	details := models.Detail{
+		ScanID:       scanResponse.ID,
+		IPAddresses:  ipAddresses,
+		HTTPHeaders:  []string{string(scanHTTPHeaders)},
+		IPRanges:     ipRanges,
+		DNSNames:     []string{},
+		PermittedDNS: []string{},
+		ExcludedDNS:  []string{},
+	}
+
+	_, err = controller.CreateDetail(details)
+	if err != nil {
+		utils.RespondWithError(w, 500, "Failed to create detail")
+		return
 	}
 
 	utils.RespondWithJSON(w, 200, scanResponse)

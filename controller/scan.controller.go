@@ -89,6 +89,14 @@ func CreateContent(content models.Content) (models.Content, error) {
 	return content, nil
 }
 
+func CreateDetail(detail models.Detail) (models.Detail, error) {
+	if err := constants.DB.Create(&detail).Error; err != nil {
+		return detail, err
+	}
+
+	return detail, nil
+}
+
 func GetScans() ([]models.ScanAPIResponse, error) {
 	var scans []models.Scan
 
