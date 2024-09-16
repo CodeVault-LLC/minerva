@@ -15,10 +15,13 @@ services:
     volumes:
       - db-data:/var/lib/postgresql/data
     command: -p 5434
+
   cache:
-    image: "docker.dragonflydb.io/dragonflydb/dragonfly"
+    image: eqalpha/keydb:latest
     ulimits:
       memlock: -1
+    expose:
+      - "6379"
     ports:
       - "6379:6379"
     volumes:

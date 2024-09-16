@@ -239,4 +239,25 @@ var ConfigLists = []*types.List{
 		URL:         "https://raw.githubusercontent.com/bongochong/CombinedPrivacyBlockLists/master/cpbl-abp-list.txt",
 		Parser:      lists.CblAbpParser,
 	},
+	{
+		Description: "CPBL Filters for uBO",
+		ListID:      "cpbl-ctld",
+		Categories:  []string{"adblock"},
+		URL:         "https://raw.githubusercontent.com/bongochong/CombinedPrivacyBlockLists/master/NoFormatting/cpbl-ctld.txt",
+		Parser:      lists.CblCtldParser,
+	},
+	{
+		Description: "A merged hosts file from a variety of other lists.",
+		ListID:      "1hosts-pro",
+		Categories:  []string{"ads", "crypto", "malware", "privacy"},
+		URL:         "https://raw.githubusercontent.com/badmojr/1Hosts/master/Pro/hosts.txt",
+		Parser:      lists.OneHostsProParser,
+	},
+	{
+		Description: "URLhaus is a project from abuse.ch with the goal of sharing malicious URLs that are being used for malware distribution.",
+		ListID:      "urlhaus-abuse-ch",
+		Categories:  []string{"malware"},
+		URL:         "https://urlhaus.abuse.ch/downloads/text/",
+		Parser:      lists.URLHausParser,
+	},
 }
