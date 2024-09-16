@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/codevault-llc/humblebrag-api/helper"
 	"github.com/codevault-llc/humblebrag-api/service"
-	"github.com/codevault-llc/humblebrag-api/utils"
 	"github.com/gorilla/mux"
 	"github.com/stripe/stripe-go/v79"
 	"github.com/stripe/stripe-go/v79/webhook"
@@ -26,7 +26,7 @@ func StripeWebhook(w http.ResponseWriter, r *http.Request) {
 	payload, err := ioutil.ReadAll(r.Body)
 
 	if err != nil {
-		utils.RespondWithError(w, http.StatusServiceUnavailable, "Request body too large")
+		helper.RespondWithError(w, http.StatusServiceUnavailable, "Request body too large")
 		return
 	}
 

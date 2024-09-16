@@ -4,7 +4,6 @@ import (
 	"crypto/x509"
 	"fmt"
 
-	"github.com/codevault-llc/humblebrag-api/config"
 	"github.com/codevault-llc/humblebrag-api/models"
 	"github.com/codevault-llc/humblebrag-api/scanner/certificate"
 	"github.com/codevault-llc/humblebrag-api/scanner/http_req"
@@ -12,6 +11,7 @@ import (
 	"github.com/codevault-llc/humblebrag-api/scanner/secrets"
 	"github.com/codevault-llc/humblebrag-api/scanner/websites"
 	"github.com/codevault-llc/humblebrag-api/service"
+	"github.com/codevault-llc/humblebrag-api/types"
 	"github.com/codevault-llc/humblebrag-api/updater"
 	"github.com/codevault-llc/humblebrag-api/utils"
 )
@@ -24,7 +24,7 @@ type WebsiteScan struct {
 	Certificates []*x509.Certificate
 	Secrets      []utils.RegexReturn
 	GetDNSScan   ip.DNSResults
-	FoundLists   []config.List
+	FoundLists   []types.List
 }
 
 func ScanWebsite(url string) (models.Scan, error) {

@@ -29,7 +29,6 @@ func main() {
 	constants.InitDragonflyDB()
 	constants.InitAuth()
 	constants.InitSessionManager()
-	constants.InitConfig()
 
 	go updater.StartAutoUpdate(20 * time.Minute)
 	controller.Start()

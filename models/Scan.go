@@ -55,6 +55,7 @@ type ScanAPIResponse struct {
 	Detail       DetailResponse        `json:"detail"`
 	Findings     int64                 `json:"findings"`
 	Certificates []CertificateResponse `json:"certificates"`
+	Lists        []ListResponse        `json:"lists"`
 
 	CreatedAt string `json:"created_at"`
 	UpdatedAt string `json:"updated_at"`

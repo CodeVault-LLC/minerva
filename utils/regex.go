@@ -4,9 +4,9 @@ import (
 	"log"
 	"strings"
 
+	"github.com/codevault-llc/humblebrag-api/types"
+	"github.com/lucasjones/reggen"
 	regexp "github.com/wasilibs/go-re2"
-
-	"github.com/codevault-llc/humblebrag-api/config"
 )
 
 type Script struct {
@@ -14,7 +14,7 @@ type Script struct {
 	Content string `json:"content"`
 }
 
-func GenericScan(rule config.Rule, script Script) []Match {
+func GenericScan(rule types.Rule, script Script) []Match {
 	re, err := regexp.Compile(rule.Regex.String())
 	if err != nil {
 		log.Fatalf("Failed to compile regex: %v", err)
@@ -50,4 +50,12 @@ func findMatchingLine(content, match string) int {
 	}
 
 	return 0
+}
+
+func NewSecret(regex string) string {
+	g, err := reggen.NewGenerator(regex)
+	if err != nil {
+		panic(err)
+	}
+	return g.Generate(1)
 }

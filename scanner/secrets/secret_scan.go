@@ -4,8 +4,8 @@ import (
 	"sync"
 
 	"github.com/codevault-llc/humblebrag-api/config"
-	"github.com/codevault-llc/humblebrag-api/constants"
 	"github.com/codevault-llc/humblebrag-api/models"
+	"github.com/codevault-llc/humblebrag-api/types"
 	"github.com/codevault-llc/humblebrag-api/utils"
 )
 
@@ -17,11 +17,11 @@ func ScanSecrets(scripts []models.ScriptRequest) []utils.RegexReturn {
 
 	concurrencyLimit := make(chan struct{}, 10)
 
-	for _, rule := range constants.VC.OrderRules() {
+	for _, rule := range config.ConfigRules {
 		concurrencyLimit <- struct{}{}
 		wg.Add(1)
 
-		go func(rule config.Rule) {
+		go func(rule types.Rule) {
 			defer wg.Done()
 			defer func() { <-concurrencyLimit }()
 
@@ -38,7 +38,7 @@ func ScanSecrets(scripts []models.ScriptRequest) []utils.RegexReturn {
 				results = append(results, utils.RegexReturn{Name: rule.RuleID, Matches: scriptResults, Description: rule.Description})
 				mu.Unlock()
 			}
-		}(rule)
+		}(*rule)
 	}
 
 	wg.Wait()

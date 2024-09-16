@@ -117,20 +117,20 @@ func GetScans() ([]models.ScanAPIResponse, error) {
 	var scans []models.Scan
 
 	if err := constants.DB.Preload("Findings").Where("status = ?", models.ScanStatusComplete).Find(&scans).Error; err != nil {
-		return utils.ConvertScans(scans), err
+		return models.ConvertScans(scans), err
 	}
 
-	return utils.ConvertScans(scans), nil
+	return models.ConvertScans(scans), nil
 }
 
 func GetScan(scanID string) (models.ScanAPIResponse, error) {
 	var scan models.Scan
 
-	if err := constants.DB.Where("id = ?", scanID).Preload("Findings").Preload("Detail").Preload("Certificates").Where("status = ?", models.ScanStatusComplete).First(&scan).Error; err != nil {
-		return utils.ConvertScan(scan), err
+	if err := constants.DB.Where("id = ?", scanID).Preload("Findings").Preload("Lists").Preload("Detail").Preload("Certificates").Where("status = ?", models.ScanStatusComplete).First(&scan).Error; err != nil {
+		return models.ConvertScan(scan), err
 	}
 
-	return utils.ConvertScan(scan), nil
+	return models.ConvertScan(scan), nil
 }
 
 func GetScanFindings(scanID string) ([]models.FindingResponse, error) {
@@ -139,10 +139,10 @@ func GetScanFindings(scanID string) ([]models.FindingResponse, error) {
 	if err := constants.DB.Where("scan_id = ?", scanID).
 		Find(&findings).
 		Error; err != nil {
-		return utils.ConvertFindings(findings), err
+		return models.ConvertFindings(findings), err
 	}
 
-	return utils.ConvertFindings(findings), nil
+	return models.ConvertFindings(findings), nil
 }
 
 func GetScanContent(scanID string) ([]models.ContentResponse, error) {
@@ -151,8 +151,8 @@ func GetScanContent(scanID string) ([]models.ContentResponse, error) {
 	if err := constants.DB.Where("scan_id = ?", scanID).
 		Find(&content).
 		Error; err != nil {
-		return utils.ConvertContents(content), err
+		return models.ConvertContents(content), err
 	}
 
-	return utils.ConvertContents(content), nil
+	return models.ConvertContents(content), nil
 }

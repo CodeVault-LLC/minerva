@@ -10,11 +10,12 @@ import (
 	"github.com/codevault-llc/humblebrag-api/config"
 	"github.com/codevault-llc/humblebrag-api/constants"
 	"github.com/codevault-llc/humblebrag-api/parsers"
+	"github.com/codevault-llc/humblebrag-api/types"
 )
 
 func StartAutoUpdate(interval time.Duration) {
-	for _, list := range constants.VC.Lists {
-		parsedData, err := fetchAndParseList(&list)
+	for _, list := range config.ConfigLists {
+		parsedData, err := fetchAndParseList(list)
 		if err != nil {
 			log.Printf("Failed to update %s: %v", list.Description, err)
 			continue
@@ -22,7 +23,7 @@ func StartAutoUpdate(interval time.Duration) {
 		log.Printf("Updated %s with %d entries", list.Description, len(parsedData))
 
 		var data []string
-		for item := range parsedData {
+		for _, item := range parsedData {
 			data = append(data, item.Value)
 		}
 
@@ -36,16 +37,15 @@ func StartAutoUpdate(interval time.Duration) {
 	defer ticker.Stop()
 
 	for range ticker.C {
-		for _, list := range constants.VC.Lists {
-			parsedData, err := fetchAndParseList(&list)
+		for _, list := range config.ConfigLists {
+			parsedData, err := fetchAndParseList(list)
 			if err != nil {
 				log.Printf("Failed to update %s: %v", list.Description, err)
 				continue
 			}
-			log.Printf("Updated %s with %d entries", list.Description, len(parsedData))
 
 			var data []string
-			for item := range parsedData {
+			for _, item := range parsedData {
 				data = append(data, item.Value)
 			}
 
@@ -57,7 +57,7 @@ func StartAutoUpdate(interval time.Duration) {
 	}
 }
 
-func fetchAndParseList(list *config.List) (<-chan parsers.Item, error) {
+func fetchAndParseList(list *types.List) ([]parsers.Item, error) {
 	resp, err := http.Get(list.URL)
 	if err != nil {
 		return nil, err
@@ -69,11 +69,16 @@ func fetchAndParseList(list *config.List) (<-chan parsers.Item, error) {
 		return nil, err
 	}
 
-	fmt.Println("Parsing data for", list.Description, list.Parser)
-
-	parsedData, err := parsers.ParseBytes(data, list.Parser)
+	parsedDataChan, err := parsers.ParseBytes(data, list.Parser)
 	if err != nil {
+		fmt.Println("Failed to parse data for", list.Description, err)
 		return nil, err
+	}
+
+	// Collect items from the channel
+	var parsedData []parsers.Item
+	for item := range parsedDataChan {
+		parsedData = append(parsedData, item)
 	}
 
 	return parsedData, nil
@@ -93,21 +98,24 @@ func storeParsedData(listID string, parsedData []string) error {
 	return err
 }
 
-func CompareValues(comparedValue string) []config.List {
-	var lists []config.List
+// CompareValues function to search for a value in DragonflyDB and return matching lists
+func CompareValues(comparedValue string) []types.List {
+	var matchingLists []types.List
 
-	for _, list := range constants.VC.Lists {
-		for _, cat := range list.Categories {
-			if cat == comparedValue {
-				lists = append(lists, config.List{
-					Description: list.Description,
-					ListID:      list.ListID,
-					Categories:  list.Categories,
-					URL:         list.URL,
-				})
-			}
+	// Iterate over all lists
+	for _, list := range config.ConfigLists {
+		// Use SISMEMBER to check if the compared value exists in the Redis set for the list
+		exists, err := constants.Rdb.SIsMember(constants.Ctx, list.ListID, comparedValue).Result()
+		if err != nil {
+			log.Printf("Failed to search in Redis for %s: %v", list.ListID, err)
+			continue
+		}
+
+		// If the value exists in the set, add the list to the result
+		if exists {
+			matchingLists = append(matchingLists, *list)
 		}
 	}
 
-	return lists
+	return matchingLists
 }

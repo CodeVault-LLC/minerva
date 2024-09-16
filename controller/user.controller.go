@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/codevault-llc/humblebrag-api/constants"
+	"github.com/codevault-llc/humblebrag-api/helper"
 	"github.com/codevault-llc/humblebrag-api/models"
 	"github.com/codevault-llc/humblebrag-api/service"
 	"github.com/codevault-llc/humblebrag-api/utils"
@@ -36,26 +37,26 @@ func discordExtensionAuthRedirectHandler(w http.ResponseWriter, r *http.Request)
 
 func discordExtensionCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	if r.FormValue("state") != "random" {
-		utils.RespondWithError(w, http.StatusBadRequest, "Invalid state parameter")
+		helper.RespondWithError(w, http.StatusBadRequest, "Invalid state parameter")
 		return
 	}
 
 	token, err := constants.DiscordConfigExtension.Exchange(r.Context(), r.FormValue("code"))
 	if err != nil {
 		log.Println("Error exchanging token:", err)
-		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to exchange token")
+		helper.RespondWithError(w, http.StatusInternalServerError, "Failed to exchange token")
 		return
 	}
 
 	userInfo, err := service.FetchDiscordUserInfo(*token)
 	if err != nil {
-		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to retrieve user info")
+		helper.RespondWithError(w, http.StatusInternalServerError, "Failed to retrieve user info")
 		return
 	}
 
 	user, err := service.FindOrCreateUserFromDiscord(*userInfo, token)
 	if err != nil {
-		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to create or find user")
+		helper.RespondWithError(w, http.StatusInternalServerError, "Failed to create or find user")
 		return
 	}
 
@@ -65,37 +66,37 @@ func discordExtensionCallbackHandler(w http.ResponseWriter, r *http.Request) {
 
 func discordAuthCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	if r.FormValue("state") != "random" {
-		utils.RespondWithError(w, http.StatusBadRequest, "Invalid state parameter")
+		helper.RespondWithError(w, http.StatusBadRequest, "Invalid state parameter")
 		return
 	}
 
 	token, err := constants.DiscordConfig.Exchange(r.Context(), r.FormValue("code"))
 	if err != nil {
-		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to exchange token")
+		helper.RespondWithError(w, http.StatusInternalServerError, "Failed to exchange token")
 		return
 	}
 
 	userInfo, err := service.FetchDiscordUserInfo(*token)
 	if err != nil {
 		fmt.Println(err)
-		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to retrieve user info")
+		helper.RespondWithError(w, http.StatusInternalServerError, "Failed to retrieve user info")
 		return
 	}
 
 	user, err := service.FindOrCreateUserFromDiscord(*userInfo, token)
 	if err != nil {
-		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to create or find user")
+		helper.RespondWithError(w, http.StatusInternalServerError, "Failed to create or find user")
 		return
 	}
 
-	userToken, err := utils.GenerateJWT(user)
+	userToken, err := helper.GenerateJWT(user)
 	if err != nil {
-		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to generate JWT")
+		helper.RespondWithError(w, http.StatusInternalServerError, "Failed to generate JWT")
 		return
 	}
 
 	if err := service.SaveUserToken(userToken, user.ID); err != nil {
-		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to save user token")
+		helper.RespondWithError(w, http.StatusInternalServerError, "Failed to save user token")
 		return
 	}
 
@@ -174,21 +175,21 @@ func cancelSubscriptionHandler(w http.ResponseWriter, r *http.Request) {
 func getCurrentUserHandler(w http.ResponseWriter, r *http.Request) {
 	user, ok := r.Context().Value("user").(models.User)
 	if !ok {
-		utils.RespondWithError(w, http.StatusUnauthorized, "User not found in context")
+		helper.RespondWithError(w, http.StatusUnauthorized, "User not found in context")
 		return
 	}
 
 	subscription, err := service.GetActiveSubscriptionForUser(user.ID)
 	if err != nil {
-		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to retrieve subscriptions")
+		helper.RespondWithError(w, http.StatusInternalServerError, "Failed to retrieve subscriptions")
 		return
 	}
 
-	userResponse := utils.ConvertUser(user)
-	userResponse.Subscription = utils.ConvertSubscription(*subscription)
+	userResponse := models.ConvertUser(user)
+	userResponse.Subscription = models.ConvertSubscription(*subscription)
 
 	if err := json.NewEncoder(w).Encode(userResponse); err != nil {
-		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to encode user response")
+		helper.RespondWithError(w, http.StatusInternalServerError, "Failed to encode user response")
 	}
 }
 
