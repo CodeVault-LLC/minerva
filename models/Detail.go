@@ -1,25 +1,38 @@
 package models
 
 import (
+	"github.com/lib/pq"
 	"gorm.io/gorm"
 )
 
 type Detail struct {
 	gorm.Model
 
-	// ScanID is the foreign key for the Scan model
 	ScanID uint
-	Scan   Scan
+	Scan   *Scan
 
 	// Detail fields
-	IPAddresses []string `gorm:"type:text[]"` // Store as string representation of IPs
-	IPRanges    []string `gorm:"type:text[]"` // Store as string representation of IP ranges
+	IPAddresses pq.StringArray `gorm:"type:text[]"` // PostgreSQL array
+	IPRanges    pq.StringArray `gorm:"type:text[]"` // PostgreSQL array
 
 	// DNS fields
-	DNSNames     []string `gorm:"type:text[]"` // PostgreSQL array
-	PermittedDNS []string `gorm:"type:text[]"` // PostgreSQL array
-	ExcludedDNS  []string `gorm:"type:text[]"` // PostgreSQL array
+	DNSNames     pq.StringArray `gorm:"type:text[]"` // PostgreSQL array
+	PermittedDNS pq.StringArray `gorm:"type:text[]"` // PostgreSQL array
+	ExcludedDNS  pq.StringArray `gorm:"type:text[]"` // PostgreSQL array
 
 	// HTTP fields
-	HTTPHeaders map[string][]string `gorm:"type:jsonb"` // Store as JSONB
+	HTTPHeaders pq.StringArray `gorm:"type:text[]"` // PostgreSQL array
+}
+
+type DetailResponse struct {
+	ID uint `json:"id"`
+
+	IPAddresses []string `json:"ip_addresses"`
+	IPRanges    []string `json:"ip_ranges"`
+
+	DNSNames     []string `json:"dns_names"`
+	PermittedDNS []string `json:"permitted_dns"`
+	ExcludedDNS  []string `json:"excluded_dns"`
+
+	HTTPHeaders []string `json:"http_headers"`
 }

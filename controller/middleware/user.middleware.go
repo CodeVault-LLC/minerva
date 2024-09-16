@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"github.com/codevault-llc/humblebrag-api/constants"
-	"github.com/codevault-llc/humblebrag-api/controller"
 	"github.com/codevault-llc/humblebrag-api/models"
+	"github.com/codevault-llc/humblebrag-api/service"
 	"github.com/codevault-llc/humblebrag-api/utils"
 )
 
@@ -33,7 +33,7 @@ func UserAuthMiddleware(next http.Handler) http.Handler {
 				return
 			}
 
-			userToken, err := controller.IsValidUserToken(token)
+			userToken, err := service.IsValidUserToken(token)
 			if err != nil {
 				utils.RespondWithError(w, 401, "Invalid token")
 				return

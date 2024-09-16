@@ -1,6 +1,8 @@
 package utils
 
-import "github.com/codevault-llc/humblebrag-api/models"
+import (
+	"github.com/codevault-llc/humblebrag-api/models"
+)
 
 func ConvertUser(user models.User) models.UserResponse {
 	return models.UserResponse{
@@ -50,8 +52,21 @@ func ConvertScan(scan models.Scan) models.ScanAPIResponse {
 		MD5:         scan.MD5,
 
 		Certificates: ConvertCertificates(scan.Certificates),
+		Detail:       ConvertDetail(scan.Detail),
 		CreatedAt:    scan.CreatedAt.Format("2006-01-02 15:04:05"),
 		UpdatedAt:    scan.UpdatedAt.Format("2006-01-02 15:04:05"),
+	}
+}
+
+func ConvertDetail(detail models.Detail) models.DetailResponse {
+	return models.DetailResponse{
+		ID:           detail.ID,
+		IPAddresses:  detail.IPAddresses,
+		IPRanges:     detail.IPRanges,
+		DNSNames:     detail.DNSNames,
+		PermittedDNS: detail.PermittedDNS,
+		ExcludedDNS:  detail.ExcludedDNS,
+		HTTPHeaders:  detail.HTTPHeaders,
 	}
 }
 

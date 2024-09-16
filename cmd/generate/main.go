@@ -2,27 +2,16 @@ package main
 
 import (
 	"os"
-	"text/template"
 
 	"github.com/rs/zerolog/log"
 
-	"github.com/codevault-llc/humblebrag-api/cmd/generate/rules"
+	rules "github.com/codevault-llc/humblebrag-api/cmd/generate/config"
 	"github.com/codevault-llc/humblebrag-api/config"
-)
-
-const (
-	templatePath = "rules/config.tmpl"
 )
 
 //go:generate go run $GOFILE ../../config/humblebrag.toml
 
 func main() {
-	if len(os.Args) < 2 {
-		os.Stderr.WriteString("Specify path to the humblebrag.toml config\n")
-		os.Exit(2)
-	}
-	humblebragConfigPath := os.Args[1]
-
 	configRules := []*config.Rule{
 		rules.AdafruitAPIKey(),
 		rules.AdobeClientID(),
@@ -209,9 +198,20 @@ func main() {
 
 		rules.URLToken(),
 		rules.EmailToken(),
+	}
 
-		//todo: Need to fix false positives
-		//rules.PhoneToken(),
+	configParsers := []string{
+		"cpbl-parser",
+	}
+
+	configLists := []*config.List{
+		{
+			Description: "CPBL Filters for ABP & uBO",
+			ListID:      "cpbl-abp",
+			Categories:  []string{"adblock"},
+			URL:         "https://raw.githubusercontent.com/bongochong/CombinedPrivacyBlockLists/master/cpbl-abp-list.txt",
+			ParserID:    "cpbl-parser",
+		},
 	}
 
 	// ensure rules have unique ids
@@ -226,6 +226,16 @@ func main() {
 		ruleLookUp[rule.RuleID] = *rule
 	}
 
+	// ensure lists have unique ids
+	listLookUp := make(map[string]config.List, len(configLists))
+	for _, list := range configLists {
+		// check if list is in listLookUp
+		if _, ok := listLookUp[list.ListID]; ok {
+			log.Fatal().Msgf("list id %s is not unique", list.ListID)
+		}
+		listLookUp[list.ListID] = *list
+	}
+
 	tmpl, err := template.ParseFiles(templatePath)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to parse template")
@@ -236,8 +246,7 @@ func main() {
 		log.Fatal().Err(err).Msg("Failed to create rules.toml")
 	}
 
-	if err = tmpl.Execute(f, config.Config{Rules: ruleLookUp}); err != nil {
+	if err = tmpl.Execute(f, config.Config{Rules: ruleLookUp, Lists: listLookUp, ParserList: configParsers}); err != nil {
 		log.Fatal().Err(err).Msg("could not execute template")
 	}
-
 }

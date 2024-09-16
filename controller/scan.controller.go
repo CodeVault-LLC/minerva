@@ -1,142 +1,88 @@
 package controller
 
 import (
-	"crypto/x509"
-	"encoding/base64"
 	"encoding/json"
+	"net/http"
 
-	"github.com/codevault-llc/humblebrag-api/constants"
 	"github.com/codevault-llc/humblebrag-api/models"
+	"github.com/codevault-llc/humblebrag-api/scanner"
+	"github.com/codevault-llc/humblebrag-api/service"
 	"github.com/codevault-llc/humblebrag-api/utils"
-	"github.com/lib/pq"
+	"github.com/gorilla/mux"
 )
 
-func CreateScan(scan models.Scan) (models.Scan, error) {
-	constants.DB.Model(&models.Scan{}).Where("website_url = ?", scan.WebsiteUrl).Update("status", models.ScanStatusArchived)
-
-	if err := constants.DB.Create(&scan).Error; err != nil {
-		return scan, err
-	}
-
-	return scan, nil
+func ScanRouter(router *mux.Router) {
+	router.HandleFunc("/scan/{scanID}", GetScan).Methods("GET")
+	router.HandleFunc("/scan/{scanID}/findings", GetScanFindings).Methods("GET")
+	router.HandleFunc("/scan/{scanID}/contents", GetScanContents).Methods("GET")
+	router.HandleFunc("/scans", GetScans).Methods("GET")
+	router.HandleFunc("/scan", CreateScan).Methods("POST")
 }
 
-func CreateFindings(scanID uint, secrets []utils.RegexReturn) {
-	for _, secret := range secrets {
-		for _, match := range secret.Matches {
-			finding := models.Finding{
-				ScanID: scanID,
-				Line:   match.Line,
-				Match:  match.Match,
-				Source: match.Source,
-
-				RegexName:        secret.Name,
-				RegexDescription: secret.Description,
-			}
-
-			constants.DB.Create(&finding)
-		}
-	}
-}
-
-func CreateCertificate(scanID uint, cert x509.Certificate) error {
-	publicKeyJSON, err := json.Marshal(cert.PublicKey)
+func CreateScan(w http.ResponseWriter, r *http.Request) {
+	var scan models.ScanRequest
+	err := json.NewDecoder(r.Body).Decode(&scan)
 	if err != nil {
-		return err
+		utils.RespondWithError(w, http.StatusBadRequest, "Invalid request")
+		return
 	}
 
-	signatureBase64 := base64.StdEncoding.EncodeToString(cert.Signature)
+	scan.Url = utils.NormalizeURL(scan.Url)
 
-	certificate := models.Certificate{
-		ScanID:                      scanID,
-		Issuer:                      string(cert.Issuer.CommonName),
-		Subject:                     string(cert.Subject.CommonName),
-		NotBefore:                   cert.NotBefore,
-		NotAfter:                    cert.NotAfter,
-		SignatureAlgorithm:          cert.SignatureAlgorithm,
-		Signature:                   []byte(signatureBase64),
-		PublicKeyAlgorithm:          cert.PublicKeyAlgorithm,
-		PublicKey:                   string(publicKeyJSON),
-		SerialNumber:                cert.SerialNumber.String(),
-		Version:                     cert.Version,
-		KeyUsage:                    cert.KeyUsage,
-		BasicConstraintsValid:       cert.BasicConstraintsValid,
-		IsCA:                        cert.IsCA,
-		DNSNames:                    pq.StringArray(cert.DNSNames),
-		EmailAddresses:              pq.StringArray(cert.EmailAddresses),
-		IPAddresses:                 pq.StringArray(utils.IPsToStrings(cert.IPAddresses)),
-		URIs:                        pq.StringArray(utils.URIsToStrings(cert.URIs)),
-		PermittedDNSDomainsCritical: cert.PermittedDNSDomainsCritical,
-		PermittedDNSDomains:         pq.StringArray(cert.PermittedDNSDomains),
-		ExcludedDNSDomains:          pq.StringArray(cert.ExcludedDNSDomains),
-		PermittedIPRanges:           pq.StringArray(utils.IPNetsToStrings(cert.PermittedIPRanges)),
-		ExcludedIPRanges:            pq.StringArray(utils.IPNetsToStrings(cert.ExcludedIPRanges)),
-		PermittedEmailAddresses:     pq.StringArray(cert.PermittedEmailAddresses),
-		ExcludedEmailAddresses:      pq.StringArray(cert.ExcludedEmailAddresses),
-		PermittedURIDomains:         pq.StringArray(cert.PermittedURIDomains),
-		ExcludedURIDomains:          pq.StringArray(cert.ExcludedURIDomains),
+	scanResponse, err := scanner.ScanWebsite(scan.Url)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to scan website")
+		return
 	}
 
-	constants.DB.Create(&certificate)
-	return nil
+	utils.RespondWithJSON(w, http.StatusOK, scanResponse)
 }
 
-func CreateContent(content models.Content) (models.Content, error) {
-	if err := constants.DB.Create(&content).Error; err != nil {
-		return content, err
+func GetScans(w http.ResponseWriter, r *http.Request) {
+	scans, err := service.GetScans()
+	if err != nil {
+		utils.RespondWithError(w, 500, "Failed to get scans")
+		return
 	}
 
-	return content, nil
+	utils.RespondWithJSON(w, 200, scans)
 }
 
-func CreateDetail(detail models.Detail) (models.Detail, error) {
-	if err := constants.DB.Create(&detail).Error; err != nil {
-		return detail, err
+func GetScan(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	scanID := vars["scanID"]
+
+	scan, err := service.GetScan(scanID)
+	if err != nil {
+		utils.RespondWithError(w, 500, "Failed to get scan")
+		return
 	}
 
-	return detail, nil
+	utils.RespondWithJSON(w, 200, scan)
 }
 
-func GetScans() ([]models.ScanAPIResponse, error) {
-	var scans []models.Scan
+func GetScanFindings(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	scanID := vars["scanID"]
 
-	if err := constants.DB.Preload("Findings").Where("status = ?", models.ScanStatusComplete).Find(&scans).Error; err != nil {
-		return utils.ConvertScans(scans), err
+	findings, err := service.GetScanFindings(scanID)
+	if err != nil {
+		utils.RespondWithError(w, 500, "Failed to get scan findings")
+		return
 	}
 
-	return utils.ConvertScans(scans), nil
+	utils.RespondWithJSON(w, 200, findings)
 }
 
-func GetScan(scanID string) (models.ScanAPIResponse, error) {
-	var scan models.Scan
+func GetScanContents(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	scanID := vars["scanID"]
 
-	if err := constants.DB.Where("id = ?", scanID).Preload("Findings").Preload("Certificates").Where("status = ?", models.ScanStatusComplete).First(&scan).Error; err != nil {
-		return utils.ConvertScan(scan), err
+	contents, err := service.GetScanContent(scanID)
+	if err != nil {
+		utils.RespondWithError(w, 500, "Failed to get scan contents")
+		return
 	}
 
-	return utils.ConvertScan(scan), nil
-}
-
-func GetScanFindings(scanID string) ([]models.FindingResponse, error) {
-	var findings []models.Finding
-
-	if err := constants.DB.Where("scan_id = ?", scanID).
-		Find(&findings).
-		Error; err != nil {
-		return utils.ConvertFindings(findings), err
-	}
-
-	return utils.ConvertFindings(findings), nil
-}
-
-func GetScanContent(scanID string) ([]models.ContentResponse, error) {
-	var content []models.Content
-
-	if err := constants.DB.Where("scan_id = ?", scanID).
-		Find(&content).
-		Error; err != nil {
-		return utils.ConvertContents(content), err
-	}
-
-	return utils.ConvertContents(content), nil
+	utils.RespondWithJSON(w, 200, contents)
 }

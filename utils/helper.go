@@ -39,3 +39,21 @@ func ConvertToStringSlice(rawMsg json.RawMessage) []string {
 	}
 	return strSlice
 }
+
+func StripProtocol(url string) string {
+	if url[:8] == "https://" {
+		return url[8:]
+	} else if url[:7] == "http://" {
+		return url[7:]
+	}
+	return url
+}
+
+func ConvertURLToDomain(inputURL string) string {
+	u, err := url.Parse(inputURL)
+	if err != nil {
+		fmt.Println("Failed to parse URL:", err)
+	}
+
+	return u.Hostname()
+}

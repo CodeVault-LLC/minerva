@@ -1,4 +1,4 @@
-package router
+package controller
 
 import (
 	"encoding/gob"
@@ -6,8 +6,8 @@ import (
 	"net/http"
 
 	"github.com/codevault-llc/humblebrag-api/constants"
+	"github.com/codevault-llc/humblebrag-api/controller/middleware"
 	"github.com/codevault-llc/humblebrag-api/models"
-	"github.com/codevault-llc/humblebrag-api/router/middleware"
 
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
@@ -32,4 +32,10 @@ func Start() {
 
 	fmt.Println("Server started on port 3000")
 	http.ListenAndServe(":3000", constants.SessionManager.LoadAndSave(handler))
+}
+
+func GlobalRouter(router *mux.Router) {
+	ScanRouter(router)
+	RegisterUserRoutes(router)
+	WebhookRouter(router)
 }

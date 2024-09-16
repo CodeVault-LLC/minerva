@@ -3,12 +3,17 @@
 # cmd/generate/config/main.go and follow the contributing guidelines
 # at https://github.com/codevault-llc/humblebrag-api/blob/master/CONTRIBUTING.md
 
-# This is the default gitleaks configuration file.
-# Rules and allowlists are defined within this file.
-# Rules instruct gitleaks on what should be considered a secret.
-# Allowlists instruct gitleaks on what is allowed, i.e. not a secret.
-
 title = "humblebrag config"
+
+[[lists]]
+id = "cpbl-abp"
+description = "CPBL Filters for ABP & uBO"
+categories = [
+    "adblock",
+]
+url = '''https://raw.githubusercontent.com/bongochong/CombinedPrivacyBlockLists/master/cpbl-abp-list.txt'''
+parser = "&{0xad32e0}"
+
 
 [[rules]]
 id = "adafruit-api-key"

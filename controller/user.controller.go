@@ -1,143 +1,216 @@
 package controller
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/codevault-llc/humblebrag-api/constants"
 	"github.com/codevault-llc/humblebrag-api/models"
+	"github.com/codevault-llc/humblebrag-api/service"
 	"github.com/codevault-llc/humblebrag-api/utils"
-	"golang.org/x/oauth2"
+	"github.com/gorilla/mux"
 )
 
-func GetUserById(id uint) (models.User, error) {
-	var user models.User
-
-	if err := constants.DB.Where("id = ?", id).
-		First(&user).
-		Error; err != nil {
-		return user, err
-	}
-
-	return user, nil
+func RegisterUserRoutes(router *mux.Router) {
+	router.HandleFunc("/users/me", getCurrentUserHandler).Methods("GET")
+	router.HandleFunc("/auth/discord", discordAuthRedirectHandler).Methods("GET")
+	router.HandleFunc("/auth/discord/extension", discordExtensionAuthRedirectHandler).Methods("GET")
+	router.HandleFunc("/auth/discord/callback", discordAuthCallbackHandler).Methods("GET")
+	router.HandleFunc("/auth/discord/callback/extension", discordExtensionCallbackHandler).Methods("GET")
+	router.HandleFunc("/users/create-checkout-session", createCheckoutSessionHandler).Methods("POST")
+	router.HandleFunc("/users/cancel-subscription", cancelSubscriptionHandler).Methods("POST")
+	router.HandleFunc("/users/logout", logoutHandler).Methods("POST")
 }
 
-func GetUserByEmail(email string) (models.User, error) {
-	var user models.User
-
-	if err := constants.DB.Where("email = ?", email).
-		First(&user).
-		Error; err != nil {
-		return user, err
-	}
-
-	return user, nil
+func discordAuthRedirectHandler(w http.ResponseWriter, r *http.Request) {
+	url := constants.DiscordConfig.AuthCodeURL("random")
+	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
 
-func GetUserByDiscordId(discordId string) (models.User, error) {
-	var user models.User
-
-	if err := constants.DB.Where("discord_id = ?", discordId).
-		First(&user).
-		Error; err != nil {
-		return user, err
-	}
-
-	return user, nil
+func discordExtensionAuthRedirectHandler(w http.ResponseWriter, r *http.Request) {
+	url := constants.DiscordConfigExtension.AuthCodeURL("random")
+	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
 
-func CreateUser(user models.User) (models.User, error) {
-	if err := constants.DB.Create(&user).Error; err != nil {
-		return user, err
+func discordExtensionCallbackHandler(w http.ResponseWriter, r *http.Request) {
+	if r.FormValue("state") != "random" {
+		utils.RespondWithError(w, http.StatusBadRequest, "Invalid state parameter")
+		return
 	}
 
-	return user, nil
-}
-
-func IsValidUserToken(token string) (models.UserToken, error) {
-	var userToken models.UserToken
-
-	if err := constants.DB.Where("token = ?", token).
-		First(&userToken).
-		Error; err != nil {
-		return userToken, err
-	}
-
-	return userToken, nil
-}
-
-func UpdateUser(user models.User) (models.User, error) {
-	if err := constants.DB.Save(&user).Error; err != nil {
-		return user, err
-	}
-
-	return user, nil
-}
-
-func FindOrCreateUserFromDiscord(discordUser utils.DiscordUser, token *oauth2.Token) (models.User, error) {
-	user, err := GetUserByDiscordId(fmt.Sprint(discordUser.Id))
+	token, err := constants.DiscordConfigExtension.Exchange(r.Context(), r.FormValue("code"))
 	if err != nil {
-		return models.User{}, err
+		log.Println("Error exchanging token:", err)
+		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to exchange token")
+		return
 	}
 
-	if user.ID != 0 {
-		return user, nil
-	}
-
-	userModel := models.User{
-		DiscordId:        fmt.Sprint(discordUser.Id),
-		Username:         discordUser.Username,
-		Email:            discordUser.Email,
-		Avatar:           discordUser.Avatar,
-		AccessToken:      token.AccessToken,
-		Provider:         "discord",
-		StripeCustomerID: "",
-		History:          []models.History{},
-		Subscriptions:    []models.Subscription{},
-	}
-
-	user, err = CreateUser(userModel)
+	userInfo, err := service.FetchDiscordUserInfo(*token)
 	if err != nil {
-		return models.User{}, err
+		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to retrieve user info")
+		return
 	}
 
-	return user, nil
+	user, err := service.FindOrCreateUserFromDiscord(*userInfo, token)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to create or find user")
+		return
+	}
+
+	constants.SessionManager.Put(r.Context(), "user", user)
+	w.Write([]byte("<script>window.close()</script>"))
 }
 
-func FetchDiscordUserInfo(token oauth2.Token) (*utils.DiscordUser, error) {
-	res, err := constants.DiscordConfig.Client(context.Background(), &token).Get("https://discord.com/api/users/@me")
-	if err != nil || res.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("failed to fetch user info: %v", err)
-	}
-	defer res.Body.Close()
-
-	var discordUser utils.DiscordUser
-	if err := json.NewDecoder(res.Body).Decode(&discordUser); err != nil {
-		return nil, fmt.Errorf("failed to decode user info: %v", err)
+func discordAuthCallbackHandler(w http.ResponseWriter, r *http.Request) {
+	if r.FormValue("state") != "random" {
+		utils.RespondWithError(w, http.StatusBadRequest, "Invalid state parameter")
+		return
 	}
 
-	return &discordUser, nil
+	token, err := constants.DiscordConfig.Exchange(r.Context(), r.FormValue("code"))
+	if err != nil {
+		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to exchange token")
+		return
+	}
+
+	userInfo, err := service.FetchDiscordUserInfo(*token)
+	if err != nil {
+		fmt.Println(err)
+		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to retrieve user info")
+		return
+	}
+
+	user, err := service.FindOrCreateUserFromDiscord(*userInfo, token)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to create or find user")
+		return
+	}
+
+	userToken, err := utils.GenerateJWT(user)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to generate JWT")
+		return
+	}
+
+	if err := service.SaveUserToken(userToken, user.ID); err != nil {
+		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to save user token")
+		return
+	}
+
+	http.Redirect(w, r, fmt.Sprintf("http://localhost:5173/auth?token=%s", userToken), http.StatusTemporaryRedirect)
 }
 
-func SaveUserToken(userToken string, userID uint) error {
-	token := models.UserToken{
-		Token:  userToken,
-		UserID: userID,
+func createCheckoutSessionHandler(w http.ResponseWriter, r *http.Request) {
+	user := r.Context().Value("user").(models.User)
+	if user.ID == 0 {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
 	}
 
-	if err := constants.DB.Create(&token).Error; err != nil {
-		return err
+	type PriceRequest struct {
+		PriceID string `json:"priceId"`
 	}
 
-	return nil
+	var priceRequest PriceRequest
+	err := json.NewDecoder(r.Body).Decode(&priceRequest)
+	if err != nil {
+		http.Error(w, "Invalid request", http.StatusBadRequest)
+		return
+	}
+
+	if priceRequest.PriceID == "" {
+		http.Error(w, "Missing price_id", http.StatusBadRequest)
+		return
+	}
+
+	stripeCustomerID, err := service.GetOrCreateStripeCustomer(user.ID)
+	if err != nil {
+		log.Printf("Error getting/creating Stripe customer: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	session, err := utils.CreateCheckoutSession(priceRequest.PriceID, stripeCustomerID)
+	if err != nil {
+		log.Printf("Error creating checkout session: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]string{"id": session.ID})
 }
 
-func RemoveUserToken(token string) error {
-	if err := constants.DB.Where("token = ?", token).Delete(&models.UserToken{}).Error; err != nil {
-		return err
+func cancelSubscriptionHandler(w http.ResponseWriter, r *http.Request) {
+	user := r.Context().Value("user").(models.User)
+	if user.ID == 0 {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
 	}
 
-	return nil
+	subscriptionFromUser, err := service.GetActiveSubscriptionForUser(user.ID)
+	if err != nil {
+		log.Printf("Error getting subscriptions: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	if subscriptionFromUser.ID == 0 {
+		http.Error(w, "No active subscriptions", http.StatusBadRequest)
+		return
+	}
+
+	err = service.CancelExistingSubscription(subscriptionFromUser)
+	if err != nil {
+		log.Printf("Error cancelling subscription: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func getCurrentUserHandler(w http.ResponseWriter, r *http.Request) {
+	user, ok := r.Context().Value("user").(models.User)
+	if !ok {
+		utils.RespondWithError(w, http.StatusUnauthorized, "User not found in context")
+		return
+	}
+
+	subscription, err := service.GetActiveSubscriptionForUser(user.ID)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to retrieve subscriptions")
+		return
+	}
+
+	userResponse := utils.ConvertUser(user)
+	userResponse.Subscription = utils.ConvertSubscription(*subscription)
+
+	if err := json.NewEncoder(w).Encode(userResponse); err != nil {
+		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to encode user response")
+	}
+}
+
+func logoutHandler(w http.ResponseWriter, r *http.Request) {
+	user := r.Context().Value("user").(models.User)
+	if user.ID == 0 {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	token := r.Header.Get("Authorization")
+	if token == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	token = token[7:]
+
+	if err := service.RemoveUserToken(token); err != nil {
+		log.Printf("Error removing user token: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }

@@ -1,10 +1,18 @@
 package ip
 
-import "net"
+import (
+	"fmt"
+	"net"
+
+	"github.com/codevault-llc/humblebrag-api/utils"
+)
 
 func ScanIP(url string) ([]string, error) {
+	url = utils.StripProtocol(url)
+
 	ips, err := net.LookupIP(url)
 	if err != nil {
+		fmt.Println("Error in IP Lookup:", err)
 		return nil, err
 	}
 
@@ -17,6 +25,8 @@ func ScanIP(url string) ([]string, error) {
 }
 
 func ScanIPRange(url string) ([]string, error) {
+	url = utils.StripProtocol(url)
+
 	ips, err := net.LookupHost(url)
 	if err != nil {
 		return nil, err

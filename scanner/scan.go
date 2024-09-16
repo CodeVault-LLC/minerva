@@ -4,37 +4,48 @@ import (
 	"crypto/x509"
 	"fmt"
 
-	"github.com/codevault-llc/humblebrag-api/controller"
+	"github.com/codevault-llc/humblebrag-api/config"
 	"github.com/codevault-llc/humblebrag-api/models"
 	"github.com/codevault-llc/humblebrag-api/scanner/certificate"
 	"github.com/codevault-llc/humblebrag-api/scanner/http_req"
 	"github.com/codevault-llc/humblebrag-api/scanner/ip"
 	"github.com/codevault-llc/humblebrag-api/scanner/secrets"
 	"github.com/codevault-llc/humblebrag-api/scanner/websites"
+	"github.com/codevault-llc/humblebrag-api/service"
+	"github.com/codevault-llc/humblebrag-api/updater"
 	"github.com/codevault-llc/humblebrag-api/utils"
 )
 
 type WebsiteScan struct {
 	Website      models.ScanResponse
 	IPAddresses  []string
-	HTTPHeaders  map[string][]string
+	IPRanges     []string
+	HTTPHeaders  []string
 	Certificates []*x509.Certificate
 	Secrets      []utils.RegexReturn
+	GetDNSScan   ip.DNSResults
+	FoundLists   []config.List
 }
 
 func ScanWebsite(url string) (models.Scan, error) {
 	website, _ := websites.ScanWebsite(url)
 	ipAddresses, _ := ip.ScanIP(url)
+	ipRanges, _ := ip.ScanIPRange(url)
 	httpHeaders, _ := http_req.ScanHTTPHeaders(url)
 	certificates, _ := certificate.GetCertificateWebsite(url, 443)
 	secretsFound := secrets.ScanSecrets(website.Scripts)
+	dnsResults, _ := ip.GetDNSScan(url)
+	foundLists := updater.CompareValues(utils.ConvertURLToDomain(url))
 
 	websiteScan := WebsiteScan{
 		Website:      website,
 		IPAddresses:  ipAddresses,
+		IPRanges:     ipRanges,
 		HTTPHeaders:  httpHeaders,
 		Certificates: certificates,
 		Secrets:      secretsFound,
+		GetDNSScan:   dnsResults,
+		FoundLists:   foundLists,
 	}
 
 	scan, err := saveScan(websiteScan)
@@ -58,7 +69,7 @@ func saveScan(scan WebsiteScan) (models.Scan, error) {
 	}
 
 	// Create Scan
-	scanResponse, err := controller.CreateScan(scanModel)
+	scanResponse, err := service.CreateScan(scanModel)
 	if err != nil {
 		fmt.Println("Failed to create scan", err)
 		return models.Scan{}, err
@@ -66,7 +77,7 @@ func saveScan(scan WebsiteScan) (models.Scan, error) {
 
 	// Create Certificates
 	for _, certificate := range scan.Certificates {
-		err := controller.CreateCertificate(scanResponse.ID, *certificate)
+		err := service.CreateCertificate(scanResponse.ID, *certificate)
 		if err != nil {
 			fmt.Println("Failed to create certificate", err)
 			return models.Scan{}, err
@@ -74,7 +85,7 @@ func saveScan(scan WebsiteScan) (models.Scan, error) {
 	}
 
 	// Create Findings
-	controller.CreateFindings(scanResponse.ID, scan.Secrets)
+	service.CreateFindings(scanResponse.ID, scan.Secrets)
 
 	// Create Contents
 	for _, script := range scan.Website.Scripts {
@@ -84,26 +95,40 @@ func saveScan(scan WebsiteScan) (models.Scan, error) {
 			Content: script.Content,
 		}
 
-		_, err := controller.CreateContent(content)
+		_, err := service.CreateContent(content)
 		if err != nil {
 			return models.Scan{}, err
 		}
 	}
+
+	fmt.Println("Scan Lists", scan.FoundLists)
 
 	// Create Details
 	detail := models.Detail{
 		ScanID:       scanResponse.ID,
 		IPAddresses:  scan.IPAddresses,
 		HTTPHeaders:  scan.HTTPHeaders,
-		IPRanges:     []string{},
-		DNSNames:     []string{},
-		PermittedDNS: []string{},
-		ExcludedDNS:  []string{},
+		IPRanges:     scan.IPRanges,
+		DNSNames:     scan.GetDNSScan.CNAME,
+		PermittedDNS: scan.GetDNSScan.Permitted,
+		ExcludedDNS:  scan.GetDNSScan.Excluded,
 	}
 
-	_, err = controller.CreateDetail(detail)
+	_, err = service.CreateDetail(detail)
 	if err != nil {
 		return models.Scan{}, err
+	}
+
+	for _, list := range scan.FoundLists {
+		listModel := models.List{
+			ScanID: scanResponse.ID,
+			ListID: list.ListID,
+		}
+
+		_, err := service.CreateList(listModel)
+		if err != nil {
+			return models.Scan{}, err
+		}
 	}
 
 	return scanResponse, nil

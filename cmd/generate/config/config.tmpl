@@ -3,12 +3,17 @@
 # cmd/generate/config/main.go and follow the contributing guidelines
 # at https://github.com/codevault-llc/humblebrag-api/blob/master/CONTRIBUTING.md
 
-# This is the default gitleaks configuration file.
-# Rules and allowlists are defined within this file.
-# Rules instruct gitleaks on what should be considered a secret.
-# Allowlists instruct gitleaks on what is allowed, i.e. not a secret.
-
 title = "humblebrag config"
+
+{{ range $i, $list := .Lists }}[[lists]]
+id = "{{$list.ListID}}"
+description = "{{$list.Description}}"
+categories = [
+    {{ range $j, $category := $list.Categories }}"{{ $category }}",{{ end }}
+]
+url = '''{{$list.URL}}'''
+parser = "{{$list.Parser}}"
+{{ end }}
 
 {{ range $i, $rule := .Rules }}[[rules]]
 id = "{{$rule.RuleID}}"

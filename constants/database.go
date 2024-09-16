@@ -1,6 +1,8 @@
 package constants
 
 import (
+	"fmt"
+
 	"github.com/codevault-llc/humblebrag-api/models"
 
 	"gorm.io/driver/postgres"
@@ -17,8 +19,10 @@ func InitDB(DATABASE_URL string) {
 
 	registerGlobalCallbacks(db)
 
-	db.AutoMigrate(&models.User{}, &models.Subscription{}, &models.Scan{}, &models.Detail{}, &models.Finding{}, &models.Certificate{}, &models.History{}, &models.UserToken{}, &models.Content{})
+	db.AutoMigrate(&models.User{}, &models.Subscription{}, &models.Scan{}, &models.Detail{}, &models.Finding{}, &models.Certificate{}, &models.History{}, &models.UserToken{}, &models.Content{}, &models.List{})
 	DB = db
+
+	fmt.Println("Connected to PostgreSQL")
 }
 
 func handleRecordNotFound(db *gorm.DB) {

@@ -1,4 +1,4 @@
-package webhook
+package controller
 
 import (
 	"encoding/json"
@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/codevault-llc/humblebrag-api/controller"
+	"github.com/codevault-llc/humblebrag-api/service"
 	"github.com/codevault-llc/humblebrag-api/utils"
 	"github.com/gorilla/mux"
 	"github.com/stripe/stripe-go/v79"
@@ -56,7 +56,7 @@ func StripeWebhook(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		controller.HandleCheckoutSessionCompleted(&checkoutSession)
+		service.HandleCheckoutSessionCompleted(&checkoutSession)
 	case "customer.subscription.updated", "customer.subscription.deleted":
 		var sub stripe.Subscription
 		err := json.Unmarshal(event.Data.Raw, &sub)
@@ -65,7 +65,7 @@ func StripeWebhook(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		controller.HandleSubscriptionUpdated(&sub)
+		service.HandleSubscriptionUpdated(&sub)
 
 	default:
 		fmt.Fprintf(os.Stderr, "⚠️  Webhook received unknown event type: %s\n", event.Type)

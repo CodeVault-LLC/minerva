@@ -4,13 +4,11 @@ import (
 	_ "embed"
 	"strings"
 
+	"github.com/codevault-llc/humblebrag-api/parsers"
 	regexp "github.com/wasilibs/go-re2"
 
 	"github.com/spf13/viper"
 )
-
-//go:embed humblebrag.toml
-var DefaultConfig string
 
 type ViperConfig struct {
 	Description string
@@ -21,23 +19,15 @@ type ViperConfig struct {
 		Regex       string
 		Keywords    []string
 	}
+
+	Lists      []List
+	ParserList []string
 }
 
 type Config struct {
-	Rules map[string]Rule
-}
-
-// Mainly read the config file and return the ViperConfig struct
-func (vc *ViperConfig) ReadConfig() error {
-	viper.SetConfigType("toml")
-	viper.ReadConfig(strings.NewReader(DefaultConfig))
-
-	err := viper.Unmarshal(vc)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	Rules      map[string]Rule
+	Lists      map[string]List
+	ParserList map[string]parsers.Parser
 }
 
 // Order the rules based on alphabetical order of the ID
