@@ -5,17 +5,25 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/codevault-llc/humblebrag-api/constants"
 	"github.com/codevault-llc/humblebrag-api/models"
 	"github.com/codevault-llc/humblebrag-api/utils"
 	"golang.org/x/oauth2"
+	"gorm.io/gorm"
 )
 
 func GetUserById(id uint) (models.User, error) {
 	var user models.User
 
 	if err := constants.DB.Where("id = ?", id).
+		Preload("Subscriptions", func(db *gorm.DB) *gorm.DB {
+			return db.Order("updated_at DESC")
+		}).
+		Preload("Scans", func(db *gorm.DB) *gorm.DB {
+			return db.Order("created_at DESC")
+		}).
 		First(&user).
 		Error; err != nil {
 		return user, err
@@ -140,4 +148,41 @@ func RemoveUserToken(token string) error {
 	}
 
 	return nil
+}
+
+const (
+	MaxScansPerDay     = 5
+	FreeScansPerDay    = 1
+	SubscriptionActive = "active"
+	ScanStatusComplete = "complete"
+)
+
+func CanPerformScan(subscriptions []models.Subscription, scans []models.Scan) bool {
+	now := time.Now()
+	startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+
+	// Count completed scans for today
+	completedScansToday := 0
+	for _, scan := range scans {
+		if scan.CreatedAt.After(startOfDay) && scan.Status == ScanStatusComplete {
+			completedScansToday++
+		}
+	}
+
+	fmt.Println("Completed scans today:", completedScansToday)
+
+	// Check if user has an active subscription
+	hasActiveSubscription := false
+	if len(subscriptions) > 0 {
+		// Assuming the first subscription is the latest one
+		latestSubscription := subscriptions[0]
+		hasActiveSubscription = latestSubscription.Status == SubscriptionActive
+	}
+
+	if hasActiveSubscription {
+		return completedScansToday < MaxScansPerDay
+	}
+
+	// For non-subscribed users
+	return completedScansToday < FreeScansPerDay
 }

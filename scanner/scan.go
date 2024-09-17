@@ -28,7 +28,7 @@ type WebsiteScan struct {
 	FoundLists   []types.List
 }
 
-func ScanWebsite(url string) (models.Scan, error) {
+func ScanWebsite(url string, userId uint) (models.Scan, error) {
 	website, _ := websites.ScanWebsite(url)
 	ipAddresses, _ := ip.ScanIP(url)
 	ipRanges, _ := ip.ScanIPRange(url)
@@ -49,7 +49,7 @@ func ScanWebsite(url string) (models.Scan, error) {
 		FoundLists:   foundLists,
 	}
 
-	scan, err := saveScan(websiteScan)
+	scan, err := saveScan(websiteScan, userId)
 	if err != nil {
 		return models.Scan{}, err
 	}
@@ -57,10 +57,12 @@ func ScanWebsite(url string) (models.Scan, error) {
 	return scan, nil
 }
 
-func saveScan(scan WebsiteScan) (models.Scan, error) {
+func saveScan(scan WebsiteScan, userId uint) (models.Scan, error) {
 	scanModel := models.Scan{
 		WebsiteUrl:  scan.Website.WebsiteUrl,
 		WebsiteName: scan.Website.WebsiteName,
+
+		UserID: userId,
 
 		Sha256: fmt.Sprintf("%x", utils.SHA256(scan.Website.WebsiteUrl)),
 		SHA1:   fmt.Sprintf("%x", utils.SHA1(scan.Website.WebsiteUrl)),

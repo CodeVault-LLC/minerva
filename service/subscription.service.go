@@ -11,7 +11,6 @@ import (
 	customer "github.com/stripe/stripe-go/v79/customer"
 	"github.com/stripe/stripe-go/v79/product"
 	"github.com/stripe/stripe-go/v79/subscription"
-	"gorm.io/gorm"
 )
 
 func CreateSubscription(subscription *models.Subscription) error {
@@ -78,40 +77,31 @@ func GetOrCreateStripeCustomer(userID uint) (string, error) {
 	return newCustomer.ID, tx.Commit().Error
 }
 
-func HandleCheckoutSessionCompleted(checkoutSession *stripe.CheckoutSession) {
+func HandleCheckoutSessionCompleted(checkoutSession *stripe.CheckoutSession) error {
 	// Fetch the user from the Stripe customer ID
 	user, err := GetUserByStripeCustomerID(checkoutSession.Customer.ID)
 	if err != nil {
-		log.Printf("Error retrieving user: %v", err)
-		return
+		return fmt.Errorf("error retrieving user: %v", err)
 	}
 
 	// Fetch the subscription from Stripe
 	sub, err := subscription.Get(checkoutSession.Subscription.ID, nil)
 	if err != nil {
-		log.Printf("Error retrieving subscription details from Stripe: %v", err)
-		return
+		return fmt.Errorf("error retrieving subscription details from Stripe: %v", err)
 	}
 
 	plan := sub.Items.Data[0].Price
 	prod, err := product.Get(plan.Product.ID, nil)
 	if err != nil {
-		log.Printf("Error retrieving product details from Stripe: %v", err)
-		return
+		return fmt.Errorf("error retrieving product details from Stripe: %v", err)
 	}
 
 	// Handle an existing active subscription
 	existingSubs, err := GetActiveSubscriptionForUser(user.ID)
-	if err != nil && err != gorm.ErrRecordNotFound {
-		log.Printf("Error retrieving active subscription: %v", err)
-		return
-	}
-
-	if existingSubs != nil {
+	if err == nil && existingSubs != nil && existingSubs.ID != 0 {
 		err := CancelExistingSubscription(existingSubs)
 		if err != nil {
-			log.Printf("Error canceling existing subscription: %v", err)
-			return
+			return fmt.Errorf("error canceling existing subscription: %v", err)
 		}
 	}
 
@@ -134,8 +124,10 @@ func HandleCheckoutSessionCompleted(checkoutSession *stripe.CheckoutSession) {
 
 	err = CreateSubscription(newSubscription)
 	if err != nil {
-		log.Printf("Error creating subscription: %v", err)
+		return fmt.Errorf("error creating subscription: %v", err)
 	}
+
+	return nil
 }
 
 // GetActiveSubscriptionForUser retrieves the active subscription for a user.
@@ -154,11 +146,15 @@ func GetActiveSubscriptionForUser(userID uint) (*models.Subscription, error) {
 
 // CancelExistingSubscription cancels the current active subscription before creating a new one.
 func CancelExistingSubscription(userSubscription *models.Subscription) error {
+	if userSubscription.StripeSubscriptionID == "" {
+		return fmt.Errorf("invalid subscription ID")
+	}
+
 	params := &stripe.SubscriptionParams{CancelAtPeriodEnd: stripe.Bool(true)}
 
 	_, err := subscription.Update(userSubscription.StripeSubscriptionID, params)
 	if err != nil {
-		return err
+		return fmt.Errorf("error updating subscription in Stripe: %v", err)
 	}
 
 	userSubscription.Status = "canceled"
@@ -167,19 +163,18 @@ func CancelExistingSubscription(userSubscription *models.Subscription) error {
 	return UpdateSubscription(userSubscription)
 }
 
-// HandleSubscriptionUpdated safely updates the subscription in the database.
-func HandleSubscriptionUpdated(sub *stripe.Subscription) {
+func HandleSubscriptionUpdated(sub *stripe.Subscription) error {
 	existingSubscription, err := GetSubscriptionByStripeSubscriptionID(sub.ID)
 	if err != nil {
 		log.Printf("Error retrieving subscription: %v", err)
-		return
+		return err
 	}
 
 	plan := sub.Items.Data[0].Price
 	prod, err := product.Get(plan.Product.ID, nil)
 	if err != nil {
 		log.Printf("Error retrieving product details from Stripe: %v", err)
-		return
+		return err
 	}
 
 	existingSubscription.StripePriceID = plan.ID
@@ -196,5 +191,25 @@ func HandleSubscriptionUpdated(sub *stripe.Subscription) {
 	err = UpdateSubscription(&existingSubscription)
 	if err != nil {
 		log.Printf("Error updating subscription: %v", err)
+		return err
 	}
+
+	// Handle status changes
+	if existingSubscription.Status != string(sub.Status) {
+		user, err := GetUserById(existingSubscription.UserID)
+		if err != nil {
+			log.Printf("Error retrieving user: %v", err)
+			return err
+		}
+
+		_, err = UpdateUser(user)
+		if err != nil {
+			log.Printf("Error updating user: %v", err)
+			return err
+		}
+
+		return nil
+	}
+
+	return nil
 }

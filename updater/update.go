@@ -55,7 +55,7 @@ func StartAutoUpdate(interval time.Duration) {
 	// Start worker goroutines
 	for i := 0; i < updateWorkers; i++ {
 		wg.Add(1)
-		go updateWorker(updateChan, &wg)
+		//go updateWorker(updateChan, &wg)
 	}
 
 	// Initial update

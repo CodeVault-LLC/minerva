@@ -2,7 +2,6 @@ package controller
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -24,17 +23,17 @@ func StripeWebhook(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, MaxBodyBytes)
 
 	payload, err := ioutil.ReadAll(r.Body)
-
 	if err != nil {
-		helper.RespondWithError(w, http.StatusServiceUnavailable, "Request body too large")
+		log.Printf("Error reading request body: %v", err)
+		helper.RespondWithError(w, http.StatusServiceUnavailable, "Error reading request body")
 		return
 	}
 
 	event := stripe.Event{}
 
 	if err := json.Unmarshal(payload, &event); err != nil {
-		fmt.Fprintf(os.Stderr, "⚠️  Webhook error while parsing basic request. %v\n", err.Error())
-		w.WriteHeader(http.StatusBadRequest)
+		log.Printf("Error parsing webhook JSON: %v", err)
+		helper.RespondWithError(w, http.StatusBadRequest, "Error parsing webhook JSON")
 		return
 	}
 
@@ -42,8 +41,8 @@ func StripeWebhook(w http.ResponseWriter, r *http.Request) {
 	event, err = webhook.ConstructEvent(payload, signatureHeader, os.Getenv("STRIPE_WEBHOOK_SECRET"))
 
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "⚠️  Webhook signature verification failed. %v\n", err)
-		w.WriteHeader(http.StatusBadRequest) // Return a 400 error on a bad signature
+		log.Printf("Error verifying webhook signature: %v", err)
+		helper.RespondWithError(w, http.StatusBadRequest, "Error verifying webhook signature")
 		return
 	}
 
@@ -52,24 +51,33 @@ func StripeWebhook(w http.ResponseWriter, r *http.Request) {
 		var checkoutSession stripe.CheckoutSession
 		err := json.Unmarshal(event.Data.Raw, &checkoutSession)
 		if err != nil {
-			log.Printf("Error parsing webhook JSON: %v", err)
-			w.WriteHeader(http.StatusBadRequest)
+			log.Printf("Error parsing checkout session: %v", err)
+			helper.RespondWithError(w, http.StatusBadRequest, "Error parsing checkout session")
 			return
 		}
-		service.HandleCheckoutSessionCompleted(&checkoutSession)
+		err = service.HandleCheckoutSessionCompleted(&checkoutSession)
+		if err != nil {
+			log.Printf("Error handling checkout session: %v", err)
+			helper.RespondWithError(w, http.StatusInternalServerError, "Error handling checkout session")
+			return
+		}
 	case "customer.subscription.updated", "customer.subscription.deleted":
 		var sub stripe.Subscription
 		err := json.Unmarshal(event.Data.Raw, &sub)
 		if err != nil {
-			log.Printf("Error parsing webhook JSON: %v", err)
-			w.WriteHeader(http.StatusBadRequest)
+			log.Printf("Error parsing subscription: %v", err)
+			helper.RespondWithError(w, http.StatusBadRequest, "Error parsing subscription")
 			return
 		}
-		service.HandleSubscriptionUpdated(&sub)
-
+		err = service.HandleSubscriptionUpdated(&sub)
+		if err != nil {
+			log.Printf("Error handling subscription update: %v", err)
+			helper.RespondWithError(w, http.StatusInternalServerError, "Error handling subscription update")
+			return
+		}
 	default:
-		fmt.Fprintf(os.Stderr, "⚠️  Webhook received unknown event type: %s\n", event.Type)
-		w.WriteHeader(http.StatusBadRequest)
-		return
+		log.Printf("Unhandled event type: %s", event.Type)
 	}
+
+	helper.RespondWithJSON(w, http.StatusOK, map[string]string{"status": "success"})
 }

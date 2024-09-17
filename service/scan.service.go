@@ -116,7 +116,7 @@ func CreateLists(lists []models.List) ([]models.List, error) {
 func GetScans() ([]models.ScanAPIResponse, error) {
 	var scans []models.Scan
 
-	if err := constants.DB.Preload("Findings").Where("status = ?", models.ScanStatusComplete).Find(&scans).Error; err != nil {
+	if err := constants.DB.Preload("Findings").Where("status = ?", models.ScanStatusComplete).Order("created_at desc").Find(&scans).Error; err != nil {
 		return models.ConvertScans(scans), err
 	}
 

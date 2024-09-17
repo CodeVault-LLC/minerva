@@ -273,4 +273,12 @@ var ConfigLists = []*types.List{
 		URL:         "https://raw.githubusercontent.com/stamparm/ipsum/master/ipsum.txt",
 		Parser:      lists.IPSumParser,
 	},
+	/*{
+		Description: "Multi PRO++ - Maximum protection",
+		ListID:      "multi-pro-max",
+		Categories:  []string{"phishing", "malware", "ads", "scam", "metrics", "fake", "affiliate"},
+		Types:       []parsers.ListType{parsers.Domain},
+		URL:         "https://cdn.jsdelivr.net/gh/hagezi/dns-blocklists@latest/domains/ultimate.txt",
+		Parser:      lists.DomainListParser,
+	},*/
 }

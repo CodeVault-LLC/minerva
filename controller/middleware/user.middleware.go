@@ -44,8 +44,19 @@ func UserAuthMiddleware(next http.Handler) http.Handler {
 				return
 			}
 
-			user := models.User{}
-			constants.DB.First(&user, claims["id"])
+			userIDFloat, ok := claims["id"].(float64)
+			if !ok {
+				helper.RespondWithError(w, 401, "Invalid token")
+				return
+			}
+
+			userID := uint(userIDFloat)
+
+			user, err := service.GetUserById(userID)
+			if err != nil {
+				helper.RespondWithError(w, 401, "Invalid token")
+				return
+			}
 
 			if user.ID == 0 {
 				helper.RespondWithError(w, 401, "Invalid token")

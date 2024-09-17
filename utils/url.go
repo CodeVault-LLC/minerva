@@ -1,23 +1,49 @@
 package utils
 
-import "strings"
+import (
+	"fmt"
+	"net/url"
+	"strings"
+)
 
-func NormalizeURL(url string) string {
-	var urlNormalized string
+func NormalizeURL(input string) string {
+	urlNormalized := strings.TrimSpace(input)
 
-	if strings.HasPrefix(url, "http://") || strings.HasPrefix(url, "https://") {
-		urlNormalized = url
-	} else {
-		urlNormalized = "https://" + url
+	if !strings.HasPrefix(urlNormalized, "http://") && !strings.HasPrefix(urlNormalized, "https://") {
+		urlNormalized = "https://" + urlNormalized
 	}
 
-	if strings.HasSuffix(urlNormalized, "/") {
-		urlNormalized = urlNormalized[:len(urlNormalized)-1]
+	urlNormalized = strings.Replace(urlNormalized, "www.", "", 1)
+	urlNormalized = strings.Replace(urlNormalized, ":///", "://", 1)
+
+	parsedURL, err := url.Parse(urlNormalized)
+	if err != nil {
+		return urlNormalized
 	}
 
-	if strings.Contains(urlNormalized, "www.") {
-		urlNormalized = strings.Replace(urlNormalized, "www.", "", 1)
-	}
+	// Construct a new URL with only the scheme and host
+	urlNormalized = parsedURL.Scheme + "://" + parsedURL.Host
+
+	// Remove the last / from the URL
+	urlNormalized = strings.TrimSuffix(urlNormalized, "/")
+
+	fmt.Println("Normalized URL:", urlNormalized)
 
 	return urlNormalized
+}
+
+// ValidateURL checks if the URL is well-formed and has either http or https as the scheme.
+func ValidateURL(input string) bool {
+	// Parse the URL to check if it's well-formed
+	parsedURL, err := url.ParseRequestURI(input)
+	if err != nil {
+		return false
+	}
+
+	// Ensure the scheme is either http or https
+	if parsedURL.Scheme != "http" && parsedURL.Scheme != "https" {
+		return false
+	}
+
+	return true
 }

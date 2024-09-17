@@ -27,6 +27,7 @@ type User struct {
 
 	History       []History      `gorm:"foreignKey:UserID"`
 	Subscriptions []Subscription `gorm:"foreignKey:UserID"`
+	Scans         []Scan         `gorm:"foreignKey:UserID"`
 }
 
 type UserResponse struct {

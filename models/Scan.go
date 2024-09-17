@@ -23,6 +23,9 @@ type Scan struct {
 	SHA1   string `gorm:"not null"`
 	MD5    string `gorm:"not null"`
 
+	UserID uint
+	User   User
+
 	Detail       Detail        `gorm:"foreignKey:ScanID"`
 	Lists        []List        `gorm:"foreignKey:ScanID"`
 	Findings     []Finding     `gorm:"foreignKey:ScanID"`

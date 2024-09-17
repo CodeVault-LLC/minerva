@@ -21,7 +21,7 @@ type Subscription struct {
 	Price              float64 `gorm:"not null"`
 	Currency           string  `gorm:"not null"`
 	Interval           string  `gorm:"not null"` // 'month', 'year', etc.
-	Status             string  `gorm:"not null"`
+	Status             string  `gorm:"not null"` // 'active', 'canceled', etc.
 	CurrentPeriodStart time.Time
 	CurrentPeriodEnd   time.Time
 	CancelAtPeriodEnd  bool

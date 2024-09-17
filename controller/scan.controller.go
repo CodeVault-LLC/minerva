@@ -21,6 +21,13 @@ func ScanRouter(router *mux.Router) {
 }
 
 func CreateScan(w http.ResponseWriter, r *http.Request) {
+	user := r.Context().Value("user").(models.User)
+
+	if !service.CanPerformScan(user.Subscriptions, user.Scans) {
+		helper.RespondWithError(w, http.StatusForbidden, "Subscription limit reached")
+		return
+	}
+
 	var scan models.ScanRequest
 	err := json.NewDecoder(r.Body).Decode(&scan)
 	if err != nil {
@@ -28,9 +35,14 @@ func CreateScan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !utils.ValidateURL(scan.Url) {
+		helper.RespondWithError(w, http.StatusBadRequest, "Invalid URL")
+		return
+	}
+
 	scan.Url = utils.NormalizeURL(scan.Url)
 
-	scanResponse, err := scanner.ScanWebsite(scan.Url)
+	scanResponse, err := scanner.ScanWebsite(scan.Url, user.ID)
 	if err != nil {
 		helper.RespondWithError(w, http.StatusInternalServerError, "Failed to scan website")
 		return
