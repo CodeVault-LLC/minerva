@@ -26,6 +26,6 @@ var OneHostsProParser = &parsers.TextParser{
 			return parsers.Item{}, false
 		}
 
-		return parsers.Item{Type: "Domain", Value: domain}, true
+		return parsers.Item{Type: parsers.Domain, Value: domain}, true
 	},
 }

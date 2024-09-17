@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/codevault-llc/humblebrag-api/models"
+	"github.com/codevault-llc/humblebrag-api/parsers"
 	"github.com/codevault-llc/humblebrag-api/scanner/certificate"
 	"github.com/codevault-llc/humblebrag-api/scanner/http_req"
 	"github.com/codevault-llc/humblebrag-api/scanner/ip"
@@ -35,7 +36,7 @@ func ScanWebsite(url string) (models.Scan, error) {
 	certificates, _ := certificate.GetCertificateWebsite(url, 443)
 	secretsFound := secrets.ScanSecrets(website.Scripts)
 	dnsResults, _ := ip.GetDNSScan(url)
-	foundLists := updater.CompareValues(utils.ConvertURLToDomain(url))
+	foundLists := updater.CompareValues(utils.ConvertURLToDomain(url), parsers.Domain)
 
 	websiteScan := WebsiteScan{
 		Website:      website,

@@ -7,8 +7,18 @@ import (
 	"os"
 )
 
+type ListType string
+
+const (
+	Domain ListType = "Domain"
+	URL    ListType = "URL"
+	IPv4   ListType = "IPv4"
+	IPv6   ListType = "IPv6"
+	Email  ListType = "Email"
+)
+
 type Item struct {
-	Type     string
+	Type     ListType
 	Value    string
 	Metadata map[string]interface{}
 }

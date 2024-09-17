@@ -5,6 +5,7 @@ import (
 
 	"github.com/codevault-llc/humblebrag-api/config/lists"
 	"github.com/codevault-llc/humblebrag-api/config/rules"
+	"github.com/codevault-llc/humblebrag-api/parsers"
 	"github.com/codevault-llc/humblebrag-api/types"
 	regexp "github.com/wasilibs/go-re2"
 )
@@ -236,6 +237,7 @@ var ConfigLists = []*types.List{
 		Description: "CPBL Filters for ABP & uBO",
 		ListID:      "cpbl-abp",
 		Categories:  []string{"adblock"},
+		Types:       []parsers.ListType{parsers.Domain},
 		URL:         "https://raw.githubusercontent.com/bongochong/CombinedPrivacyBlockLists/master/cpbl-abp-list.txt",
 		Parser:      lists.CblAbpParser,
 	},
@@ -243,6 +245,7 @@ var ConfigLists = []*types.List{
 		Description: "CPBL Filters for uBO",
 		ListID:      "cpbl-ctld",
 		Categories:  []string{"adblock"},
+		Types:       []parsers.ListType{parsers.Domain},
 		URL:         "https://raw.githubusercontent.com/bongochong/CombinedPrivacyBlockLists/master/NoFormatting/cpbl-ctld.txt",
 		Parser:      lists.CblCtldParser,
 	},
@@ -250,6 +253,7 @@ var ConfigLists = []*types.List{
 		Description: "A merged hosts file from a variety of other lists.",
 		ListID:      "1hosts-pro",
 		Categories:  []string{"ads", "crypto", "malware", "privacy"},
+		Types:       []parsers.ListType{parsers.Domain},
 		URL:         "https://raw.githubusercontent.com/badmojr/1Hosts/master/Pro/hosts.txt",
 		Parser:      lists.OneHostsProParser,
 	},
@@ -257,7 +261,16 @@ var ConfigLists = []*types.List{
 		Description: "URLhaus is a project from abuse.ch with the goal of sharing malicious URLs that are being used for malware distribution.",
 		ListID:      "urlhaus-abuse-ch",
 		Categories:  []string{"malware"},
+		Types:       []parsers.ListType{parsers.Domain},
 		URL:         "https://urlhaus.abuse.ch/downloads/text/",
 		Parser:      lists.URLHausParser,
+	},
+	{
+		Description: "IPsum is a threat intelligence feed based on 30+ different publicly available lists of suspicious and/or malicious IP addresses.",
+		ListID:      "ipsum",
+		Categories:  []string{"malware"},
+		Types:       []parsers.ListType{parsers.IPv4},
+		URL:         "https://raw.githubusercontent.com/stamparm/ipsum/master/ipsum.txt",
+		Parser:      lists.IPSumParser,
 	},
 }

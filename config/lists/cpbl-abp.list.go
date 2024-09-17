@@ -11,7 +11,7 @@ var CblAbpParser = &parsers.TextParser{
 		line = strings.TrimSpace(line)
 		if strings.HasPrefix(line, "||") && strings.HasSuffix(line, "^") {
 			domain := strings.TrimPrefix(strings.TrimSuffix(line, "^"), "||")
-			return parsers.Item{Type: "Domain", Value: domain}, true
+			return parsers.Item{Type: parsers.Domain, Value: domain}, true
 		}
 		return parsers.Item{}, false
 	},

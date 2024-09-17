@@ -6,9 +6,20 @@ import (
 	"github.com/codevault-llc/humblebrag-api/parsers"
 )
 
-var CblCtldParser = &parsers.TextParser{
+var URLHausParser = &parsers.TextParser{
 	ParseFunc: func(line string) (parsers.Item, bool) {
 		line = strings.TrimSpace(line)
-		return parsers.Item{Type: "Domain", Value: line}, true
+
+		// Ignore comment or metadata lines starting with '#'
+		if strings.HasPrefix(line, "#") || line == "" {
+			return parsers.Item{}, false
+		}
+
+		// Check if line is a valid URL (starts with http/https)
+		if strings.HasPrefix(line, "http://") || strings.HasPrefix(line, "https://") {
+			return parsers.Item{Type: parsers.URL, Value: line}, true
+		}
+
+		return parsers.Item{}, false
 	},
 }

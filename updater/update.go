@@ -22,12 +22,7 @@ func StartAutoUpdate(interval time.Duration) {
 		}
 		log.Printf("Updated %s with %d entries", list.Description, len(parsedData))
 
-		var data []string
-		for _, item := range parsedData {
-			data = append(data, item.Value)
-		}
-
-		err = storeParsedData(list.ListID, data)
+		err = storeParsedData(list.ListID, parsedData)
 		if err != nil {
 			log.Printf("Failed to store data for %s: %v", list.Description, err)
 		}
@@ -44,12 +39,7 @@ func StartAutoUpdate(interval time.Duration) {
 				continue
 			}
 
-			var data []string
-			for _, item := range parsedData {
-				data = append(data, item.Value)
-			}
-
-			err = storeParsedData(list.ListID, data)
+			err = storeParsedData(list.ListID, parsedData)
 			if err != nil {
 				log.Printf("Failed to store data for %s: %v", list.Description, err)
 			}
@@ -84,14 +74,19 @@ func fetchAndParseList(list *types.List) ([]parsers.Item, error) {
 	return parsedData, nil
 }
 
-// Updated to store data in DragonflyDB (Redis-compatible)
-func storeParsedData(listID string, parsedData []string) error {
+func storeParsedData(listID string, parsedData []parsers.Item) error {
 	// Use Redis' pipeline to insert multiple records efficiently
 	pipe := constants.Rdb.Pipeline()
 
-	for _, value := range parsedData {
-		// Store each value in Redis with the ListID as the key
-		pipe.SAdd(constants.Ctx, listID, value)
+	for _, item := range parsedData {
+		// Create a composite key with ListID and item type
+		key := fmt.Sprintf("%s:%s", listID, item.Type)
+
+		// Store each value in Redis with the ListID and type as key
+		pipe.SAdd(constants.Ctx, key, item.Value)
+
+		// Set the expiration time (30 minutes) for the data
+		pipe.Expire(constants.Ctx, key, 30*time.Minute)
 	}
 
 	_, err := pipe.Exec(constants.Ctx)
@@ -99,21 +94,29 @@ func storeParsedData(listID string, parsedData []string) error {
 }
 
 // CompareValues function to search for a value in DragonflyDB and return matching lists
-func CompareValues(comparedValue string) []types.List {
+func CompareValues(comparedValue string, valueType parsers.ListType) []types.List {
 	var matchingLists []types.List
 
 	// Iterate over all lists
 	for _, list := range config.ConfigLists {
-		// Use SISMEMBER to check if the compared value exists in the Redis set for the list
-		exists, err := constants.Rdb.SIsMember(constants.Ctx, list.ListID, comparedValue).Result()
-		if err != nil {
-			log.Printf("Failed to search in Redis for %s: %v", list.ListID, err)
-			continue
-		}
+		for _, listType := range list.Types {
+			// Only search in lists that match the given type
+			if listType == valueType {
+				// Create the composite key with ListID and type
+				key := fmt.Sprintf("%s:%s", list.ListID, valueType)
 
-		// If the value exists in the set, add the list to the result
-		if exists {
-			matchingLists = append(matchingLists, *list)
+				// Use SISMEMBER to check if the compared value exists in the Redis set for the list
+				exists, err := constants.Rdb.SIsMember(constants.Ctx, key, comparedValue).Result()
+				if err != nil {
+					log.Printf("Failed to search in Redis for %s: %v", list.ListID, err)
+					continue
+				}
+
+				// If the value exists in the set, add the list to the result
+				if exists {
+					matchingLists = append(matchingLists, *list)
+				}
+			}
 		}
 	}
 
