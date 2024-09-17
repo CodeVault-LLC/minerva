@@ -6,26 +6,31 @@ import (
 	"time"
 
 	"github.com/go-redis/redis/v8"
-	_ "github.com/mattn/go-sqlite3"
 )
 
-var Ctx = context.Background()
 var Rdb *redis.Client
 
 func InitDragonflyDB() {
 	Rdb = redis.NewClient(&redis.Options{
-		Addr: "localhost:6379", // Use the appropriate address and port
+		Addr:               "localhost:6379",
+		IdleTimeout:        5 * time.Minute,
+		DB:                 0,
+		MaxRetries:         2,
+		PoolSize:           100, // Increase the pool size
+		MinIdleConns:       2,   // Maintain some minimum idle connections
+		ReadTimeout:        100 * time.Second,
+		WriteTimeout:       100 * time.Second,
+		IdleCheckFrequency: 5 * time.Minute,
 	})
 
-	// Retry connection
-	for i := 0; i < 5; i++ {
-		_, err := Rdb.Ping(Ctx).Result()
-		if err == nil {
-			log.Println("Connected to DragonflyDB")
-			return
-		}
-		log.Printf("Failed to connect to DragonflyDB (attempt %d): %v", i+1, err)
-		time.Sleep(2 * time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	_, err := Rdb.Ping(ctx).Result()
+	if err != nil {
+		log.Println("Error connecting to Redis")
+		log.Println(err)
+	} else {
+		log.Println("Connected to Redis")
 	}
-	log.Fatal("Could not connect to DragonflyDB after 5 attempts")
 }

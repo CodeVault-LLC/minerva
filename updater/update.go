@@ -1,71 +1,130 @@
 package updater
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/codevault-llc/humblebrag-api/config"
 	"github.com/codevault-llc/humblebrag-api/constants"
 	"github.com/codevault-llc/humblebrag-api/parsers"
 	"github.com/codevault-llc/humblebrag-api/types"
+	"github.com/go-redis/redis/v8"
+)
+
+const (
+	batchSize          = 5000 // Reduced batch size
+	maxRetries         = 5    // Increased retries
+	retryDelay         = 10 * time.Second
+	storeTimeout       = 5 * time.Minute // Increased timeout
+	updateWorkers      = 5
+	redisScriptTimeout = 10 * time.Minute // Increased timeout
+)
+
+var (
+	storeLuaScript = redis.NewScript(`
+    local key = KEYS[1]
+    local values = ARGV
+    local batchSize = 1000  -- Process 1000 items at a time within Redis
+    local totalAdded = 0
+
+    redis.call('DEL', key)
+
+    for i = 1, #values, batchSize do
+        local batch = {}
+        for j = i, math.min(i + batchSize - 1, #values) do
+            table.insert(batch, values[j])
+        end
+        local added = redis.call('SADD', key, unpack(batch))
+        totalAdded = totalAdded + added
+    end
+
+    redis.call('EXPIRE', key, 1800)  -- 30 minutes
+    return totalAdded
+`)
 )
 
 func StartAutoUpdate(interval time.Duration) {
-	for _, list := range config.ConfigLists {
-		parsedData, err := fetchAndParseList(list)
-		if err != nil {
-			log.Printf("Failed to update %s: %v", list.Description, err)
-			continue
-		}
-		log.Printf("Updated %s with %d entries", list.Description, len(parsedData))
+	updateChan := make(chan *types.List, len(config.ConfigLists))
+	var wg sync.WaitGroup
 
-		err = storeParsedData(list.ListID, parsedData)
-		if err != nil {
-			log.Printf("Failed to store data for %s: %v", list.Description, err)
-		}
+	// Start worker goroutines
+	for i := 0; i < updateWorkers; i++ {
+		wg.Add(1)
+		go updateWorker(updateChan, &wg)
 	}
 
+	// Initial update
+	for _, list := range config.ConfigLists {
+		updateChan <- list
+	}
+
+	// Periodic updates
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
 	for range ticker.C {
 		for _, list := range config.ConfigLists {
-			parsedData, err := fetchAndParseList(list)
-			if err != nil {
-				log.Printf("Failed to update %s: %v", list.Description, err)
-				continue
-			}
-
-			err = storeParsedData(list.ListID, parsedData)
-			if err != nil {
-				log.Printf("Failed to store data for %s: %v", list.Description, err)
-			}
+			updateChan <- list
 		}
 	}
+
+	close(updateChan)
+	wg.Wait()
+}
+
+func updateWorker(updateChan <-chan *types.List, wg *sync.WaitGroup) {
+	defer wg.Done()
+
+	for list := range updateChan {
+		if err := updateList(list); err != nil {
+			log.Printf("Failed to update %s: %v", list.Description, err)
+		}
+	}
+}
+
+func updateList(list *types.List) error {
+	parsedData, err := fetchAndParseList(list)
+	if err != nil {
+		return fmt.Errorf("failed to fetch and parse list: %w", err)
+	}
+
+	log.Printf("Parsed %s with %d entries", list.Description, len(parsedData))
+
+	storedCount, err := storeParsedDataWithRetry(list.ListID, parsedData)
+	if err != nil {
+		return fmt.Errorf("failed to store data: %w", err)
+	}
+
+	log.Printf("Successfully stored %d/%d entries for %s", storedCount, len(parsedData), list.Description)
+
+	if storedCount != len(parsedData) {
+		log.Printf("Warning: Mismatch in stored data count for %s. Expected: %d, Actual: %d", list.Description, len(parsedData), storedCount)
+	}
+
+	return nil
 }
 
 func fetchAndParseList(list *types.List) ([]parsers.Item, error) {
 	resp, err := http.Get(list.URL)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to fetch list: %w", err)
 	}
 	defer resp.Body.Close()
-
-	data, err := ioutil.ReadAll(resp.Body)
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to read response body: %w", err)
 	}
 
-	parsedDataChan, err := parsers.ParseBytes(data, list.Parser)
+	parsedDataChan, err := parsers.ParseBytes(bodyBytes, list.Parser)
 	if err != nil {
-		fmt.Println("Failed to parse data for", list.Description, err)
-		return nil, err
+		return nil, fmt.Errorf("failed to parse data: %w", err)
 	}
 
-	// Collect items from the channel
 	var parsedData []parsers.Item
 	for item := range parsedDataChan {
 		parsedData = append(parsedData, item)
@@ -74,48 +133,91 @@ func fetchAndParseList(list *types.List) ([]parsers.Item, error) {
 	return parsedData, nil
 }
 
-func storeParsedData(listID string, parsedData []parsers.Item) error {
-	// Use Redis' pipeline to insert multiple records efficiently
-	pipe := constants.Rdb.Pipeline()
-
-	for _, item := range parsedData {
-		// Create a composite key with ListID and item type
-		key := fmt.Sprintf("%s:%s", listID, item.Type)
-
-		// Store each value in Redis with the ListID and type as key
-		pipe.SAdd(constants.Ctx, key, item.Value)
-
-		// Set the expiration time (30 minutes) for the data
-		pipe.Expire(constants.Ctx, key, 30*time.Minute)
+func storeParsedDataWithRetry(listID string, parsedData []parsers.Item) (int, error) {
+	var totalStored int
+	for attempt := 0; attempt < maxRetries; attempt++ {
+		storedCount, err := storeParsedData(listID, parsedData)
+		if err != nil {
+			log.Printf("Attempt %d failed to store data for %s: %v", attempt+1, listID, err)
+			time.Sleep(retryDelay)
+			continue
+		}
+		totalStored += storedCount
+		if totalStored == len(parsedData) {
+			return totalStored, nil
+		}
+		log.Printf("Attempt %d: Stored %d/%d items for %s", attempt+1, totalStored, len(parsedData), listID)
 	}
-
-	_, err := pipe.Exec(constants.Ctx)
-	return err
+	return totalStored, fmt.Errorf("failed to store all data after %d attempts", maxRetries)
 }
 
-// CompareValues function to search for a value in DragonflyDB and return matching lists
+func storeParsedData(listID string, parsedData []parsers.Item) (int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), storeTimeout)
+	defer cancel()
+
+	totalStored := 0
+	itemsByType := make(map[string][]string)
+	for _, item := range parsedData {
+		key := fmt.Sprintf("%s:%s", listID, item.Type)
+		itemsByType[key] = append(itemsByType[key], item.Value)
+	}
+
+	for key, values := range itemsByType {
+		storedCount, err := storeDataBatch(ctx, key, values)
+		if err != nil {
+			return totalStored, fmt.Errorf("failed to store batch for key %s: %w", key, err)
+		}
+		totalStored += storedCount
+	}
+
+	return totalStored, nil
+}
+
+func storeDataBatch(ctx context.Context, key string, batch []string) (int, error) {
+	result, err := storeLuaScript.Run(ctx, constants.Rdb, []string{key}, batch).Result()
+	if err != nil {
+		return 0, err
+	}
+	storedCount, ok := result.(int64)
+	if !ok {
+		return 0, fmt.Errorf("unexpected result type from Lua script")
+	}
+	return int(storedCount), nil
+}
+
 func CompareValues(comparedValue string, valueType parsers.ListType) []types.List {
 	var matchingLists []types.List
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
-	// Iterate over all lists
+	pipe := constants.Rdb.Pipeline()
+	cmds := make(map[string]*redis.BoolCmd)
+
 	for _, list := range config.ConfigLists {
 		for _, listType := range list.Types {
-			// Only search in lists that match the given type
 			if listType == valueType {
-				// Create the composite key with ListID and type
 				key := fmt.Sprintf("%s:%s", list.ListID, valueType)
+				fmt.Println(key)
+				cmds[list.ListID] = pipe.SIsMember(ctx, key, comparedValue)
+			}
+		}
+	}
 
-				// Use SISMEMBER to check if the compared value exists in the Redis set for the list
-				exists, err := constants.Rdb.SIsMember(constants.Ctx, key, comparedValue).Result()
-				if err != nil {
-					log.Printf("Failed to search in Redis for %s: %v", list.ListID, err)
-					continue
-				}
+	_, err := pipe.Exec(ctx)
+	if err != nil {
+		log.Printf("Failed to execute pipeline: %v", err)
+		return nil
+	}
 
-				// If the value exists in the set, add the list to the result
-				if exists {
-					matchingLists = append(matchingLists, *list)
-				}
+	for _, list := range config.ConfigLists {
+		if cmd, ok := cmds[list.ListID]; ok {
+			exists, err := cmd.Result()
+			if err != nil {
+				log.Printf("Failed to get result for %s: %v", list.ListID, err)
+				continue
+			}
+			if exists {
+				matchingLists = append(matchingLists, *list)
 			}
 		}
 	}

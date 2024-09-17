@@ -1,4 +1,8 @@
-version: "3.8"
+version: "3"
+
+volumes:
+  db-data:
+  cache-data:
 
 services:
   db:
@@ -17,16 +21,19 @@ services:
     command: -p 5434
 
   cache:
-    image: eqalpha/keydb:latest
-    ulimits:
-      memlock: -1
-    expose:
-      - "6379"
+    image: redis:alpine
+    container_name: humblebrag-cache
+    restart: always
     ports:
-      - "6379:6379"
+      - "6379:6379" # Changed from 6389:6389 to 6379:6379
     volumes:
       - cache-data:/data
 
-volumes:
-  db-data:
-  cache-data:
+  app:
+    build: .
+    container_name: humblebrag-api
+    depends_on:
+      - db
+      - cache
+    ports:
+      - "3000:3000"
