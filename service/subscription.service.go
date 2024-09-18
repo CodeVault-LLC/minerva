@@ -51,10 +51,12 @@ func GetOrCreateStripeCustomer(userID uint) (string, error) {
 		return "", err
 	}
 
+	// Check if the user already has a Stripe customer ID
 	if user.StripeCustomerID != "" {
 		return user.StripeCustomerID, nil
 	}
 
+	// Create a new customer in Stripe
 	params := &stripe.CustomerParams{
 		Email: stripe.String(user.Email),
 		Metadata: map[string]string{
@@ -67,8 +69,9 @@ func GetOrCreateStripeCustomer(userID uint) (string, error) {
 		return "", err
 	}
 
-	tx := constants.DB.Begin()
+	// Update the user record with the new Stripe customer ID
 	user.StripeCustomerID = newCustomer.ID
+	tx := constants.DB.Begin()
 	if err := tx.Save(&user).Error; err != nil {
 		tx.Rollback()
 		return "", err
@@ -164,11 +167,20 @@ func CancelExistingSubscription(userSubscription *models.Subscription) error {
 }
 
 func HandleSubscriptionUpdated(sub *stripe.Subscription) error {
-	existingSubscription, err := GetSubscriptionByStripeSubscriptionID(sub.ID)
+	log.Printf("Received subscription update for StripeSubscriptionID: %s", sub.ID)
+
+	existingSubscription, err := retryUntilSubscriptionExists(sub.ID, 5, time.Second)
 	if err != nil {
-		log.Printf("Error retrieving subscription: %v", err)
+		log.Printf("Error retrieving subscription for StripeSubscriptionID: %s, error: %v", sub.ID, err)
 		return err
 	}
+
+	if existingSubscription.ID == 0 {
+		log.Printf("No subscription found in the database for StripeSubscriptionID: %s", sub.ID)
+		return fmt.Errorf("subscription not found or invalid subscription ID")
+	}
+
+	log.Printf("Found existing subscription in the database: %v", existingSubscription)
 
 	plan := sub.Items.Data[0].Price
 	prod, err := product.Get(plan.Product.ID, nil)
@@ -177,6 +189,7 @@ func HandleSubscriptionUpdated(sub *stripe.Subscription) error {
 		return err
 	}
 
+	// Update subscription details
 	existingSubscription.StripePriceID = plan.ID
 	existingSubscription.PlanName = prod.Name
 	existingSubscription.PlanType = plan.Nickname
@@ -187,29 +200,29 @@ func HandleSubscriptionUpdated(sub *stripe.Subscription) error {
 	existingSubscription.CurrentPeriodStart = time.Unix(sub.CurrentPeriodStart, 0)
 	existingSubscription.CurrentPeriodEnd = time.Unix(sub.CurrentPeriodEnd, 0)
 	existingSubscription.CancelAtPeriodEnd = sub.CancelAtPeriodEnd
+	existingSubscription.StripeCustomerID = sub.Customer.ID
 
-	err = UpdateSubscription(&existingSubscription)
+	err = UpdateSubscription(existingSubscription)
 	if err != nil {
-		log.Printf("Error updating subscription: %v", err)
+		log.Printf("Error updating subscription in the database: %v", err)
 		return err
 	}
 
-	// Handle status changes
-	if existingSubscription.Status != string(sub.Status) {
-		user, err := GetUserById(existingSubscription.UserID)
-		if err != nil {
-			log.Printf("Error retrieving user: %v", err)
-			return err
-		}
-
-		_, err = UpdateUser(user)
-		if err != nil {
-			log.Printf("Error updating user: %v", err)
-			return err
-		}
-
-		return nil
-	}
+	log.Printf("Subscription successfully updated in the database: %v", existingSubscription)
 
 	return nil
+}
+
+func retryUntilSubscriptionExists(subID string, maxAttempts int, delay time.Duration) (*models.Subscription, error) {
+	for i := 0; i < maxAttempts; i++ {
+		subscription, err := GetSubscriptionByStripeSubscriptionID(subID)
+		if err == nil && subscription.ID != 0 {
+			return &subscription, nil
+		}
+
+		log.Printf("Subscription not found, retrying attempt %d/%d", i+1, maxAttempts)
+		time.Sleep(delay)
+	}
+
+	return nil, fmt.Errorf("subscription not found after %d attempts", maxAttempts)
 }

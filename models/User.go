@@ -9,6 +9,13 @@ const (
 	RoleUser  RoleEnum = "user"
 )
 
+type TwoFAMethod string
+
+const (
+	MethodApp   TwoFAMethod = "app"   // e.g., Google Authenticator
+	MethodEmail TwoFAMethod = "email" // e.g., email-based OTP
+)
+
 type User struct {
 	gorm.Model
 
@@ -25,6 +32,11 @@ type User struct {
 	Provider         string `gorm:"not null"`
 	StripeCustomerID string `gorm:"not null"`
 
+	// 2FA-related fields
+	Is2FAEnabled bool        `gorm:"default:false"` // Track if 2FA is enabled
+	TwoFASecret  string      `gorm:"not null"`      // Secret key for 2FA
+	TwoFAMethod  TwoFAMethod `gorm:"default:'app'"` // 2FA method, app-based or email-based
+
 	History       []History      `gorm:"foreignKey:UserID"`
 	Subscriptions []Subscription `gorm:"foreignKey:UserID"`
 	Scans         []Scan         `gorm:"foreignKey:UserID"`
@@ -40,6 +52,8 @@ type UserResponse struct {
 	Role RoleEnum `json:"role"`
 
 	Subscription SubscriptionResponse `json:"subscription"`
+
+	Is2FAEnabled bool `json:"is_2fa_enabled"` // Reflect 2FA status
 
 	CreatedAt string `json:"created_at"`
 	UpdatedAt string `json:"updated_at"`
