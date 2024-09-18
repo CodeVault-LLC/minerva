@@ -89,12 +89,12 @@ func CreateContent(content models.Content) (models.Content, error) {
 	return content, nil
 }
 
-func CreateDetail(detail models.Detail) (models.Detail, error) {
-	if err := constants.DB.Create(&detail).Error; err != nil {
-		return detail, err
+func CreateNetwork(network models.Network) (models.Network, error) {
+	if err := constants.DB.Create(&network).Error; err != nil {
+		return network, err
 	}
 
-	return detail, nil
+	return network, nil
 }
 
 func CreateList(list models.List) (models.List, error) {

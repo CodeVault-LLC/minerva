@@ -8,7 +8,7 @@ import (
 	"github.com/codevault-llc/humblebrag-api/parsers"
 	"github.com/codevault-llc/humblebrag-api/scanner/certificate"
 	"github.com/codevault-llc/humblebrag-api/scanner/http_req"
-	"github.com/codevault-llc/humblebrag-api/scanner/ip"
+	"github.com/codevault-llc/humblebrag-api/scanner/network"
 	"github.com/codevault-llc/humblebrag-api/scanner/secrets"
 	"github.com/codevault-llc/humblebrag-api/scanner/websites"
 	"github.com/codevault-llc/humblebrag-api/service"
@@ -24,28 +24,39 @@ type WebsiteScan struct {
 	HTTPHeaders  []string
 	Certificates []*x509.Certificate
 	Secrets      []utils.RegexReturn
-	GetDNSScan   ip.DNSResults
+	GetDNSScan   network.DNSResults
 	FoundLists   []types.List
+}
+
+type NetworkScan struct {
+	IPAddresses []string
+	IPRanges    []string
+	GetDNSScan  network.DNSResults
 }
 
 func ScanWebsite(url string, userId uint) (models.Scan, error) {
 	website, _ := websites.ScanWebsite(url)
-	ipAddresses, _ := ip.ScanIP(url)
-	ipRanges, _ := ip.ScanIPRange(url)
-	httpHeaders, _ := http_req.ScanHTTPHeaders(url)
+	httpResponse, _ := http_req.GetHTTPResponse(url)
 	certificates, _ := certificate.GetCertificateWebsite(url, 443)
 	secretsFound := secrets.ScanSecrets(website.Scripts)
-	dnsResults, _ := ip.GetDNSScan(url)
+
 	foundLists := updater.CompareValues(utils.ConvertURLToDomain(url), parsers.Domain)
+	networkScan := scanNetwork(url)
+
+	// Create HTTP Headers
+	httpHeaders := make([]string, 0)
+	for key, value := range httpResponse.Headers {
+		httpHeaders = append(httpHeaders, fmt.Sprintf("%s: %s", key, value))
+	}
 
 	websiteScan := WebsiteScan{
 		Website:      website,
-		IPAddresses:  ipAddresses,
-		IPRanges:     ipRanges,
+		IPAddresses:  networkScan.IPAddresses,
+		IPRanges:     networkScan.IPRanges,
 		HTTPHeaders:  httpHeaders,
 		Certificates: certificates,
 		Secrets:      secretsFound,
-		GetDNSScan:   dnsResults,
+		GetDNSScan:   networkScan.GetDNSScan,
 		FoundLists:   foundLists,
 	}
 
@@ -55,6 +66,19 @@ func ScanWebsite(url string, userId uint) (models.Scan, error) {
 	}
 
 	return scan, nil
+}
+
+func scanNetwork(url string) NetworkScan {
+	ipAddresses, _ := network.ScanIP(url)
+	ipRanges, _ := network.ScanIPRange(url)
+
+	dnsResults, _ := network.GetDNSScan(url)
+
+	return NetworkScan{
+		IPAddresses: ipAddresses,
+		IPRanges:    ipRanges,
+		GetDNSScan:  dnsResults,
+	}
 }
 
 func saveScan(scan WebsiteScan, userId uint) (models.Scan, error) {
@@ -107,7 +131,7 @@ func saveScan(scan WebsiteScan, userId uint) (models.Scan, error) {
 	fmt.Println("Scan Lists", scan.FoundLists)
 
 	// Create Details
-	detail := models.Detail{
+	detail := models.Network{
 		ScanID:       scanResponse.ID,
 		IPAddresses:  scan.IPAddresses,
 		HTTPHeaders:  scan.HTTPHeaders,
@@ -117,7 +141,7 @@ func saveScan(scan WebsiteScan, userId uint) (models.Scan, error) {
 		ExcludedDNS:  scan.GetDNSScan.Excluded,
 	}
 
-	_, err = service.CreateDetail(detail)
+	_, err = service.CreateNetwork(detail)
 	if err != nil {
 		return models.Scan{}, err
 	}

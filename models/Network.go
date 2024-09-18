@@ -5,7 +5,7 @@ import (
 	"gorm.io/gorm"
 )
 
-type Detail struct {
+type Network struct {
 	gorm.Model
 
 	ScanID uint
@@ -24,7 +24,7 @@ type Detail struct {
 	HTTPHeaders pq.StringArray `gorm:"type:text[]"` // PostgreSQL array
 }
 
-type DetailResponse struct {
+type NetworkResponse struct {
 	ID uint `json:"id"`
 
 	IPAddresses []string `json:"ip_addresses"`
@@ -37,14 +37,14 @@ type DetailResponse struct {
 	HTTPHeaders []string `json:"http_headers"`
 }
 
-func ConvertDetail(detail Detail) DetailResponse {
-	return DetailResponse{
-		ID:           detail.ID,
-		IPAddresses:  detail.IPAddresses,
-		IPRanges:     detail.IPRanges,
-		DNSNames:     detail.DNSNames,
-		PermittedDNS: detail.PermittedDNS,
-		ExcludedDNS:  detail.ExcludedDNS,
-		HTTPHeaders:  detail.HTTPHeaders,
+func ConvertNetwork(network Network) NetworkResponse {
+	return NetworkResponse{
+		ID:           network.ID,
+		IPAddresses:  network.IPAddresses,
+		IPRanges:     network.IPRanges,
+		DNSNames:     network.DNSNames,
+		PermittedDNS: network.PermittedDNS,
+		ExcludedDNS:  network.ExcludedDNS,
+		HTTPHeaders:  network.HTTPHeaders,
 	}
 }

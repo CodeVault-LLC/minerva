@@ -14,6 +14,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// Get user by ID
 func GetUserById(id uint) (models.User, error) {
 	var user models.User
 
@@ -32,6 +33,7 @@ func GetUserById(id uint) (models.User, error) {
 	return user, nil
 }
 
+// Get user by email
 func GetUserByEmail(email string) (models.User, error) {
 	var user models.User
 
@@ -44,6 +46,7 @@ func GetUserByEmail(email string) (models.User, error) {
 	return user, nil
 }
 
+// Get user by Discord ID
 func GetUserByDiscordId(discordId string) (models.User, error) {
 	var user models.User
 
@@ -56,6 +59,7 @@ func GetUserByDiscordId(discordId string) (models.User, error) {
 	return user, nil
 }
 
+// Create a new user
 func CreateUser(user models.User) (models.User, error) {
 	if err := constants.DB.Create(&user).Error; err != nil {
 		return user, err
@@ -64,6 +68,7 @@ func CreateUser(user models.User) (models.User, error) {
 	return user, nil
 }
 
+// Get user by token
 func IsValidUserToken(token string) (models.UserToken, error) {
 	var userToken models.UserToken
 
@@ -76,6 +81,7 @@ func IsValidUserToken(token string) (models.UserToken, error) {
 	return userToken, nil
 }
 
+// Get user by token
 func UpdateUser(user models.User) (models.User, error) {
 	if err := constants.DB.Save(&user).Error; err != nil {
 		return user, err
@@ -84,6 +90,7 @@ func UpdateUser(user models.User) (models.User, error) {
 	return user, nil
 }
 
+// Get user by token
 func FindOrCreateUserFromDiscord(discordUser utils.DiscordUser, token *oauth2.Token) (models.User, error) {
 	user, err := GetUserByDiscordId(fmt.Sprint(discordUser.Id))
 	if err != nil {
@@ -114,6 +121,7 @@ func FindOrCreateUserFromDiscord(discordUser utils.DiscordUser, token *oauth2.To
 	return user, nil
 }
 
+// Get user by token
 func FetchDiscordUserInfo(token oauth2.Token) (*utils.DiscordUser, error) {
 	res, err := constants.DiscordConfig.Client(context.Background(), &token).Get("https://discord.com/api/users/@me")
 	if err != nil || res.StatusCode != http.StatusOK {
@@ -129,6 +137,7 @@ func FetchDiscordUserInfo(token oauth2.Token) (*utils.DiscordUser, error) {
 	return &discordUser, nil
 }
 
+// Get user by token
 func SaveUserToken(userToken string, userID uint) error {
 	token := models.UserToken{
 		Token:  userToken,

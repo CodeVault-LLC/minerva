@@ -17,9 +17,7 @@ import (
 func RegisterUserRoutes(router *mux.Router) {
 	router.HandleFunc("/users/me", getCurrentUserHandler).Methods("GET")
 	router.HandleFunc("/auth/discord", discordAuthRedirectHandler).Methods("GET")
-	router.HandleFunc("/auth/discord/extension", discordExtensionAuthRedirectHandler).Methods("GET")
 	router.HandleFunc("/auth/discord/callback", discordAuthCallbackHandler).Methods("GET")
-	router.HandleFunc("/auth/discord/callback/extension", discordExtensionCallbackHandler).Methods("GET")
 	router.HandleFunc("/users/create-checkout-session", createCheckoutSessionHandler).Methods("POST")
 	router.HandleFunc("/users/cancel-subscription", cancelSubscriptionHandler).Methods("POST")
 	router.HandleFunc("/users/logout", logoutHandler).Methods("POST")
@@ -28,40 +26,6 @@ func RegisterUserRoutes(router *mux.Router) {
 func discordAuthRedirectHandler(w http.ResponseWriter, r *http.Request) {
 	url := constants.DiscordConfig.AuthCodeURL("random")
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
-}
-
-func discordExtensionAuthRedirectHandler(w http.ResponseWriter, r *http.Request) {
-	url := constants.DiscordConfigExtension.AuthCodeURL("random")
-	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
-}
-
-func discordExtensionCallbackHandler(w http.ResponseWriter, r *http.Request) {
-	if r.FormValue("state") != "random" {
-		helper.RespondWithError(w, http.StatusBadRequest, "Invalid state parameter")
-		return
-	}
-
-	token, err := constants.DiscordConfigExtension.Exchange(r.Context(), r.FormValue("code"))
-	if err != nil {
-		log.Println("Error exchanging token:", err)
-		helper.RespondWithError(w, http.StatusInternalServerError, "Failed to exchange token")
-		return
-	}
-
-	userInfo, err := service.FetchDiscordUserInfo(*token)
-	if err != nil {
-		helper.RespondWithError(w, http.StatusInternalServerError, "Failed to retrieve user info")
-		return
-	}
-
-	user, err := service.FindOrCreateUserFromDiscord(*userInfo, token)
-	if err != nil {
-		helper.RespondWithError(w, http.StatusInternalServerError, "Failed to create or find user")
-		return
-	}
-
-	constants.SessionManager.Put(r.Context(), "user", user)
-	w.Write([]byte("<script>window.close()</script>"))
 }
 
 func discordAuthCallbackHandler(w http.ResponseWriter, r *http.Request) {

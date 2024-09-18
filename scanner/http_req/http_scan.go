@@ -5,19 +5,22 @@ import (
 	"net/http"
 )
 
-func ScanHTTPHeaders(url string) ([]string, error) {
+type HTTPResponse struct {
+	StatusCode int
+	Headers    http.Header
+}
+
+func GetHTTPResponse(url string) (HTTPResponse, error) {
 	resp, err := http.Head(url)
 	if err != nil {
 		fmt.Println("Error scanning HTTP headers", err)
-		return nil, err
+		return HTTPResponse{}, err
 	}
 
 	defer resp.Body.Close()
 
-	var headers []string
-	for key, value := range resp.Header {
-		headers = append(headers, fmt.Sprintf("%s: %s", key, value))
-	}
-
-	return headers, nil
+	return HTTPResponse{
+		StatusCode: resp.StatusCode,
+		Headers:    resp.Header,
+	}, nil
 }

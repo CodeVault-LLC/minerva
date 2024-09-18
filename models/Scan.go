@@ -26,7 +26,7 @@ type Scan struct {
 	UserID uint
 	User   User
 
-	Detail       Detail        `gorm:"foreignKey:ScanID"`
+	Detail       Network       `gorm:"foreignKey:ScanID"`
 	Lists        []List        `gorm:"foreignKey:ScanID"`
 	Findings     []Finding     `gorm:"foreignKey:ScanID"`
 	Contents     []Content     `gorm:"foreignKey:ScanID"`
@@ -55,7 +55,7 @@ type ScanAPIResponse struct {
 	SHA1   string `json:"sha1"`
 	MD5    string `json:"md5"`
 
-	Detail       DetailResponse        `json:"detail"`
+	Network      NetworkResponse       `json:"detail"`
 	Findings     int64                 `json:"findings"`
 	Certificates []CertificateResponse `json:"certificates"`
 	Lists        []ListResponse        `json:"lists"`
@@ -77,7 +77,7 @@ func ConvertScan(scan Scan) ScanAPIResponse {
 		MD5:         scan.MD5,
 
 		Certificates: ConvertCertificates(scan.Certificates),
-		Detail:       ConvertDetail(scan.Detail),
+		Network:      ConvertNetwork(scan.Detail),
 		Lists:        ConvertLists(scan.Lists),
 		CreatedAt:    scan.CreatedAt.Format("2006-01-02 15:04:05"),
 		UpdatedAt:    scan.UpdatedAt.Format("2006-01-02 15:04:05"),

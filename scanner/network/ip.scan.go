@@ -1,4 +1,4 @@
-package ip
+package network
 
 import (
 	"fmt"
@@ -7,6 +7,7 @@ import (
 	"github.com/codevault-llc/humblebrag-api/utils"
 )
 
+// ScanIP scans the IP address of a given URL and returns a list of IP addresses
 func ScanIP(url string) ([]string, error) {
 	url = utils.StripProtocol(url)
 
@@ -24,6 +25,7 @@ func ScanIP(url string) ([]string, error) {
 	return ipList, nil
 }
 
+// ScanIPRange scans the IP range of a given URL and returns a list of IP addresses
 func ScanIPRange(url string) ([]string, error) {
 	url = utils.StripProtocol(url)
 
