@@ -38,4 +38,5 @@ func GlobalRouter(router *mux.Router) {
 	ScanRouter(router)
 	RegisterUserRoutes(router)
 	WebhookRouter(router)
+	RegisterNotificationRoutes(router)
 }

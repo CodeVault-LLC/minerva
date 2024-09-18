@@ -12,8 +12,6 @@ import (
 var DB *gorm.DB
 
 func InitDB(DATABASE_URL string) {
-	fmt.Println("Connecting to PostgreSQL...", DATABASE_URL)
-
 	db, err := gorm.Open(postgres.Open(DATABASE_URL), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect database")
@@ -21,7 +19,7 @@ func InitDB(DATABASE_URL string) {
 
 	registerGlobalCallbacks(db)
 
-	db.AutoMigrate(&models.User{}, &models.Subscription{}, &models.Scan{}, &models.Detail{}, &models.Finding{}, &models.Certificate{}, &models.History{}, &models.UserToken{}, &models.Content{}, &models.List{})
+	db.AutoMigrate(&models.User{}, &models.Notification{}, &models.Subscription{}, &models.Scan{}, &models.Detail{}, &models.Finding{}, &models.Certificate{}, &models.History{}, &models.UserToken{}, &models.Content{}, &models.List{})
 	DB = db
 
 	fmt.Println("Connected to PostgreSQL")

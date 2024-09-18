@@ -1,6 +1,10 @@
 package models
 
-import "gorm.io/gorm"
+import (
+	"github.com/codevault-llc/humblebrag-api/config"
+	"github.com/codevault-llc/humblebrag-api/types"
+	"gorm.io/gorm"
+)
 
 type List struct {
 	gorm.Model
@@ -18,4 +22,32 @@ type ListResponse struct {
 	ListID      string   `json:"list_id"`
 	Categories  []string `json:"categories"`
 	URL         string   `json:"url"`
+}
+
+func ConvertList(list List) ListResponse {
+	var configList *types.List
+	for _, l := range config.ConfigLists {
+		if l.ListID == list.ListID {
+			configList = l
+			break
+		}
+	}
+
+	return ListResponse{
+		ID:          list.ID,
+		Description: configList.Description,
+		ListID:      list.ListID,
+		Categories:  configList.Categories,
+		URL:         configList.URL,
+	}
+}
+
+func ConvertLists(lists []List) []ListResponse {
+	var listResponses []ListResponse
+
+	for _, list := range lists {
+		listResponses = append(listResponses, ConvertList(list))
+	}
+
+	return listResponses
 }

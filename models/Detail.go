@@ -36,3 +36,15 @@ type DetailResponse struct {
 
 	HTTPHeaders []string `json:"http_headers"`
 }
+
+func ConvertDetail(detail Detail) DetailResponse {
+	return DetailResponse{
+		ID:           detail.ID,
+		IPAddresses:  detail.IPAddresses,
+		IPRanges:     detail.IPRanges,
+		DNSNames:     detail.DNSNames,
+		PermittedDNS: detail.PermittedDNS,
+		ExcludedDNS:  detail.ExcludedDNS,
+		HTTPHeaders:  detail.HTTPHeaders,
+	}
+}

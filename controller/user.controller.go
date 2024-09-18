@@ -185,9 +185,17 @@ func getCurrentUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	notifications, err := service.GetUnreadNotificationsByUserID(user.ID)
+	if err != nil {
+		helper.RespondWithError(w, http.StatusInternalServerError, "Failed to retrieve notifications")
+		return
+	}
+
 	userResponse := models.ConvertUser(user)
 	userResponse.Subscription = models.ConvertSubscription(*subscription)
+	userResponse.Notifications = models.ConvertNotifications(notifications)
 
+	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(userResponse); err != nil {
 		helper.RespondWithError(w, http.StatusInternalServerError, "Failed to encode user response")
 	}

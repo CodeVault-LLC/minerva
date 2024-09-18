@@ -84,3 +84,37 @@ type CertificateResponse struct {
 	SignatureAlgorithm string `json:"signature_algorithm"`
 	PublicKeyAlgorithm string `json:"public_key_algorithm"`
 }
+
+func ConvertCertificate(certificate Certificate) CertificateResponse {
+	return CertificateResponse{
+		ID:                 certificate.ID,
+		Issuer:             certificate.Issuer,
+		Subject:            certificate.Subject,
+		NotBefore:          certificate.NotBefore,
+		NotAfter:           certificate.NotAfter,
+		SignatureAlgorithm: certificate.SignatureAlgorithm.String(),
+		PublicKeyAlgorithm: certificate.PublicKeyAlgorithm.String(),
+	}
+}
+
+func ConvertCertificates(certificates []Certificate) []CertificateResponse {
+	var certificateResponses []CertificateResponse
+
+	for _, certificate := range certificates {
+		certificateResponses = append(certificateResponses, CertificateResponse{
+			ID:                 certificate.ID,
+			Issuer:             certificate.Issuer,
+			Subject:            certificate.Subject,
+			NotBefore:          certificate.NotBefore,
+			NotAfter:           certificate.NotAfter,
+			SignatureAlgorithm: certificate.SignatureAlgorithm.String(),
+			PublicKeyAlgorithm: certificate.PublicKeyAlgorithm.String(),
+		})
+	}
+
+	if len(certificateResponses) == 0 {
+		return []CertificateResponse{}
+	}
+
+	return certificateResponses
+}

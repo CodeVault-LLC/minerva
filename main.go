@@ -30,6 +30,6 @@ func main() {
 	constants.InitAuth()
 	constants.InitSessionManager()
 
-	go updater.StartAutoUpdate(20 * time.Minute)
+	go updater.StartAutoUpdate(3 * time.Second)
 	controller.Start()
 }

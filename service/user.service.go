@@ -19,10 +19,10 @@ func GetUserById(id uint) (models.User, error) {
 
 	if err := constants.DB.Where("id = ?", id).
 		Preload("Subscriptions", func(db *gorm.DB) *gorm.DB {
-			return db.Order("updated_at DESC")
+			return db.Order("updated_at DESC").Limit(3)
 		}).
 		Preload("Scans", func(db *gorm.DB) *gorm.DB {
-			return db.Order("created_at DESC")
+			return db.Order("created_at DESC").Limit(5)
 		}).
 		First(&user).
 		Error; err != nil {

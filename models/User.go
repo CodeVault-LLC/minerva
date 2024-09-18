@@ -40,6 +40,7 @@ type User struct {
 	History       []History      `gorm:"foreignKey:UserID"`
 	Subscriptions []Subscription `gorm:"foreignKey:UserID"`
 	Scans         []Scan         `gorm:"foreignKey:UserID"`
+	Notifications []Notification `gorm:"foreignKey:UserID"`
 }
 
 type UserResponse struct {
@@ -51,7 +52,8 @@ type UserResponse struct {
 
 	Role RoleEnum `json:"role"`
 
-	Subscription SubscriptionResponse `json:"subscription"`
+	Subscription  SubscriptionResponse   `json:"subscription"`
+	Notifications []NotificationResponse `json:"notifications"`
 
 	Is2FAEnabled bool `json:"is_2fa_enabled"` // Reflect 2FA status
 
@@ -63,4 +65,24 @@ type UserMinimalResponse struct {
 	ID       uint   `json:"id"`
 	Username string `json:"username"`
 	Email    string `json:"email"`
+}
+
+func ConvertUser(user User) UserResponse {
+	return UserResponse{
+		ID:        user.ID,
+		Username:  user.Username,
+		Email:     user.Email,
+		Avatar:    user.Avatar,
+		AvatarURL: "https://cdn.discordapp.com/avatars/" + user.DiscordId + "/" + user.Avatar + ".png",
+		CreatedAt: user.UpdatedAt.Format("2006-01-02 15:04:05"),
+		UpdatedAt: user.UpdatedAt.Format("2006-01-02 15:04:05"),
+	}
+}
+
+func ConvertUserMinimal(user User) UserMinimalResponse {
+	return UserMinimalResponse{
+		ID:       user.ID,
+		Username: user.Username,
+		Email:    user.Email,
+	}
 }

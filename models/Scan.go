@@ -63,3 +63,33 @@ type ScanAPIResponse struct {
 	CreatedAt string `json:"created_at"`
 	UpdatedAt string `json:"updated_at"`
 }
+
+func ConvertScan(scan Scan) ScanAPIResponse {
+	return ScanAPIResponse{
+		ID:       scan.ID,
+		Findings: int64(len(scan.Findings)),
+
+		WebsiteUrl:  scan.WebsiteUrl,
+		WebsiteName: scan.WebsiteName,
+		Status:      string(scan.Status),
+		Sha256:      scan.Sha256,
+		SHA1:        scan.SHA1,
+		MD5:         scan.MD5,
+
+		Certificates: ConvertCertificates(scan.Certificates),
+		Detail:       ConvertDetail(scan.Detail),
+		Lists:        ConvertLists(scan.Lists),
+		CreatedAt:    scan.CreatedAt.Format("2006-01-02 15:04:05"),
+		UpdatedAt:    scan.UpdatedAt.Format("2006-01-02 15:04:05"),
+	}
+}
+
+func ConvertScans(scans []Scan) []ScanAPIResponse {
+	var scanResponses []ScanAPIResponse
+
+	for _, scan := range scans {
+		scanResponses = append(scanResponses, ConvertScan(scan))
+	}
+
+	return scanResponses
+}

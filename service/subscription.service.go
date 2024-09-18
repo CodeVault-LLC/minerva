@@ -130,6 +130,18 @@ func HandleCheckoutSessionCompleted(checkoutSession *stripe.CheckoutSession) err
 		return fmt.Errorf("error creating subscription: %v", err)
 	}
 
+	notification := &models.Notification{
+		Type:    models.NotificationSubscription,
+		UserID:  user.ID,
+		Message: fmt.Sprintf("You have successfully subscribed to the %s plan.", prod.Name),
+		IsRead:  false,
+	}
+
+	_, err = CreateNotification(*notification)
+	if err != nil {
+		return fmt.Errorf("error creating notification: %v", err)
+	}
+
 	return nil
 }
 
@@ -162,6 +174,18 @@ func CancelExistingSubscription(userSubscription *models.Subscription) error {
 
 	userSubscription.Status = "canceled"
 	userSubscription.CancelAtPeriodEnd = true
+
+	notification := &models.Notification{
+		Type:    models.NotificationSubscription,
+		UserID:  userSubscription.UserID,
+		Message: "Your current subscription has been canceled.",
+		IsRead:  false,
+	}
+
+	_, err = CreateNotification(*notification)
+	if err != nil {
+		return fmt.Errorf("error creating notification: %v", err)
+	}
 
 	return UpdateSubscription(userSubscription)
 }

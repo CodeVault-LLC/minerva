@@ -35,3 +35,25 @@ type FindingResponse struct {
 	CreatedAt string `json:"created_at"`
 	UpdatedAt string `json:"updated_at"`
 }
+
+func ConvertFindings(findings []Finding) []FindingResponse {
+	var findingResponses []FindingResponse
+
+	for _, finding := range findings {
+		findingResponses = append(findingResponses, FindingResponse{
+			ID:     finding.ID,
+			ScanID: finding.ScanID,
+			Line:   finding.Line,
+			Match:  finding.Match,
+			Source: finding.Source,
+
+			RegexName:        finding.RegexName,
+			RegexDescription: finding.RegexDescription,
+
+			CreatedAt: finding.CreatedAt.Format("2006-01-02 15:04:05"),
+			UpdatedAt: finding.UpdatedAt.Format("2006-01-02 15:04:05"),
+		})
+	}
+
+	return findingResponses
+}

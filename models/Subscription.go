@@ -40,3 +40,17 @@ type SubscriptionResponse struct {
 	CurrentPeriodEnd   time.Time `json:"current_period_end"`
 	CancelAtPeriodEnd  bool      `json:"cancel_at_period_end"`
 }
+
+func ConvertSubscription(subscription Subscription) SubscriptionResponse {
+	return SubscriptionResponse{
+		ID:                 subscription.ID,
+		PlanName:           subscription.PlanName,
+		Price:              subscription.Price,
+		Currency:           subscription.Currency,
+		Interval:           subscription.Interval,
+		Status:             subscription.Status,
+		CurrentPeriodStart: subscription.CurrentPeriodStart,
+		CurrentPeriodEnd:   subscription.CurrentPeriodEnd,
+		CancelAtPeriodEnd:  subscription.CancelAtPeriodEnd,
+	}
+}

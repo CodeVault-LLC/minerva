@@ -55,7 +55,7 @@ func StartAutoUpdate(interval time.Duration) {
 	// Start worker goroutines
 	for i := 0; i < updateWorkers; i++ {
 		wg.Add(1)
-		//go updateWorker(updateChan, &wg)
+		//go updateWorker(updateChan, &wg) // Uncomment this line
 	}
 
 	// Initial update
@@ -68,6 +68,8 @@ func StartAutoUpdate(interval time.Duration) {
 	defer ticker.Stop()
 
 	for range ticker.C {
+		fmt.Println("Updating list")
+
 		for _, list := range config.ConfigLists {
 			updateChan <- list
 		}
