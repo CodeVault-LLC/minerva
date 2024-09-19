@@ -15,8 +15,8 @@ import (
 )
 
 // Get user by ID
-func GetUserById(id uint) (models.User, error) {
-	var user models.User
+func GetUserById(id uint) (models.UserModel, error) {
+	var user models.UserModel
 
 	if err := constants.DB.Where("id = ?", id).
 		Preload("Subscriptions", func(db *gorm.DB) *gorm.DB {
@@ -34,8 +34,8 @@ func GetUserById(id uint) (models.User, error) {
 }
 
 // Get user by email
-func GetUserByEmail(email string) (models.User, error) {
-	var user models.User
+func GetUserByEmail(email string) (models.UserModel, error) {
+	var user models.UserModel
 
 	if err := constants.DB.Where("email = ?", email).
 		First(&user).
@@ -47,8 +47,8 @@ func GetUserByEmail(email string) (models.User, error) {
 }
 
 // Get user by Discord ID
-func GetUserByDiscordId(discordId string) (models.User, error) {
-	var user models.User
+func GetUserByDiscordId(discordId string) (models.UserModel, error) {
+	var user models.UserModel
 
 	if err := constants.DB.Where("discord_id = ?", discordId).
 		First(&user).
@@ -60,7 +60,7 @@ func GetUserByDiscordId(discordId string) (models.User, error) {
 }
 
 // Create a new user
-func CreateUser(user models.User) (models.User, error) {
+func CreateUser(user models.UserModel) (models.UserModel, error) {
 	if err := constants.DB.Create(&user).Error; err != nil {
 		return user, err
 	}
@@ -69,8 +69,8 @@ func CreateUser(user models.User) (models.User, error) {
 }
 
 // Get user by token
-func IsValidUserToken(token string) (models.UserToken, error) {
-	var userToken models.UserToken
+func IsValidUserToken(token string) (models.UserTokenModel, error) {
+	var userToken models.UserTokenModel
 
 	if err := constants.DB.Where("token = ?", token).
 		First(&userToken).
@@ -82,7 +82,7 @@ func IsValidUserToken(token string) (models.UserToken, error) {
 }
 
 // Get user by token
-func UpdateUser(user models.User) (models.User, error) {
+func UpdateUser(user models.UserModel) (models.UserModel, error) {
 	if err := constants.DB.Save(&user).Error; err != nil {
 		return user, err
 	}
@@ -91,17 +91,17 @@ func UpdateUser(user models.User) (models.User, error) {
 }
 
 // Get user by token
-func FindOrCreateUserFromDiscord(discordUser utils.DiscordUser, token *oauth2.Token) (models.User, error) {
+func FindOrCreateUserFromDiscord(discordUser utils.DiscordUser, token *oauth2.Token) (models.UserModel, error) {
 	user, err := GetUserByDiscordId(fmt.Sprint(discordUser.Id))
 	if err != nil {
-		return models.User{}, err
+		return models.UserModel{}, err
 	}
 
 	if user.ID != 0 {
 		return user, nil
 	}
 
-	userModel := models.User{
+	userModel := models.UserModel{
 		DiscordId:        fmt.Sprint(discordUser.Id),
 		Username:         discordUser.Username,
 		Email:            discordUser.Email,
@@ -109,13 +109,13 @@ func FindOrCreateUserFromDiscord(discordUser utils.DiscordUser, token *oauth2.To
 		AccessToken:      token.AccessToken,
 		Provider:         "discord",
 		StripeCustomerID: "",
-		History:          []models.History{},
-		Subscriptions:    []models.Subscription{},
+		History:          []models.HistoryModel{},
+		Subscriptions:    []models.SubscriptionModel{},
 	}
 
 	user, err = CreateUser(userModel)
 	if err != nil {
-		return models.User{}, err
+		return models.UserModel{}, err
 	}
 
 	return user, nil
@@ -139,7 +139,7 @@ func FetchDiscordUserInfo(token oauth2.Token) (*utils.DiscordUser, error) {
 
 // Get user by token
 func SaveUserToken(userToken string, userID uint) error {
-	token := models.UserToken{
+	token := models.UserTokenModel{
 		Token:  userToken,
 		UserID: userID,
 	}
@@ -152,7 +152,7 @@ func SaveUserToken(userToken string, userID uint) error {
 }
 
 func RemoveUserToken(token string) error {
-	if err := constants.DB.Where("token = ?", token).Delete(&models.UserToken{}).Error; err != nil {
+	if err := constants.DB.Where("token = ?", token).Delete(&models.UserTokenModel{}).Error; err != nil {
 		return err
 	}
 
@@ -166,7 +166,7 @@ const (
 	ScanStatusComplete = "complete"
 )
 
-func CanPerformScan(subscriptions []models.Subscription, scans []models.Scan) bool {
+func CanPerformScan(subscriptions []models.SubscriptionModel, scans []models.ScanModel) bool {
 	now := time.Now()
 	startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 

@@ -6,8 +6,8 @@ import (
 )
 
 // GetUserByStripeCustomerID retrieves a user by their Stripe customer ID.
-func GetUserByStripeCustomerID(stripeCustomerID string) (*models.User, error) {
-	var user models.User
+func GetUserByStripeCustomerID(stripeCustomerID string) (*models.UserModel, error) {
+	var user models.UserModel
 
 	err := constants.DB.Where("stripe_customer_id = ?", stripeCustomerID).
 		First(&user).Error
@@ -19,8 +19,8 @@ func GetUserByStripeCustomerID(stripeCustomerID string) (*models.User, error) {
 	return &user, nil
 }
 
-func GetSubscriptionByStripeSubscriptionID(subscriptionID string) (models.Subscription, error) {
-	var subscription models.Subscription
+func GetSubscriptionByStripeSubscriptionID(subscriptionID string) (models.SubscriptionModel, error) {
+	var subscription models.SubscriptionModel
 
 	if err := constants.DB.Where("stripe_subscription_id = ?", subscriptionID).
 		First(&subscription).

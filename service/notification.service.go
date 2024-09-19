@@ -6,7 +6,7 @@ import (
 )
 
 // CreateNotification creates a new notification in the database
-func CreateNotification(notification models.Notification) (*models.Notification, error) {
+func CreateNotification(notification models.NotificationModel) (*models.NotificationModel, error) {
 	tx := constants.DB.Begin()
 	if err := tx.Create(&notification).Error; err != nil {
 		tx.Rollback()
@@ -17,8 +17,8 @@ func CreateNotification(notification models.Notification) (*models.Notification,
 }
 
 // GetNotificationsByUserID retrieves all notifications for a user
-func GetNotificationsByUserID(userID uint) ([]models.Notification, error) {
-	var notifications []models.Notification
+func GetNotificationsByUserID(userID uint) ([]models.NotificationModel, error) {
+	var notifications []models.NotificationModel
 	if err := constants.DB.Where("user_id = ?", userID).Find(&notifications).Error; err != nil {
 		return nil, err
 	}
@@ -27,8 +27,8 @@ func GetNotificationsByUserID(userID uint) ([]models.Notification, error) {
 }
 
 // GetUnreadNotificationsByUserID retrieves all unread notifications for a user
-func GetUnreadNotificationsByUserID(userID uint) ([]models.Notification, error) {
-	var notifications []models.Notification
+func GetUnreadNotificationsByUserID(userID uint) ([]models.NotificationModel, error) {
+	var notifications []models.NotificationModel
 	if err := constants.DB.Where("user_id = ? AND is_read = ?", userID, false).Find(&notifications).Error; err != nil {
 		return nil, err
 	}
@@ -39,7 +39,7 @@ func GetUnreadNotificationsByUserID(userID uint) ([]models.Notification, error) 
 // MarkNotificationAsRead updates the read status of a notification
 func MarkNotificationAsRead(notificationID uint) error {
 	tx := constants.DB.Begin()
-	if err := tx.Model(&models.Notification{}).Where("id = ?", notificationID).Update("is_read", true).Error; err != nil {
+	if err := tx.Model(&models.NotificationModel{}).Where("id = ?", notificationID).Update("is_read", true).Error; err != nil {
 		tx.Rollback()
 		return err
 	}

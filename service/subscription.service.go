@@ -13,7 +13,7 @@ import (
 	"github.com/stripe/stripe-go/v79/subscription"
 )
 
-func CreateSubscription(subscription *models.Subscription) error {
+func CreateSubscription(subscription *models.SubscriptionModel) error {
 	tx := constants.DB.Begin()
 	if err := tx.Create(&subscription).Error; err != nil {
 		tx.Rollback()
@@ -23,15 +23,15 @@ func CreateSubscription(subscription *models.Subscription) error {
 	return tx.Commit().Error
 }
 
-func UpdateSubscription(subscription *models.Subscription) error {
+func UpdateSubscription(subscription *models.SubscriptionModel) error {
 	tx := constants.DB.Begin()
 	if err := tx.Save(&subscription).Error; err != nil {
 		tx.Rollback()
 		return err
 	}
 
-	user := &models.User{}
-	if err := tx.Model(&models.User{}).Where("id = ?", subscription.UserID).First(user).Error; err != nil {
+	user := &models.UserModel{}
+	if err := tx.Model(&models.UserModel{}).Where("id = ?", subscription.UserID).First(user).Error; err != nil {
 		tx.Rollback()
 		return err
 	}
@@ -109,7 +109,7 @@ func HandleCheckoutSessionCompleted(checkoutSession *stripe.CheckoutSession) err
 	}
 
 	// Create a new subscription record
-	newSubscription := &models.Subscription{
+	newSubscription := &models.SubscriptionModel{
 		StripeSubscriptionID: sub.ID,
 		StripePriceID:        plan.ID,
 		StripeCustomerID:     checkoutSession.Customer.ID,
@@ -130,7 +130,7 @@ func HandleCheckoutSessionCompleted(checkoutSession *stripe.CheckoutSession) err
 		return fmt.Errorf("error creating subscription: %v", err)
 	}
 
-	notification := &models.Notification{
+	notification := &models.NotificationModel{
 		Type:    models.NotificationSubscription,
 		UserID:  user.ID,
 		Message: fmt.Sprintf("You have successfully subscribed to the %s plan.", prod.Name),
@@ -146,8 +146,8 @@ func HandleCheckoutSessionCompleted(checkoutSession *stripe.CheckoutSession) err
 }
 
 // GetActiveSubscriptionForUser retrieves the active subscription for a user.
-func GetActiveSubscriptionForUser(userID uint) (*models.Subscription, error) {
-	var subscription models.Subscription
+func GetActiveSubscriptionForUser(userID uint) (*models.SubscriptionModel, error) {
+	var subscription models.SubscriptionModel
 
 	err := constants.DB.Where("user_id = ? AND status = ?", userID, "active").
 		First(&subscription).Attrs(&subscription).Error
@@ -160,7 +160,7 @@ func GetActiveSubscriptionForUser(userID uint) (*models.Subscription, error) {
 }
 
 // CancelExistingSubscription cancels the current active subscription before creating a new one.
-func CancelExistingSubscription(userSubscription *models.Subscription) error {
+func CancelExistingSubscription(userSubscription *models.SubscriptionModel) error {
 	if userSubscription.StripeSubscriptionID == "" {
 		return fmt.Errorf("invalid subscription ID")
 	}
@@ -175,7 +175,7 @@ func CancelExistingSubscription(userSubscription *models.Subscription) error {
 	userSubscription.Status = "canceled"
 	userSubscription.CancelAtPeriodEnd = true
 
-	notification := &models.Notification{
+	notification := &models.NotificationModel{
 		Type:    models.NotificationSubscription,
 		UserID:  userSubscription.UserID,
 		Message: "Your current subscription has been canceled.",
@@ -237,7 +237,7 @@ func HandleSubscriptionUpdated(sub *stripe.Subscription) error {
 	return nil
 }
 
-func retryUntilSubscriptionExists(subID string, maxAttempts int, delay time.Duration) (*models.Subscription, error) {
+func retryUntilSubscriptionExists(subID string, maxAttempts int, delay time.Duration) (*models.SubscriptionModel, error) {
 	for i := 0; i < maxAttempts; i++ {
 		subscription, err := GetSubscriptionByStripeSubscriptionID(subID)
 		if err == nil && subscription.ID != 0 {
