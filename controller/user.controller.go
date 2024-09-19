@@ -68,7 +68,7 @@ func discordAuthCallbackHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func createCheckoutSessionHandler(w http.ResponseWriter, r *http.Request) {
-	user := r.Context().Value("user").(models.User)
+	user := r.Context().Value("user").(models.UserModel)
 	if user.ID == 0 {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
@@ -108,7 +108,7 @@ func createCheckoutSessionHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func cancelSubscriptionHandler(w http.ResponseWriter, r *http.Request) {
-	user := r.Context().Value("user").(models.User)
+	user := r.Context().Value("user").(models.UserModel)
 	if user.ID == 0 {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
@@ -137,7 +137,7 @@ func cancelSubscriptionHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func getCurrentUserHandler(w http.ResponseWriter, r *http.Request) {
-	user, ok := r.Context().Value("user").(models.User)
+	user, ok := r.Context().Value("user").(models.UserModel)
 	if !ok {
 		helper.RespondWithError(w, http.StatusUnauthorized, "User not found in context")
 		return
@@ -166,7 +166,7 @@ func getCurrentUserHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func logoutHandler(w http.ResponseWriter, r *http.Request) {
-	user := r.Context().Value("user").(models.User)
+	user := r.Context().Value("user").(models.UserModel)
 	if user.ID == 0 {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return

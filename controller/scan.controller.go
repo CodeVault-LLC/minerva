@@ -16,12 +16,14 @@ func ScanRouter(router *mux.Router) {
 	router.HandleFunc("/scan/{scanID}", GetScan).Methods("GET")
 	router.HandleFunc("/scan/{scanID}/findings", GetScanFindings).Methods("GET")
 	router.HandleFunc("/scan/{scanID}/contents", GetScanContents).Methods("GET")
+	router.HandleFunc("/scan/{scanID}/network", GetScanNetwork).Methods("GET")
 	router.HandleFunc("/scans", GetScans).Methods("GET")
+	router.HandleFunc("/scans/statistics", getUserStatisticsHandler).Methods("GET")
 	router.HandleFunc("/scan", CreateScan).Methods("POST")
 }
 
 func CreateScan(w http.ResponseWriter, r *http.Request) {
-	user := r.Context().Value("user").(models.User)
+	user := r.Context().Value("user").(models.UserModel)
 
 	if !service.CanPerformScan(user.Subscriptions, user.Scans) {
 		helper.RespondWithError(w, http.StatusForbidden, "Subscription limit reached")
@@ -98,4 +100,70 @@ func GetScanContents(w http.ResponseWriter, r *http.Request) {
 	}
 
 	helper.RespondWithJSON(w, 200, contents)
+}
+
+func GetScanNetwork(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	scanID := vars["scanID"]
+
+	network, err := service.GetScanNetwork(scanID)
+	if err != nil {
+		helper.RespondWithError(w, 500, "Failed to get scan network")
+		return
+	}
+
+	helper.RespondWithJSON(w, 200, network)
+}
+
+type UserStatisticsResponse struct {
+	TotalScans          int64 `json:"totalScans"`
+	TotalDomainsScanned int64 `json:"totalDomainsScanned"`
+	LastScansIn24Hours  int64 `json:"lastScansIn24Hours"`
+
+	MostScannedDomains []models.ScanAPIResponse `json:"mostScannedWebsites"`
+}
+
+func getUserStatisticsHandler(w http.ResponseWriter, r *http.Request) {
+	user := r.Context().Value("user").(models.UserModel)
+	if user.ID == 0 {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	totalScans, err := service.GetTotalScans()
+	if err != nil {
+		helper.RespondWithError(w, http.StatusInternalServerError, "Failed to get total scans")
+		return
+	}
+
+	totalDomainsScanned, err := service.GetTotalDomainsScanned()
+	if err != nil {
+		helper.RespondWithError(w, http.StatusInternalServerError, "Failed to get total domains scanned")
+		return
+	}
+
+	lastScansIn24Hours, err := service.GetRecentScans()
+	if err != nil {
+		helper.RespondWithError(w, http.StatusInternalServerError, "Failed to get last scans in 24 hours")
+		return
+	}
+
+	mostScannedDomains, err := service.GetMostScannedDomains()
+	if err != nil {
+		helper.RespondWithError(w, http.StatusInternalServerError, "Failed to get most scanned domains")
+		return
+	}
+
+	statistics := UserStatisticsResponse{
+		TotalScans:          totalScans,
+		TotalDomainsScanned: totalDomainsScanned,
+		LastScansIn24Hours:  lastScansIn24Hours,
+
+		MostScannedDomains: models.ConvertScans(mostScannedDomains),
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(statistics); err != nil {
+		helper.RespondWithError(w, http.StatusInternalServerError, "Failed to encode statistics response")
+	}
 }

@@ -6,11 +6,11 @@ import (
 	"gorm.io/gorm"
 )
 
-type List struct {
+type ListModel struct {
 	gorm.Model
 
 	ScanID uint
-	Scan   Scan
+	Scan   ScanModel
 
 	ListID string // match towards the listID in the config
 }
@@ -24,7 +24,7 @@ type ListResponse struct {
 	URL         string   `json:"url"`
 }
 
-func ConvertList(list List) ListResponse {
+func ConvertList(list ListModel) ListResponse {
 	var configList *types.List
 	for _, l := range config.ConfigLists {
 		if l.ListID == list.ListID {
@@ -42,7 +42,7 @@ func ConvertList(list List) ListResponse {
 	}
 }
 
-func ConvertLists(lists []List) []ListResponse {
+func ConvertLists(lists []ListModel) []ListResponse {
 	var listResponses []ListResponse
 
 	for _, list := range lists {

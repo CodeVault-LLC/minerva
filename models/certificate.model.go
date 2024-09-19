@@ -9,11 +9,11 @@ import (
 	"gorm.io/gorm"
 )
 
-type Certificate struct {
+type CertificateModel struct {
 	gorm.Model
 
-	ScanID uint
-	Scan   Scan
+	NetworkId uint
+	Network   *NetworkModel
 
 	Subject string `gorm:"not null"`
 	Issuer  string `gorm:"not null"`
@@ -51,7 +51,7 @@ type Certificate struct {
 }
 
 // Custom methods to handle PublicKey marshaling/unmarshaling
-func (c *Certificate) BeforeSave(tx *gorm.DB) (err error) {
+func (c *CertificateModel) BeforeSave(tx *gorm.DB) (err error) {
 	if c.PublicKey != "" {
 		encodedPublicKey, err := json.Marshal(c.PublicKey)
 		if err != nil {
@@ -62,7 +62,7 @@ func (c *Certificate) BeforeSave(tx *gorm.DB) (err error) {
 	return nil
 }
 
-func (c *Certificate) AfterFind(tx *gorm.DB) (err error) {
+func (c *CertificateModel) AfterFind(tx *gorm.DB) (err error) {
 	if len(c.PublicKey) > 0 {
 		err = json.Unmarshal([]byte(c.PublicKey), &c.PublicKey)
 		if err != nil {
@@ -85,7 +85,7 @@ type CertificateResponse struct {
 	PublicKeyAlgorithm string `json:"public_key_algorithm"`
 }
 
-func ConvertCertificate(certificate Certificate) CertificateResponse {
+func ConvertCertificate(certificate CertificateModel) CertificateResponse {
 	return CertificateResponse{
 		ID:                 certificate.ID,
 		Issuer:             certificate.Issuer,
@@ -97,7 +97,7 @@ func ConvertCertificate(certificate Certificate) CertificateResponse {
 	}
 }
 
-func ConvertCertificates(certificates []Certificate) []CertificateResponse {
+func ConvertCertificates(certificates []CertificateModel) []CertificateResponse {
 	var certificateResponses []CertificateResponse
 
 	for _, certificate := range certificates {

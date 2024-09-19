@@ -66,7 +66,7 @@ func UserAuthMiddleware(next http.Handler) http.Handler {
 			r = r.WithContext(helper.AddUserToContext(r.Context(), user))
 			next.ServeHTTP(w, r)
 		} else {
-			user, ok := constants.SessionManager.Get(r.Context(), "user").(models.User)
+			user, ok := constants.SessionManager.Get(r.Context(), "user").(models.UserModel)
 			if !ok || user.ID == 0 {
 				log.Println("Unauthorized")
 				helper.RespondWithError(w, 401, "Unauthorized")

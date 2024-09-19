@@ -6,7 +6,7 @@ import (
 	"gorm.io/gorm"
 )
 
-type Subscription struct {
+type SubscriptionModel struct {
 	gorm.Model
 
 	StripeSubscriptionID string `gorm:"unique;not null"`
@@ -14,7 +14,7 @@ type Subscription struct {
 	StripeCustomerID     string `gorm:"not null"`
 
 	UserID uint
-	User   User
+	User   UserModel
 
 	PlanType           string  `gorm:"not null"`
 	PlanName           string  `gorm:"not null"`
@@ -26,7 +26,7 @@ type Subscription struct {
 	CurrentPeriodEnd   time.Time
 	CancelAtPeriodEnd  bool
 
-	History []History `gorm:"foreignKey:SubscriptionID"`
+	History []HistoryModel `gorm:"foreignKey:SubscriptionID"`
 }
 
 type SubscriptionResponse struct {
@@ -41,7 +41,7 @@ type SubscriptionResponse struct {
 	CancelAtPeriodEnd  bool      `json:"cancel_at_period_end"`
 }
 
-func ConvertSubscription(subscription Subscription) SubscriptionResponse {
+func ConvertSubscription(subscription SubscriptionModel) SubscriptionResponse {
 	return SubscriptionResponse{
 		ID:                 subscription.ID,
 		PlanName:           subscription.PlanName,

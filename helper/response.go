@@ -27,6 +27,6 @@ func DecodeJSON(body io.ReadCloser, v interface{}) {
 	decoder.Decode(v)
 }
 
-func AddUserToContext(ctx context.Context, user models.User) context.Context {
+func AddUserToContext(ctx context.Context, user models.UserModel) context.Context {
 	return context.WithValue(ctx, "user", user)
 }

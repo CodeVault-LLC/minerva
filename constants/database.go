@@ -19,7 +19,7 @@ func InitDB(DATABASE_URL string) {
 
 	registerGlobalCallbacks(db)
 
-	db.AutoMigrate(&models.User{}, &models.Notification{}, &models.Subscription{}, &models.Scan{}, &models.Network{}, &models.Finding{}, &models.Certificate{}, &models.History{}, &models.UserToken{}, &models.Content{}, &models.List{})
+	db.AutoMigrate(&models.UserModel{}, &models.NotificationModel{}, &models.SubscriptionModel{}, &models.ScanModel{}, &models.WhoisModel{}, &models.NetworkModel{}, &models.FindingModel{}, &models.CertificateModel{}, &models.HistoryModel{}, &models.UserTokenModel{}, &models.ContentModel{}, &models.ListModel{})
 	DB = db
 
 	fmt.Println("Connected to PostgreSQL")

@@ -16,7 +16,7 @@ const (
 	MethodEmail TwoFAMethod = "email" // e.g., email-based OTP
 )
 
-type User struct {
+type UserModel struct {
 	gorm.Model
 
 	DiscordId string `gorm:"unique;not null"`
@@ -37,10 +37,10 @@ type User struct {
 	TwoFASecret  string      `gorm:"not null"`      // Secret key for 2FA
 	TwoFAMethod  TwoFAMethod `gorm:"default:'app'"` // 2FA method, app-based or email-based
 
-	History       []History      `gorm:"foreignKey:UserID"`
-	Subscriptions []Subscription `gorm:"foreignKey:UserID"`
-	Scans         []Scan         `gorm:"foreignKey:UserID"`
-	Notifications []Notification `gorm:"foreignKey:UserID"`
+	History       []HistoryModel      `gorm:"foreignKey:UserID"`
+	Subscriptions []SubscriptionModel `gorm:"foreignKey:UserID"`
+	Scans         []ScanModel         `gorm:"foreignKey:UserID"`
+	Notifications []NotificationModel `gorm:"foreignKey:UserID"`
 }
 
 type UserResponse struct {
@@ -67,7 +67,7 @@ type UserMinimalResponse struct {
 	Email    string `json:"email"`
 }
 
-func ConvertUser(user User) UserResponse {
+func ConvertUser(user UserModel) UserResponse {
 	return UserResponse{
 		ID:        user.ID,
 		Username:  user.Username,
@@ -79,7 +79,7 @@ func ConvertUser(user User) UserResponse {
 	}
 }
 
-func ConvertUserMinimal(user User) UserMinimalResponse {
+func ConvertUserMinimal(user UserModel) UserMinimalResponse {
 	return UserMinimalResponse{
 		ID:       user.ID,
 		Username: user.Username,

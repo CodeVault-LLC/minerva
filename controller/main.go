@@ -14,7 +14,7 @@ import (
 )
 
 func Start() {
-	gob.Register(models.User{})
+	gob.Register(models.UserModel{})
 	router := mux.NewRouter()
 
 	router.Use(middleware.UserAuthMiddleware)

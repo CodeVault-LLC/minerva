@@ -12,7 +12,7 @@ const (
 	ScanStatusFailed   ScanStatus = "failed"
 )
 
-type Scan struct {
+type ScanModel struct {
 	gorm.Model
 
 	WebsiteUrl  string     `gorm:"not null"`
@@ -24,13 +24,13 @@ type Scan struct {
 	MD5    string `gorm:"not null"`
 
 	UserID uint
-	User   User
+	User   UserModel
 
-	Detail       Network       `gorm:"foreignKey:ScanID"`
-	Lists        []List        `gorm:"foreignKey:ScanID"`
-	Findings     []Finding     `gorm:"foreignKey:ScanID"`
-	Contents     []Content     `gorm:"foreignKey:ScanID"`
-	Certificates []Certificate `gorm:"foreignKey:ScanID"`
+	Network NetworkModel `gorm:"foreignKey:ScanID"`
+
+	Lists        []ListModel        `gorm:"foreignKey:ScanID"`
+	Findings     []FindingModel     `gorm:"foreignKey:ScanID"`
+	Contents     []ContentModel     `gorm:"foreignKey:ScanID"`
 }
 
 type ScanRequest struct {
@@ -55,16 +55,14 @@ type ScanAPIResponse struct {
 	SHA1   string `json:"sha1"`
 	MD5    string `json:"md5"`
 
-	Network      NetworkResponse       `json:"detail"`
 	Findings     int64                 `json:"findings"`
-	Certificates []CertificateResponse `json:"certificates"`
 	Lists        []ListResponse        `json:"lists"`
 
 	CreatedAt string `json:"created_at"`
 	UpdatedAt string `json:"updated_at"`
 }
 
-func ConvertScan(scan Scan) ScanAPIResponse {
+func ConvertScan(scan ScanModel) ScanAPIResponse {
 	return ScanAPIResponse{
 		ID:       scan.ID,
 		Findings: int64(len(scan.Findings)),
@@ -76,15 +74,13 @@ func ConvertScan(scan Scan) ScanAPIResponse {
 		SHA1:        scan.SHA1,
 		MD5:         scan.MD5,
 
-		Certificates: ConvertCertificates(scan.Certificates),
-		Network:      ConvertNetwork(scan.Detail),
 		Lists:        ConvertLists(scan.Lists),
 		CreatedAt:    scan.CreatedAt.Format("2006-01-02 15:04:05"),
 		UpdatedAt:    scan.UpdatedAt.Format("2006-01-02 15:04:05"),
 	}
 }
 
-func ConvertScans(scans []Scan) []ScanAPIResponse {
+func ConvertScans(scans []ScanModel) []ScanAPIResponse {
 	var scanResponses []ScanAPIResponse
 
 	for _, scan := range scans {

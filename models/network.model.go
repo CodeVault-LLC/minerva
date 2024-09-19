@@ -5,11 +5,11 @@ import (
 	"gorm.io/gorm"
 )
 
-type Network struct {
+type NetworkModel struct {
 	gorm.Model
 
 	ScanID uint
-	Scan   *Scan
+	Scan   *ScanModel
 
 	// Detail fields
 	IPAddresses pq.StringArray `gorm:"type:text[]"` // PostgreSQL array
@@ -22,6 +22,10 @@ type Network struct {
 
 	// HTTP fields
 	HTTPHeaders pq.StringArray `gorm:"type:text[]"` // PostgreSQL array
+
+	// Relationships
+	Whois        WhoisModel         `gorm:"foreignKey:ScanID"`
+	Certificates []CertificateModel `gorm:"foreignKey:ScanID"`
 }
 
 type NetworkResponse struct {
@@ -37,7 +41,7 @@ type NetworkResponse struct {
 	HTTPHeaders []string `json:"http_headers"`
 }
 
-func ConvertNetwork(network Network) NetworkResponse {
+func ConvertNetwork(network NetworkModel) NetworkResponse {
 	return NetworkResponse{
 		ID:           network.ID,
 		IPAddresses:  network.IPAddresses,

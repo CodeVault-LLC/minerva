@@ -2,13 +2,13 @@ package models
 
 import "gorm.io/gorm"
 
-type UserToken struct {
+type UserTokenModel struct {
 	gorm.Model
 
 	Token string
 
 	UserID uint
-	User   User
+	User   UserModel
 }
 
 type UserTokenResponse struct {

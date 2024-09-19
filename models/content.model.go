@@ -2,11 +2,11 @@ package models
 
 import "gorm.io/gorm"
 
-type Content struct {
+type ContentModel struct {
 	gorm.Model
 
 	ScanID uint
-	Scan   Scan
+	Scan   ScanModel
 
 	Name string `gorm:"not null"`
 
@@ -20,7 +20,7 @@ type ContentResponse struct {
 	Content string `json:"content"`
 }
 
-func ConvertContents(content []Content) []ContentResponse {
+func ConvertContents(content []ContentModel) []ContentResponse {
 	var contentResponses []ContentResponse
 
 	for _, c := range content {
@@ -35,7 +35,7 @@ func ConvertContents(content []Content) []ContentResponse {
 	return contentResponses
 }
 
-func ConvertContent(content Content) ContentResponse {
+func ConvertContent(content ContentModel) ContentResponse {
 	return ContentResponse{
 		ID:      content.ID,
 		ScanID:  content.ScanID,

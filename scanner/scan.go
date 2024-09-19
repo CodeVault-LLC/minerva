@@ -3,6 +3,7 @@ package scanner
 import (
 	"crypto/x509"
 	"fmt"
+	"net/http"
 
 	"github.com/codevault-llc/humblebrag-api/models"
 	"github.com/codevault-llc/humblebrag-api/parsers"
@@ -10,11 +11,13 @@ import (
 	"github.com/codevault-llc/humblebrag-api/scanner/http_req"
 	"github.com/codevault-llc/humblebrag-api/scanner/network"
 	"github.com/codevault-llc/humblebrag-api/scanner/secrets"
+	"github.com/codevault-llc/humblebrag-api/scanner/security"
 	"github.com/codevault-llc/humblebrag-api/scanner/websites"
 	"github.com/codevault-llc/humblebrag-api/service"
 	"github.com/codevault-llc/humblebrag-api/types"
 	"github.com/codevault-llc/humblebrag-api/updater"
 	"github.com/codevault-llc/humblebrag-api/utils"
+	whoisparser "github.com/likexian/whois-parser"
 )
 
 type WebsiteScan struct {
@@ -26,19 +29,30 @@ type WebsiteScan struct {
 	Secrets      []utils.RegexReturn
 	GetDNSScan   network.DNSResults
 	FoundLists   []types.List
+	WhoisRecord  whoisparser.WhoisInfo
 }
 
 type NetworkScan struct {
 	IPAddresses []string
 	IPRanges    []string
 	GetDNSScan  network.DNSResults
+	WhoisRecord whoisparser.WhoisInfo
 }
 
-func ScanWebsite(url string, userId uint) (models.Scan, error) {
+type SecurityScan struct {
+	corsIssues      []string
+	headerScan      security.ScanSecurityHead
+	protocolSupport []string
+}
+
+func ScanWebsite(url string, userId uint) (models.ScanModel, error) {
 	website, _ := websites.ScanWebsite(url)
 	httpResponse, _ := http_req.GetHTTPResponse(url)
 	certificates, _ := certificate.GetCertificateWebsite(url, 443)
 	secretsFound := secrets.ScanSecrets(website.Scripts)
+
+	addr := fmt.Sprintf("%s:%d", utils.ConvertURLToDomain(url), 443)
+	go scanSecurity(addr, httpResponse.Headers)
 
 	foundLists := updater.CompareValues(utils.ConvertURLToDomain(url), parsers.Domain)
 	networkScan := scanNetwork(url)
@@ -58,31 +72,51 @@ func ScanWebsite(url string, userId uint) (models.Scan, error) {
 		Secrets:      secretsFound,
 		GetDNSScan:   networkScan.GetDNSScan,
 		FoundLists:   foundLists,
+		WhoisRecord:  networkScan.WhoisRecord,
 	}
 
 	scan, err := saveScan(websiteScan, userId)
 	if err != nil {
-		return models.Scan{}, err
+		return models.ScanModel{}, err
 	}
 
 	return scan, nil
 }
 
+func scanSecurity(addr string, headers http.Header) SecurityScan {
+	corsIssues := security.ScanCors(headers)
+	headerScan := security.ScanSecurityHeaders(headers)
+	protocolSupport, err := security.ScanProtocolSupport(addr)
+
+	fmt.Println("Protocol Support", protocolSupport)
+
+	if err != nil {
+		fmt.Println("Failed to scan protocol support", err)
+	}
+
+	return SecurityScan{
+		corsIssues:      corsIssues,
+		headerScan:      headerScan,
+		protocolSupport: protocolSupport,
+	}
+}
+
 func scanNetwork(url string) NetworkScan {
 	ipAddresses, _ := network.ScanIP(url)
 	ipRanges, _ := network.ScanIPRange(url)
-
 	dnsResults, _ := network.GetDNSScan(url)
+	whoisRecord, _ := network.ScanWhois(utils.ConvertURLToDomain(url))
 
 	return NetworkScan{
 		IPAddresses: ipAddresses,
 		IPRanges:    ipRanges,
 		GetDNSScan:  dnsResults,
+		WhoisRecord: whoisRecord,
 	}
 }
 
-func saveScan(scan WebsiteScan, userId uint) (models.Scan, error) {
-	scanModel := models.Scan{
+func saveScan(scan WebsiteScan, userId uint) (models.ScanModel, error) {
+	scanModel := models.ScanModel{
 		WebsiteUrl:  scan.Website.WebsiteUrl,
 		WebsiteName: scan.Website.WebsiteName,
 
@@ -99,7 +133,7 @@ func saveScan(scan WebsiteScan, userId uint) (models.Scan, error) {
 	scanResponse, err := service.CreateScan(scanModel)
 	if err != nil {
 		fmt.Println("Failed to create scan", err)
-		return models.Scan{}, err
+		return models.ScanModel{}, err
 	}
 
 	// Create Certificates
@@ -107,7 +141,7 @@ func saveScan(scan WebsiteScan, userId uint) (models.Scan, error) {
 		err := service.CreateCertificate(scanResponse.ID, *certificate)
 		if err != nil {
 			fmt.Println("Failed to create certificate", err)
-			return models.Scan{}, err
+			return models.ScanModel{}, err
 		}
 	}
 
@@ -116,7 +150,7 @@ func saveScan(scan WebsiteScan, userId uint) (models.Scan, error) {
 
 	// Create Contents
 	for _, script := range scan.Website.Scripts {
-		content := models.Content{
+		content := models.ContentModel{
 			ScanID:  scanResponse.ID,
 			Name:    script.Src,
 			Content: script.Content,
@@ -124,14 +158,12 @@ func saveScan(scan WebsiteScan, userId uint) (models.Scan, error) {
 
 		_, err := service.CreateContent(content)
 		if err != nil {
-			return models.Scan{}, err
+			return models.ScanModel{}, err
 		}
 	}
 
-	fmt.Println("Scan Lists", scan.FoundLists)
-
-	// Create Details
-	detail := models.Network{
+	// Create Networks
+	network := models.NetworkModel{
 		ScanID:       scanResponse.ID,
 		IPAddresses:  scan.IPAddresses,
 		HTTPHeaders:  scan.HTTPHeaders,
@@ -141,20 +173,57 @@ func saveScan(scan WebsiteScan, userId uint) (models.Scan, error) {
 		ExcludedDNS:  scan.GetDNSScan.Excluded,
 	}
 
-	_, err = service.CreateNetwork(detail)
+	// Create Whois
+	whois := models.WhoisModel{
+		ScanID: scanResponse.ID,
+		Status: scan.WhoisRecord.Domain.Status[0],
+
+		DomainName: scan.WhoisRecord.Domain.Name,
+		Registrar:  scan.WhoisRecord.Registrar.Name,
+		Email:      scan.WhoisRecord.Registrant.Email,
+		Phone:      scan.WhoisRecord.Registrant.Phone,
+		NameServer: scan.WhoisRecord.Domain.NameServers,
+
+		RegistrantName:       scan.WhoisRecord.Registrant.Name,
+		RegistrantCity:       scan.WhoisRecord.Registrant.City,
+		RegistrantPostalCode: scan.WhoisRecord.Registrant.PostalCode,
+		RegistrantCountry:    scan.WhoisRecord.Registrant.Country,
+		RegistrantEmail:      scan.WhoisRecord.Registrant.Email,
+		RegistrantPhone:      scan.WhoisRecord.Registrant.Phone,
+		RegistrantOrg:        scan.WhoisRecord.Registrant.Organization,
+
+		AdminName:       scan.WhoisRecord.Administrative.Name,
+		AdminEmail:      scan.WhoisRecord.Administrative.Email,
+		AdminPhone:      scan.WhoisRecord.Administrative.Phone,
+		AdminOrg:        scan.WhoisRecord.Administrative.Organization,
+		AdminCity:       scan.WhoisRecord.Administrative.City,
+		AdminPostalCode: scan.WhoisRecord.Administrative.PostalCode,
+		AdminCountry:    scan.WhoisRecord.Administrative.Country,
+
+		Updated: scan.WhoisRecord.Domain.UpdatedDate,
+		Created: scan.WhoisRecord.Domain.CreatedDate,
+		Expires: scan.WhoisRecord.Domain.ExpirationDate,
+	}
+
+	_, err = service.CreateWhois(whois)
 	if err != nil {
-		return models.Scan{}, err
+		return models.ScanModel{}, err
+	}
+
+	_, err = service.CreateNetwork(network)
+	if err != nil {
+		return models.ScanModel{}, err
 	}
 
 	for _, list := range scan.FoundLists {
-		listModel := models.List{
+		listModel := models.ListModel{
 			ScanID: scanResponse.ID,
 			ListID: list.ListID,
 		}
 
 		_, err := service.CreateList(listModel)
 		if err != nil {
-			return models.Scan{}, err
+			return models.ScanModel{}, err
 		}
 	}
 

@@ -10,7 +10,7 @@ const (
 	NotificationSubscription NotificationType = "subscription"
 )
 
-type Notification struct {
+type NotificationModel struct {
 	gorm.Model
 	UserID         uint             `gorm:"not null"`      // Reference to the user
 	Type           NotificationType `gorm:"not null"`      // Type of notification (e.g., security, subscription)
@@ -28,7 +28,7 @@ type NotificationResponse struct {
 	CreatedAt string           `json:"created_at"`
 }
 
-func ConvertNotifications(notifications []Notification) []NotificationResponse {
+func ConvertNotifications(notifications []NotificationModel) []NotificationResponse {
 	var notificationResponses []NotificationResponse
 
 	for _, notification := range notifications {
@@ -45,7 +45,7 @@ func ConvertNotifications(notifications []Notification) []NotificationResponse {
 	return notificationResponses
 }
 
-func ConvertNotification(notification Notification) NotificationResponse {
+func ConvertNotification(notification NotificationModel) NotificationResponse {
 	return NotificationResponse{
 		ID:        notification.ID,
 		UserID:    notification.UserID,

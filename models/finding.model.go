@@ -2,11 +2,11 @@ package models
 
 import "gorm.io/gorm"
 
-type Finding struct {
+type FindingModel struct {
 	gorm.Model
 
 	ScanID uint
-	Scan   Scan
+	Scan   ScanModel
 
 	RegexName        string `gorm:"not null"`
 	RegexDescription string `gorm:"not null"`
@@ -36,7 +36,7 @@ type FindingResponse struct {
 	UpdatedAt string `json:"updated_at"`
 }
 
-func ConvertFindings(findings []Finding) []FindingResponse {
+func ConvertFindings(findings []FindingModel) []FindingResponse {
 	var findingResponses []FindingResponse
 
 	for _, finding := range findings {

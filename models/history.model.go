@@ -2,18 +2,18 @@ package models
 
 import "gorm.io/gorm"
 
-type History struct {
+type HistoryModel struct {
 	gorm.Model
 
 	UserID uint
-	User User
+	User   UserModel
 
 	SubscriptionID uint
-	Subscription Subscription
+	Subscription   SubscriptionModel
 }
 
 type HistoryResponse struct {
-	ID uint `json:"id"`
-	UserID uint `json:"user_id"`
+	ID             uint `json:"id"`
+	UserID         uint `json:"user_id"`
 	SubscriptionID uint `json:"subscription_id"`
 }
