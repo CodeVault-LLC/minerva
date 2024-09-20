@@ -16,8 +16,9 @@ func CreateScan(scan models.ScanModel) (models.ScanModel, error) {
 	return scan, nil
 }
 
+// Make this function update the scan information. Now we are just updating some fields of the scan, meaning some can be empty.
 func UpdateScan(scan models.ScanModel) (models.ScanModel, error) {
-	if err := database.DB.Save(&scan).Error; err != nil {
+	if err := database.DB.Model(&models.ScanModel{}).Where("id = ?", scan.ID).Updates(scan).Error; err != nil {
 		return scan, err
 	}
 

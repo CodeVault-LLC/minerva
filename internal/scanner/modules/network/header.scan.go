@@ -1,4 +1,4 @@
-package http_req
+package network
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ type HTTPResponse struct {
 	Headers    http.Header
 }
 
-func GetHTTPResponse(url string) (HTTPResponse, error) {
+func getHeaders(url string) (HTTPResponse, error) {
 	resp, err := http.Head(url)
 	if err != nil {
 		fmt.Println("Error scanning HTTP headers", err)

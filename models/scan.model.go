@@ -10,6 +10,7 @@ const (
 	ScanStatusArchived ScanStatus = "archived"
 	ScanStatusComplete ScanStatus = "complete"
 	ScanStatusFailed   ScanStatus = "failed"
+	ScanStatusPending  ScanStatus = "pending"
 )
 
 type ScanModel struct {

@@ -1,15 +1,16 @@
-package secrets
+package finding
 
 import (
 	"sync"
 
 	"github.com/codevault-llc/humblebrag-api/config"
+	"github.com/codevault-llc/humblebrag-api/internal/service"
 	"github.com/codevault-llc/humblebrag-api/models"
 	"github.com/codevault-llc/humblebrag-api/pkg/utils"
 	"github.com/codevault-llc/humblebrag-api/types"
 )
 
-func ScanSecrets(scripts []models.ScriptRequest) []utils.RegexReturn {
+func scanSecrets(scripts []models.ScriptRequest) []utils.RegexReturn {
 	var results []utils.RegexReturn
 
 	var wg sync.WaitGroup
@@ -43,4 +44,10 @@ func ScanSecrets(scripts []models.ScriptRequest) []utils.RegexReturn {
 
 	wg.Wait()
 	return results
+}
+
+func FindingModule(scanId uint, scripts []models.ScriptRequest) {
+	findings := scanSecrets(scripts)
+
+	service.CreateFindings(scanId, findings)
 }

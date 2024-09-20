@@ -57,3 +57,10 @@ func ConvertURLToDomain(inputURL string) string {
 
 	return u.Hostname()
 }
+
+func SafeString(s string) string {
+	if s == "" {
+		return "N/A" // or any default value
+	}
+	return s
+}

@@ -135,3 +135,17 @@ func TestConvertURLToDomain(t *testing.T) {
 		t.Errorf("Expected '%s', got '%s'", expectedDomain, domain)
 	}
 }
+
+func TestSafeString(t *testing.T) {
+	s := "hello"
+	safe := SafeString(s)
+	if safe != s {
+		t.Errorf("Expected '%s', got '%s'", s, safe)
+	}
+
+	s = ""
+	safe = SafeString(s)
+	if safe != "N/A" {
+		t.Errorf("Expected 'N/A', got '%s'", safe)
+	}
+}
