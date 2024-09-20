@@ -1,6 +1,6 @@
 package types
 
-import "github.com/codevault-llc/humblebrag-api/parsers"
+import "github.com/codevault-llc/humblebrag-api/pkg/parsers"
 
 type List struct {
 	Description string

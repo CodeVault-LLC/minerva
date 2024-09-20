@@ -1,8 +1,8 @@
 package rules
 
 import (
+	"github.com/codevault-llc/humblebrag-api/pkg/utils"
 	"github.com/codevault-llc/humblebrag-api/types"
-	"github.com/codevault-llc/humblebrag-api/utils"
 )
 
 func KrakenAccessToken() *types.Rule {

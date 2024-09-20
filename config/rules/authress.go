@@ -3,8 +3,8 @@ package rules
 import (
 	"fmt"
 
+	"github.com/codevault-llc/humblebrag-api/pkg/utils"
 	"github.com/codevault-llc/humblebrag-api/types"
-	"github.com/codevault-llc/humblebrag-api/utils"
 )
 
 func Authress() *types.Rule {

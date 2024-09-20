@@ -3,7 +3,7 @@ package lists
 import (
 	"strings"
 
-	"github.com/codevault-llc/humblebrag-api/parsers"
+	"github.com/codevault-llc/humblebrag-api/pkg/parsers"
 )
 
 /*

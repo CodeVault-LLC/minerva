@@ -5,7 +5,7 @@ import (
 
 	"github.com/codevault-llc/humblebrag-api/config/lists"
 	"github.com/codevault-llc/humblebrag-api/config/rules"
-	"github.com/codevault-llc/humblebrag-api/parsers"
+	"github.com/codevault-llc/humblebrag-api/pkg/parsers"
 	"github.com/codevault-llc/humblebrag-api/types"
 	regexp "github.com/wasilibs/go-re2"
 )
