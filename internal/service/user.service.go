@@ -167,7 +167,11 @@ const (
 	ScanStatusComplete = "complete"
 )
 
-func CanPerformScan(subscriptions []models.SubscriptionModel, scans []models.ScanModel) bool {
+func CanPerformScan(user models.UserModel, scans []models.ScanModel) bool {
+	if user.Role == models.RoleAdmin {
+		return true
+	}
+
 	now := time.Now()
 	startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 
@@ -183,9 +187,9 @@ func CanPerformScan(subscriptions []models.SubscriptionModel, scans []models.Sca
 
 	// Check if user has an active subscription
 	hasActiveSubscription := false
-	if len(subscriptions) > 0 {
+	if len(user.Subscriptions) > 0 {
 		// Assuming the first subscription is the latest one
-		latestSubscription := subscriptions[0]
+		latestSubscription := user.Subscriptions[0]
 		hasActiveSubscription = latestSubscription.Status == SubscriptionActive
 	}
 

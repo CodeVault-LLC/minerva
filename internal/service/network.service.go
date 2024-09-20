@@ -19,10 +19,19 @@ func GetScanNetwork(scanID string) (models.NetworkResponse, error) {
 	var network models.NetworkModel
 
 	if err := database.DB.Where("scan_id = ?", scanID).
-		Find(&network).
-		Error; err != nil {
-		return models.ConvertNetwork(network), err
+		Preload("Certificates").
+		Preload("Whois").
+		First(&network).Error; err != nil {
+		return models.NetworkResponse{}, err
 	}
 
 	return models.ConvertNetwork(network), nil
+}
+
+func UpdateNetwork(network models.NetworkModel) (models.NetworkModel, error) {
+	if err := database.DB.Save(&network).Error; err != nil {
+		return network, err
+	}
+
+	return network, nil
 }

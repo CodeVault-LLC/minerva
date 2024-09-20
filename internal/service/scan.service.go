@@ -16,6 +16,14 @@ func CreateScan(scan models.ScanModel) (models.ScanModel, error) {
 	return scan, nil
 }
 
+func UpdateScan(scan models.ScanModel) (models.ScanModel, error) {
+	if err := database.DB.Save(&scan).Error; err != nil {
+		return scan, err
+	}
+
+	return scan, nil
+}
+
 func GetScans() ([]models.ScanAPIResponse, error) {
 	var scans []models.ScanModel
 
@@ -29,7 +37,7 @@ func GetScans() ([]models.ScanAPIResponse, error) {
 func GetScan(scanID string) (models.ScanAPIResponse, error) {
 	var scan models.ScanModel
 
-	if err := database.DB.Where("id = ?", scanID).Preload("Findings").Preload("Lists").Preload("Certificates").Where("status = ?", models.ScanStatusComplete).First(&scan).Error; err != nil {
+	if err := database.DB.Where("id = ?", scanID).Preload("Findings").Preload("Lists").Where("status = ?", models.ScanStatusComplete).First(&scan).Error; err != nil {
 		return models.ConvertScan(scan), err
 	}
 

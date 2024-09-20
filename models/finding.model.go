@@ -57,3 +57,13 @@ func ConvertFindings(findings []FindingModel) []FindingResponse {
 
 	return findingResponses
 }
+
+func FindFinding(findings []FindingModel, finding FindingModel) bool {
+	for _, f := range findings {
+		if f.Line == finding.Line && f.Match == finding.Match && f.Source == finding.Source {
+			return true
+		}
+	}
+
+	return false
+}

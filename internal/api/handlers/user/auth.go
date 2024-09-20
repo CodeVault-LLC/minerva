@@ -45,7 +45,7 @@ func discordAuthCallbackHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userToken, err := helper.GenerateJWT(user)
+	userToken, err := helper.GenerateJWT(user.ID)
 	if err != nil {
 		helper.RespondWithError(w, http.StatusInternalServerError, "Failed to generate JWT")
 		return

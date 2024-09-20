@@ -24,8 +24,8 @@ type NetworkModel struct {
 	HTTPHeaders pq.StringArray `gorm:"type:text[]"` // PostgreSQL array
 
 	// Relationships
-	Whois        WhoisModel         `gorm:"foreignKey:ScanID"`
-	Certificates []CertificateModel `gorm:"foreignKey:ScanID"`
+	Whois        WhoisModel         `gorm:"foreignKey:NetworkId"`
+	Certificates []CertificateModel `gorm:"foreignKey:NetworkId"` // Separate foreign key for certificates
 }
 
 type NetworkResponse struct {
@@ -39,9 +39,18 @@ type NetworkResponse struct {
 	ExcludedDNS  []string `json:"excluded_dns"`
 
 	HTTPHeaders []string `json:"http_headers"`
+
+	Certificates []CertificateResponse `json:"certificates"`
+	Whois        WhoisResponse         `json:"whois"`
 }
 
 func ConvertNetwork(network NetworkModel) NetworkResponse {
+	convertedCertificates := make([]CertificateResponse, len(network.Certificates))
+
+	for i, cert := range network.Certificates {
+		convertedCertificates[i] = ConvertCertificate(cert)
+	}
+
 	return NetworkResponse{
 		ID:           network.ID,
 		IPAddresses:  network.IPAddresses,
@@ -50,5 +59,8 @@ func ConvertNetwork(network NetworkModel) NetworkResponse {
 		PermittedDNS: network.PermittedDNS,
 		ExcludedDNS:  network.ExcludedDNS,
 		HTTPHeaders:  network.HTTPHeaders,
+
+		Certificates: convertedCertificates,
+		Whois:        ConvertWhois(network.Whois),
 	}
 }

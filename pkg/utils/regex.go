@@ -21,8 +21,6 @@ func GenericScan(rule types.Rule, script Script) []Match {
 	}
 
 	var result RegexReturn
-	result.Name = rule.RuleID
-	result.Description = rule.Description
 	result.Matches = make([]Match, 0)
 
 	matches := re.FindAllIndex([]byte(script.Content), -1)

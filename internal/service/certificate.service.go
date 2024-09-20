@@ -52,3 +52,11 @@ func CreateCertificate(networkId uint, cert x509.Certificate) error {
 	database.DB.Create(&certificate)
 	return nil
 }
+
+func DeleteCertificates(networkId uint) error {
+	if err := database.DB.Where("network_id = ?", networkId).Delete(&models.CertificateModel{}).Error; err != nil {
+		return err
+	}
+
+	return nil
+}

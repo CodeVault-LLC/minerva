@@ -26,3 +26,11 @@ func GetScanContent(scanID string) ([]models.ContentResponse, error) {
 
 	return models.ConvertContents(content), nil
 }
+
+func DeleteContents(scanID uint) error {
+	if err := database.DB.Where("scan_id = ?", scanID).Delete(&models.ContentModel{}).Error; err != nil {
+		return err
+	}
+
+	return nil
+}

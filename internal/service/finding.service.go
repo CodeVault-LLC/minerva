@@ -25,6 +25,31 @@ func CreateFindings(scanID uint, secrets []utils.RegexReturn) {
 	}
 }
 
+// UpdateFindings	updates findings in the database
+func UpdateFindings(scanID uint, secrets []utils.RegexReturn) {
+	var findings []models.FindingModel
+
+	database.DB.Where("scan_id = ?", scanID).Find(&findings)
+
+	for _, secret := range secrets {
+		for _, match := range secret.Matches {
+			finding := models.FindingModel{
+				ScanID: scanID,
+				Line:   match.Line,
+				Match:  match.Match,
+				Source: match.Source,
+
+				RegexName:        secret.Name,
+				RegexDescription: secret.Description,
+			}
+
+			if !models.FindFinding(findings, finding) {
+				database.DB.Create(&finding)
+			}
+		}
+	}
+}
+
 // GetScanFindings retrieves findings from the database
 func GetScanFindings(scanID string) ([]models.FindingResponse, error) {
 	var findings []models.FindingModel

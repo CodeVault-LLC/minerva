@@ -13,7 +13,7 @@ type CertificateModel struct {
 	gorm.Model
 
 	NetworkId uint
-	Network   *NetworkModel
+	Network   NetworkModel `gorm:"foreignKey:NetworkId"`
 
 	Subject string `gorm:"not null"`
 	Issuer  string `gorm:"not null"`

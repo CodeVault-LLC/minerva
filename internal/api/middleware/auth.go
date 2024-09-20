@@ -12,7 +12,7 @@ import (
 
 func UserAuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if (r.URL.Path == "/stripe" && r.Method == "POST") || (r.URL.Path == "/auth/discord/callback" && r.Method == "GET") || (r.URL.Path == "/auth/discord/callback/extension" && r.Method == "GET") || (r.URL.Path == "/auth/discord/extension" && r.Method == "GET") || (r.URL.Path == "/auth/discord" && r.Method == "GET") {
+		if (r.URL.Path == "/api/stripe" && r.Method == "POST") || (r.URL.Path == "/api/auth/discord/callback" && r.Method == "GET") || (r.URL.Path == "/api/auth/discord" && r.Method == "GET") {
 			next.ServeHTTP(w, r)
 			return
 		}

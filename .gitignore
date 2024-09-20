@@ -24,3 +24,5 @@ go.work.sum
 .env
 /temp
 air.toml
+
+humblebrag-api.log

@@ -11,7 +11,7 @@ import (
 )
 
 func RegisterStatisticsRoutes(api *mux.Router) {
-	api.HandleFunc("/scans/{scanID}/statistics", GetScanStatistics).Methods("GET")
+	api.HandleFunc("/scans/statistics", GetScanStatistics).Methods("GET")
 }
 
 type UserStatisticsResponse struct {

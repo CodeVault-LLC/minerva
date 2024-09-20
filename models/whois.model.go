@@ -9,17 +9,17 @@ type WhoisModel struct {
 	gorm.Model
 
 	NetworkId uint
-	Network   *NetworkModel
+	Network   *NetworkModel `gorm:"foreignKey:NetworkId"`
 
-	DomainName string         `gorm:"not null"`
-	Registrar  string         `gorm:"not null"`
-	Email      string         `gorm:"not null"`
-	Phone      string         `gorm:"not null"`
-	Updated    string         `gorm:"not null"`
-	Created    string         `gorm:"not null"`
-	Expires    string         `gorm:"not null"`
-	Status     string         `gorm:"not null"`
-	NameServer pq.StringArray `gorm:"type:text[]"`
+	DomainName  string         `gorm:"not null"`
+	Registrar   string         `gorm:"not null"`
+	Email       string         `gorm:"not null"`
+	Phone       string         `gorm:"not null"`
+	Updated     string         `gorm:"not null"`
+	Created     string         `gorm:"not null"`
+	Expires     string         `gorm:"not null"`
+	Status      string         `gorm:"not null"`
+	NameServers pq.StringArray `gorm:"type:text[]"`
 
 	RegistrantName       string `gorm:"not null"`
 	RegistrantEmail      string `gorm:"not null"`
@@ -41,15 +41,15 @@ type WhoisModel struct {
 type WhoisResponse struct {
 	ID uint `json:"id"`
 
-	DomainName string `json:"domain_name"`
-	Registrar  string `json:"registrar"`
-	Email      string `json:"email"`
-	Phone      string `json:"phone"`
-	Updated    string `json:"updated"`
-	Created    string `json:"created"`
-	Expires    string `json:"expires"`
-	Status     string `json:"status"`
-	NameServer string `json:"name_server"`
+	DomainName  string   `json:"domain_name"`
+	Registrar   string   `json:"registrar"`
+	Email       string   `json:"email"`
+	Phone       string   `json:"phone"`
+	Updated     string   `json:"updated"`
+	Created     string   `json:"created"`
+	Expires     string   `json:"expires"`
+	Status      string   `json:"status"`
+	NameServers []string `json:"name_servers"`
 
 	RegistrantName       string `json:"registrant_name"`
 	RegistrantEmail      string `json:"registrant_email"`
@@ -71,4 +71,41 @@ type WhoisResponse struct {
 
 	CreatedAt string `json:"created_at"`
 	UpdatedAt string `json:"updated_at"`
+}
+
+func ConvertWhois(whois WhoisModel) WhoisResponse {
+	return WhoisResponse{
+		ID: whois.ID,
+
+		DomainName:  whois.DomainName,
+		Registrar:   whois.Registrar,
+		Email:       whois.Email,
+		Phone:       whois.Phone,
+		Updated:     whois.Updated,
+		Created:     whois.Created,
+		Expires:     whois.Expires,
+		Status:      whois.Status,
+		NameServers: whois.NameServers,
+
+		RegistrantName:       whois.RegistrantName,
+		RegistrantEmail:      whois.RegistrantEmail,
+		RegistrantPhone:      whois.RegistrantPhone,
+		RegistrantOrg:        whois.RegistrantOrg,
+		RegistrantCity:       whois.RegistrantCity,
+		RegistrantState:      whois.RegistrantCountry,
+		RegistrantCountry:    whois.RegistrantCountry,
+		RegistrantPostalCode: whois.RegistrantPostalCode,
+
+		AdminName:       whois.AdminName,
+		AdminEmail:      whois.AdminEmail,
+		AdminPhone:      whois.AdminPhone,
+		AdminOrg:        whois.AdminOrg,
+		AdminCity:       whois.AdminCity,
+		AdminState:      whois.AdminCountry,
+		AdminCountry:    whois.AdminCountry,
+		AdminPostalCode: whois.AdminPostalCode,
+
+		CreatedAt: whois.CreatedAt.Format("2006-01-02 15:04:05"),
+		UpdatedAt: whois.UpdatedAt.Format("2006-01-02 15:04:05"),
+	}
 }

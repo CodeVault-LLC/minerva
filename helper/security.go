@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/codevault-llc/humblebrag-api/models"
 	"github.com/dgrijalva/jwt-go"
 )
 
@@ -15,9 +14,9 @@ func init() {
 	JWT_SECRET = os.Getenv("JWT_SECRET")
 }
 
-func GenerateJWT(user models.UserModel) (string, error) {
+func GenerateJWT(id uint) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"id": user.ID,
+		"id": id,
 	})
 
 	tokenString, err := token.SignedString([]byte(JWT_SECRET))

@@ -8,6 +8,10 @@ import (
 )
 
 var (
+	DiscordConfig = &oauth2.Config{}
+)
+
+func InitDiscordAuth() {
 	DiscordConfig = &oauth2.Config{
 		RedirectURL:  os.Getenv("REDIRECT_URI"),
 		ClientID:     os.Getenv("CLIENT_ID"),
@@ -15,4 +19,4 @@ var (
 		Scopes:       []string{discord.ScopeIdentify, discord.ScopeEmail},
 		Endpoint:     discord.Endpoint,
 	}
-)
+}

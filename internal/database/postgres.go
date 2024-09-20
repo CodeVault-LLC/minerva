@@ -17,7 +17,7 @@ func InitPostgres(dsn string) (*gorm.DB, error) {
 
 	registerGlobalCallbacks(db)
 
-	db.AutoMigrate(&models.UserModel{}, &models.NotificationModel{}, &models.SubscriptionModel{}, &models.ScanModel{}, &models.WhoisModel{}, &models.NetworkModel{}, &models.FindingModel{}, &models.CertificateModel{}, &models.HistoryModel{}, &models.UserTokenModel{}, &models.ContentModel{}, &models.ListModel{})
+	db.AutoMigrate(&models.UserModel{}, &models.NotificationModel{}, &models.SubscriptionModel{}, &models.ScanModel{}, &models.NetworkModel{}, &models.WhoisModel{}, &models.FindingModel{}, &models.CertificateModel{}, &models.HistoryModel{}, &models.UserTokenModel{}, &models.ContentModel{}, &models.ListModel{})
 	DB = db
 
 	return db, nil

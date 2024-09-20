@@ -33,8 +33,8 @@ func SetupRouter(db *gorm.DB) *mux.Router {
 
 	// Scan routes
 	scan.RegisterModulesRoutes(api)
-	scan.RegisterScanRoutes(api)
 	scan.RegisterStatisticsRoutes(api)
+	scan.RegisterScanRoutes(api)
 
 	// Webhook routes
 	webhook.RegisterStripeRoutes(api)

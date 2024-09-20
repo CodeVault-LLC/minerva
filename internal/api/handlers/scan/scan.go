@@ -21,7 +21,7 @@ func RegisterScanRoutes(api *mux.Router) {
 func CreateScan(w http.ResponseWriter, r *http.Request) {
 	user := r.Context().Value("user").(models.UserModel)
 
-	if !service.CanPerformScan(user.Subscriptions, user.Scans) {
+	if !service.CanPerformScan(user, user.Scans) {
 		helper.RespondWithError(w, http.StatusForbidden, "Subscription limit reached")
 		return
 	}

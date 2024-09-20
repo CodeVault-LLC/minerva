@@ -28,9 +28,9 @@ type ScanModel struct {
 
 	Network NetworkModel `gorm:"foreignKey:ScanID"`
 
-	Lists        []ListModel        `gorm:"foreignKey:ScanID"`
-	Findings     []FindingModel     `gorm:"foreignKey:ScanID"`
-	Contents     []ContentModel     `gorm:"foreignKey:ScanID"`
+	Lists    []ListModel    `gorm:"foreignKey:ScanID"`
+	Findings []FindingModel `gorm:"foreignKey:ScanID"`
+	Contents []ContentModel `gorm:"foreignKey:ScanID"`
 }
 
 type ScanRequest struct {
@@ -55,8 +55,8 @@ type ScanAPIResponse struct {
 	SHA1   string `json:"sha1"`
 	MD5    string `json:"md5"`
 
-	Findings     int64                 `json:"findings"`
-	Lists        []ListResponse        `json:"lists"`
+	Findings int64          `json:"findings"`
+	Lists    []ListResponse `json:"lists"`
 
 	CreatedAt string `json:"created_at"`
 	UpdatedAt string `json:"updated_at"`
@@ -74,9 +74,9 @@ func ConvertScan(scan ScanModel) ScanAPIResponse {
 		SHA1:        scan.SHA1,
 		MD5:         scan.MD5,
 
-		Lists:        ConvertLists(scan.Lists),
-		CreatedAt:    scan.CreatedAt.Format("2006-01-02 15:04:05"),
-		UpdatedAt:    scan.UpdatedAt.Format("2006-01-02 15:04:05"),
+		Lists:     ConvertLists(scan.Lists),
+		CreatedAt: scan.CreatedAt.Format("2006-01-02 15:04:05"),
+		UpdatedAt: scan.UpdatedAt.Format("2006-01-02 15:04:05"),
 	}
 }
 
