@@ -27,7 +27,7 @@ func main() {
 	err = godotenv.Load()
 
 	if err != nil {
-		log.Error("Error loading .env file", err)
+		log.Error("Error loading .env file %v", err)
 	}
 
 	parseUrl := os.Getenv("DATABASE_URL")
@@ -37,18 +37,18 @@ func main() {
 
 	postgres, err := database.InitPostgres(parseUrl)
 	if err != nil {
-		log.Error("Error connecting to database", err)
+		log.Error("Error connecting to database %v", err)
 	}
 	log.Info("Postgres connected")
 
 	redis, err := database.InitRedis()
 	if err != nil {
-		log.Error("Error connecting to redis", err)
+		log.Error("Error connecting to redis %v", err)
 	}
 	log.Info("Redis connected")
 
 	cache := cache.InitSessionManager()
 
-	go updater.StartAutoUpdate(3 * time.Second)
+	go updater.StartAutoUpdate(20 * time.Minute)
 	api.Start(postgres, redis, cache)
 }

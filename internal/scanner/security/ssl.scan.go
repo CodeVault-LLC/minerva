@@ -8,7 +8,6 @@ import (
 )
 
 var tlsVersions = map[uint16]string{
-	tls.VersionSSL30: "SSL 3.0 (Insecure)",
 	tls.VersionTLS10: "TLS 1.0 (Insecure)",
 	tls.VersionTLS11: "TLS 1.1 (Insecure)",
 	tls.VersionTLS12: "TLS 1.2 (Secure)",

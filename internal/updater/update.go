@@ -3,7 +3,7 @@ package updater
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"sync"
@@ -55,7 +55,7 @@ func StartAutoUpdate(interval time.Duration) {
 	// Start worker goroutines
 	for i := 0; i < updateWorkers; i++ {
 		wg.Add(1)
-		//go updateWorker(updateChan, &wg) // Uncomment this line
+		go updateWorker(updateChan, &wg) // Uncomment this line
 	}
 
 	// Initial update
@@ -117,7 +117,7 @@ func fetchAndParseList(list *types.List) ([]parsers.Item, error) {
 		return nil, fmt.Errorf("failed to fetch list: %w", err)
 	}
 	defer resp.Body.Close()
-	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response body: %w", err)
 	}

@@ -1,8 +1,6 @@
 package scanner
 
 import (
-	"fmt"
-	"net/http"
 	"sync"
 
 	"github.com/codevault-llc/humblebrag-api/internal/scanner/modules/content"
@@ -105,13 +103,4 @@ func runBackgroundModules(scanId uint, url string, requestedWebsite *html.Node) 
 			logger.Log.Info("Successfully updated scan status to 'Complete' for scan ID: %d", scanId)
 		}
 	}()
-}
-
-// Helper function to format HTTP headers
-func formatHTTPHeaders(headers http.Header) []string {
-	httpHeaders := make([]string, 0)
-	for key, value := range headers {
-		httpHeaders = append(httpHeaders, fmt.Sprintf("%s: %s", key, value))
-	}
-	return httpHeaders
 }

@@ -7,6 +7,7 @@ import (
 
 	"github.com/codevault-llc/humblebrag-api/internal/service"
 	"github.com/codevault-llc/humblebrag-api/models"
+	"github.com/codevault-llc/humblebrag-api/pkg/logger"
 	"github.com/codevault-llc/humblebrag-api/pkg/utils"
 	"github.com/gorilla/mux"
 )
@@ -52,5 +53,10 @@ func createCheckoutSessionHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	json.NewEncoder(w).Encode(map[string]string{"id": session.ID})
+	err = json.NewEncoder(w).Encode(map[string]string{"id": session.ID})
+	if err != nil {
+		logger.Log.Error("Failed to encode response: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
 }

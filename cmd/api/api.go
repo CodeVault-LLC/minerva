@@ -25,5 +25,8 @@ func Start(db *gorm.DB, redis *redis.Client, cache *scs.SessionManager) {
 	handler := c.Handler(api)
 
 	fmt.Println("Server started on port 3000")
-	http.ListenAndServe(":3000", cache.LoadAndSave(handler))
+	err := http.ListenAndServe(":3000", cache.LoadAndSave(handler))
+	if err != nil {
+		panic(err)
+	}
 }

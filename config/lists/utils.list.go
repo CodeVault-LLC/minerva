@@ -2,7 +2,6 @@ package lists
 
 import (
 	"net"
-	"strings"
 )
 
 // Check if the IP is a localhost or reserved domain
@@ -20,6 +19,7 @@ func isLocalhost(s string) bool {
 	return false
 }
 
+/*
 // Check if the IP is in private ranges (RFC 1918)
 func isPrivateIP(ip string) bool {
 	parsedIP := net.ParseIP(ip)
@@ -85,3 +85,4 @@ func isPublicIP(ip string) bool {
 func isIPv6(ip string) bool {
 	return strings.Contains(ip, ":")
 }
+*/

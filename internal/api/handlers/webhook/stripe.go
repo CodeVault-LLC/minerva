@@ -2,7 +2,7 @@ package webhook
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -22,7 +22,7 @@ func stripeWebhook(w http.ResponseWriter, r *http.Request) {
 	const MaxBodyBytes = int64(65536)
 	r.Body = http.MaxBytesReader(w, r.Body, MaxBodyBytes)
 
-	payload, err := ioutil.ReadAll(r.Body)
+	payload, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Printf("Error reading request body: %v", err)
 		helper.RespondWithError(w, http.StatusServiceUnavailable, "Error reading request body")

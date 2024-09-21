@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/codevault-llc/humblebrag-api/models"
+	"github.com/codevault-llc/humblebrag-api/pkg/logger"
 )
 
 func RespondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
@@ -15,7 +16,10 @@ func RespondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
-	w.Write(response)
+	_, err := w.Write(response)
+	if err != nil {
+		logger.Log.Error("Failed to write response: %v", err)
+	}
 }
 
 func RespondWithError(w http.ResponseWriter, code int, message string) {
@@ -24,7 +28,10 @@ func RespondWithError(w http.ResponseWriter, code int, message string) {
 
 func DecodeJSON(body io.ReadCloser, v interface{}) {
 	decoder := json.NewDecoder(body)
-	decoder.Decode(v)
+	err := decoder.Decode(v)
+	if err != nil {
+		logger.Log.Error("Failed to decode JSON: %v", err)
+	}
 }
 
 func AddUserToContext(ctx context.Context, user models.UserModel) context.Context {
