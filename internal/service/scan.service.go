@@ -28,7 +28,7 @@ func UpdateScan(scan models.ScanModel) (models.ScanModel, error) {
 func GetScans() ([]models.ScanAPIResponse, error) {
 	var scans []models.ScanModel
 
-	if err := database.DB.Preload("Findings").Where("status = ?", models.ScanStatusComplete).Order("created_at desc").Find(&scans).Error; err != nil {
+	if err := database.DB.Preload("Findings").Where("status IN (?, ?)", models.ScanStatusComplete, models.ScanStatusPending).Order("created_at desc").Find(&scans).Error; err != nil {
 		return models.ConvertScans(scans), err
 	}
 
@@ -38,7 +38,7 @@ func GetScans() ([]models.ScanAPIResponse, error) {
 func GetScan(scanID string) (models.ScanAPIResponse, error) {
 	var scan models.ScanModel
 
-	if err := database.DB.Where("id = ?", scanID).Preload("Findings").Preload("Lists").Where("status = ?", models.ScanStatusComplete).First(&scan).Error; err != nil {
+	if err := database.DB.Where("id = ?", scanID).Preload("Findings").Preload("Lists").Where("status IN (?, ?)", models.ScanStatusComplete, models.ScanStatusPending).First(&scan).Error; err != nil {
 		return models.ConvertScan(scan), err
 	}
 

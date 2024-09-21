@@ -46,7 +46,7 @@ func CreateScan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	helper.RespondWithJSON(w, http.StatusOK, scanResponse)
+	helper.RespondWithJSON(w, http.StatusOK, models.ConvertScan(scanResponse))
 }
 
 func GetScans(w http.ResponseWriter, r *http.Request) {

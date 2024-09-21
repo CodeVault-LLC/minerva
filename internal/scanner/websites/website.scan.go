@@ -9,40 +9,61 @@ import (
 	"golang.org/x/net/html"
 )
 
-func ScanWebsite(url string) (models.ScanResponse, error) {
-	client := &http.Client{}
+type RequestWebsiteResponse struct {
+	Response      *http.Response
+	ParsedBody    *html.Node
+	RedirectChain []string
+}
+
+func RequestWebsite(url string, userAgent string) (*RequestWebsiteResponse, error) {
+	var redirectChain []string
+
+	// Custom HTTP client with a redirect policy
+	client := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			// Append each redirected URL to the chain
+			redirectChain = append(redirectChain, req.URL.String())
+			return nil
+		},
+	}
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return models.ScanResponse{}, err
+		return &RequestWebsiteResponse{}, err
 	}
 
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36")
+	req.Header.Set("User-Agent", userAgent)
+	req.Header.Set("Accept-Language", "en-US")
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return models.ScanResponse{}, err
+		return &RequestWebsiteResponse{}, err
 	}
-	defer resp.Body.Close()
 
-	if resp.StatusCode != 200 {
-		return models.ScanResponse{}, err
-	}
+	// Add the final URL in the redirect chain
+	redirectChain = append(redirectChain, resp.Request.URL.String())
 
 	responseData, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return models.ScanResponse{}, err
+		return &RequestWebsiteResponse{}, err
 	}
 
 	resp.Body = io.NopCloser(strings.NewReader(string(responseData)))
 
 	doc, err := html.Parse(resp.Body)
 	if err != nil {
-		return models.ScanResponse{}, err
+		return &RequestWebsiteResponse{}, err
 	}
 
+	return &RequestWebsiteResponse{
+		Response:      resp,
+		ParsedBody:    doc,
+		RedirectChain: redirectChain, // Save the redirect chain
+	}, nil
+}
+
+func AnalyzeWebsite(resp *RequestWebsiteResponse) (models.ScanResponse, error) {
 	var websiteName string = "Unknown"
-	var extractedScripts []models.ScriptRequest
 
 	// Function to traverse and extract data
 	var f func(*html.Node)
@@ -52,31 +73,6 @@ func ScanWebsite(url string) (models.ScanResponse, error) {
 			websiteName = n.FirstChild.Data
 		}
 
-		// Extract script tags
-		if n.Type == html.ElementNode && n.Data == "script" {
-			for _, a := range n.Attr {
-				if a.Key == "src" {
-					// Handle external scripts
-					scriptContent, err := downloadExternalScript(a.Val)
-					if err != nil {
-						return
-					}
-					extractedScripts = append(extractedScripts, models.ScriptRequest{
-						Src:     a.Val,
-						Content: scriptContent,
-					})
-				}
-			}
-
-			// Handle inline scripts
-			if n.FirstChild != nil && n.FirstChild.Type == html.TextNode {
-				extractedScripts = append(extractedScripts, models.ScriptRequest{
-					Src:     "inline-script",
-					Content: n.FirstChild.Data,
-				})
-			}
-		}
-
 		// Recursively traverse children
 		for c := n.FirstChild; c != nil; c = c.NextSibling {
 			f(c)
@@ -84,40 +80,11 @@ func ScanWebsite(url string) (models.ScanResponse, error) {
 	}
 
 	// Start traversing from the root document
-	f(doc)
+	f(resp.ParsedBody)
 
 	return models.ScanResponse{
 		WebsiteName: websiteName,
-		Scripts:     extractedScripts,
-		WebsiteUrl:  url,
+		WebsiteUrl:  resp.Response.Request.URL.Hostname(),
+		StatusCode:  resp.Response.StatusCode,
 	}, nil
-}
-
-func downloadExternalScript(url string) (string, error) {
-	client := &http.Client{}
-
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return "", err
-	}
-
-	// Set config
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36")
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		return "", err
-	}
-
-	responseData, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
-
-	return string(responseData), nil
 }
