@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 var JWT_SECRET string
