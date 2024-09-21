@@ -1,0 +1,11 @@
+issues:
+  exclude-dirs:
+    - config
+  exclude-files:
+    - "config/*"
+
+  # Ignore issue SA1029
+  exclude-rules:
+    - path: helper/response.go
+      linters:
+        - staticcheck
