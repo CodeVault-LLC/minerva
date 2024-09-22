@@ -30,12 +30,15 @@ func main() {
 		log.Error("Error loading .env file %v", err)
 	}
 
-	parseUrl := os.Getenv("DATABASE_URL")
+	postgresUser := os.Getenv("POSTGRES_USER")
+	postgresPassword := os.Getenv("POSTGRES_PASSWORD")
+	postgresDb := os.Getenv("POSTGRES_DB")
+
 	stripeKey := os.Getenv("STRIPE_SECRET")
 	stripe.Key = stripeKey
 	config.InitDiscordAuth()
 
-	postgres, err := database.InitPostgres(parseUrl)
+	postgres, err := database.InitPostgres(fmt.Sprintf("postgres://%s:%s@localhost:5434/%s?sslmode=disable", postgresUser, postgresPassword, postgresDb))
 	if err != nil {
 		log.Error("Error connecting to database %v", err)
 	}

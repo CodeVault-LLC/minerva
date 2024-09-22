@@ -16,6 +16,15 @@ func RegisterProfileRoutes(router *mux.Router) {
 	router.HandleFunc("/users/logout", logoutHandler).Methods("POST")
 }
 
+// @Summary Get current user
+// @Description Get the current user
+// @Tags users
+// @Accept json
+// @Produce json
+// @Success 200 {object} models.UserResponse
+// @Failure 400 {object} types.Error
+// @Failure 404 {object} types.Error
+// @Router /users/me [get]
 func getCurrentUserHandler(w http.ResponseWriter, r *http.Request) {
 	user, ok := r.Context().Value("user").(models.UserModel)
 	if !ok {

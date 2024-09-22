@@ -9,9 +9,9 @@ services:
     image: postgres:alpine
     container_name: humblebrag-db
     environment:
-      POSTGRES_DB: humblebrag
-      POSTGRES_USER: codevaultllc
-      POSTGRES_PASSWORD: 7c7ebd9a50c3ba4ae73e0c21b87c02f0267d23eb439bf55968472af46b3f8c5ca0f31cc6664d864e6df6d829c9c04c31693af43294e37c2e23c62c9dc469f815
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     expose:
       - "5434"
     ports:
@@ -29,11 +29,66 @@ services:
     volumes:
       - cache-data:/data
 
-  app:
-    build: .
-    container_name: humblebrag-api
+  keygen-setup:
+    image: keygen/api
+    container_name: humblebrag-keygen-setup
+    env_file:
+      - .env
+    environment:
+      KEYGEN_MODE: "singleplayer"
+      KEYGEN_ACCOUNT_ID: ${KEYGEN_ACCOUNT_ID}
+      KEYGEN_HOST: ${KEYGEN_HOST}
+
+      DATABASE_URL: postgres://$POSTGRES_USER:$POSTGRES_PASSWORD@db:5434/$POSTGRES_DB
+      REDIS_URL: redis://cache:6379
+
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE}
+      ENCRYPTION_DETERMINISTIC_KEY: ${ENCRYPTION_DETERMINISTIC_KEY}
+      ENCRYPTION_PRIMARY_KEY: ${ENCRYPTION_PRIMARY_KEY}
+      ENCRYPTION_KEY_DERIVATION_SALT: ${ENCRYPTION_KEY_DERIVATION_SALT}
+
+      KEYGEN_ADMIN_EMAIL: ${KEYGEN_ADMIN_EMAIL}
+      KEYGEN_ADMIN_PASSWORD: ${KEYGEN_ADMIN_PASSWORD}
+      DISABLE_DATABASE_ENVIRONMENT_CHECK: 1
+    ports:
+      - "8080:8080"
+    expose:
+      - "8080"
     depends_on:
       - db
       - cache
-    ports:
-      - "3000:3000"
+    command: setup
+
+  keygen-web:
+      image: keygen/api
+      container_name: humblebrag-keygen-setup
+      env_file:
+        - .env
+      environment:
+        KEYGEN_MODE: "singleplayer"
+        KEYGEN_ACCOUNT_ID: ${KEYGEN_ACCOUNT_ID}
+        KEYGEN_HOST: ${KEYGEN_HOST}
+
+        DATABASE_URL: postgres://$POSTGRES_USER:$POSTGRES_PASSWORD@db:5434/$POSTGRES_DB
+        REDIS_URL: redis://cache:6379
+
+        SECRET_KEY_BASE: ${SECRET_KEY_BASE}
+        ENCRYPTION_DETERMINISTIC_KEY: ${ENCRYPTION_DETERMINISTIC_KEY}
+        ENCRYPTION_PRIMARY_KEY: ${ENCRYPTION_PRIMARY_KEY}
+        ENCRYPTION_KEY_DERIVATION_SALT: ${ENCRYPTION_KEY_DERIVATION_SALT}
+
+        KEYGEN_ADMIN_EMAIL: ${KEYGEN_ADMIN_EMAIL}
+        KEYGEN_ADMIN_PASSWORD: ${KEYGEN_ADMIN_PASSWORD}
+        DISABLE_DATABASE_ENVIRONMENT_CHECK: 1
+      ports:
+        - "3000:3000"
+      expose:
+        - "8080"
+      depends_on:
+        - db
+        - cache
+      command: web
+
+networks:
+  web_network:
+    name: web_network

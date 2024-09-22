@@ -1,0 +1,132 @@
+basePath: /api/v1
+definitions:
+  models.NotificationResponse:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: integer
+      is_read:
+        type: boolean
+      message:
+        type: string
+      type:
+        $ref: '#/definitions/models.NotificationType'
+      user_id:
+        type: integer
+    type: object
+  models.NotificationType:
+    enum:
+    - general
+    - security
+    - subscription
+    type: string
+    x-enum-varnames:
+    - NotificationGeneral
+    - NotificationSecurity
+    - NotificationSubscription
+  models.RoleEnum:
+    enum:
+    - admin
+    - user
+    type: string
+    x-enum-varnames:
+    - RoleAdmin
+    - RoleUser
+  models.SubscriptionResponse:
+    properties:
+      cancel_at_period_end:
+        type: boolean
+      currency:
+        type: string
+      current_period_end:
+        type: string
+      current_period_start:
+        type: string
+      id:
+        type: integer
+      interval:
+        type: string
+      plan_name:
+        type: string
+      price:
+        type: number
+      status:
+        type: string
+    type: object
+  models.UserResponse:
+    properties:
+      avatar:
+        type: string
+      avatar_url:
+        type: string
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: integer
+      is_2fa_enabled:
+        description: Reflect 2FA status
+        type: boolean
+      notifications:
+        items:
+          $ref: '#/definitions/models.NotificationResponse'
+        type: array
+      role:
+        $ref: '#/definitions/models.RoleEnum'
+      subscription:
+        $ref: '#/definitions/models.SubscriptionResponse'
+      updated_at:
+        type: string
+      username:
+        type: string
+    type: object
+  types.Error:
+    properties:
+      code:
+        description: Error Code
+        type: integer
+      message:
+        description: Error Message
+        type: string
+    type: object
+host: localhost:3000
+info:
+  contact:
+    email: support@swagger.io
+    name: Humblebrag LLC Support
+    url: http://www.swagger.io/support
+  description: Humblebrag is a scanner service which detects and reports on the presence
+    of sensitive data in your codebase and infrastructure.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Humblebrag-API
+  version: "1.0"
+paths:
+  /users/me:
+    get:
+      consumes:
+      - application/json
+      description: Get the current user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/types.Error'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/types.Error'
+      summary: Get current user
+      tags:
+      - users
+swagger: "2.0"
