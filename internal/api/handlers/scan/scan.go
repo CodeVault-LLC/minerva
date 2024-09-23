@@ -70,7 +70,10 @@ func GetScansQuery(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(results)
+	err = json.NewEncoder(w).Encode(results)
+	if err != nil {
+		http.Error(w, "Error encoding response: "+err.Error(), http.StatusInternalServerError)
+	}
 }
 
 func GetScans(w http.ResponseWriter, r *http.Request) {
