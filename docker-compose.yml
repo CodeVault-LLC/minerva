@@ -28,12 +28,3 @@ services:
       - "6379:6379" # Changed from 6389:6389 to 6379:6379
     volumes:
       - cache-data:/data
-
-  app:
-    build: .
-    container_name: humblebrag-api
-    depends_on:
-      - db
-      - cache
-    ports:
-      - "3000:3000"

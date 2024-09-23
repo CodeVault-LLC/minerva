@@ -18,7 +18,7 @@ func InitPostgres(dsn string) (*gorm.DB, error) {
 
 	registerGlobalCallbacks(db)
 
-	err = db.AutoMigrate(&models.UserModel{}, &models.NotificationModel{}, &models.SubscriptionModel{}, &models.ScanModel{}, &models.NetworkModel{}, &models.WhoisModel{}, &models.FindingModel{}, &models.CertificateModel{}, &models.HistoryModel{}, &models.UserTokenModel{}, &models.ContentModel{}, &models.ListModel{})
+	err = db.AutoMigrate(&models.UserModel{}, &models.NotificationModel{}, &models.SubscriptionModel{}, &models.ScanModel{}, &models.NetworkModel{}, &models.WhoisModel{}, &models.FindingModel{}, &models.CertificateModel{}, &models.CertificateResultModel{}, &models.HistoryModel{}, &models.UserTokenModel{}, &models.ContentModel{}, &models.ListModel{})
 	if err != nil {
 		logger.Log.Error("Failed to auto migrate models: %v", err)
 		return nil, err

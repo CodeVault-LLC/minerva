@@ -14,6 +14,7 @@ import (
 
 func RegisterScanRoutes(api *mux.Router) {
 	api.HandleFunc("/scans", GetScans).Methods("GET")
+	api.HandleFunc("/scans/query", GetScansQuery).Methods("GET")
 	api.HandleFunc("/scans/{scanID}", GetScan).Methods("GET")
 	api.HandleFunc("/scan", CreateScan).Methods("POST")
 }
@@ -47,6 +48,32 @@ func CreateScan(w http.ResponseWriter, r *http.Request) {
 	}
 
 	helper.RespondWithJSON(w, http.StatusOK, models.ConvertScan(scanResponse))
+}
+
+func GetScansQuery(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query().Get("q")
+	if query == "" {
+		http.Error(w, "Query parameter 'q' is required", http.StatusBadRequest)
+		return
+	}
+
+	parsedQuery, err := utils.ParseQuery(query)
+	if err != nil {
+		http.Error(w, "Invalid query format: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	results, err := service.ExecuteAdvancedQuery(parsedQuery)
+	if err != nil {
+		http.Error(w, "Error executing query: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(results)
+	if err != nil {
+		http.Error(w, "Error encoding response: "+err.Error(), http.StatusInternalServerError)
+	}
 }
 
 func GetScans(w http.ResponseWriter, r *http.Request) {

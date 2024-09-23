@@ -1,9 +1,12 @@
 package service
 
 import (
+	"regexp"
+
 	"github.com/codevault-llc/humblebrag-api/internal/database"
 	"github.com/codevault-llc/humblebrag-api/models"
 	"github.com/codevault-llc/humblebrag-api/pkg/utils"
+	"gorm.io/gorm"
 )
 
 func CreateScan(scan models.ScanModel) (models.ScanModel, error) {
@@ -96,4 +99,70 @@ func GetMostScannedDomains() ([]models.ScanModel, error) {
 	}
 
 	return scans, nil
+}
+
+func ExecuteAdvancedQuery(parsedQuery map[string][]string) (interface{}, error) {
+	query := database.DB.Model(&models.ScanModel{})
+
+	for key, values := range parsedQuery {
+		switch key {
+		case "domain", "websiteurl":
+			query = query.Where("website_url LIKE ?", "%"+values[0]+"%")
+		case "sha256":
+			query = query.Where("sha256 IN ?", values)
+		case "sha1":
+			query = query.Where("sha1 IN ?", values)
+		case "md5":
+			query = query.Where("md5 IN ?", values)
+		case "ip":
+			query = query.Joins("JOIN network_models ON network_models.scan_id = scan_models.id").
+				Where("network_models.ip_address IN ?", values)
+		case "certificate":
+			query = query.Joins("JOIN network_models ON network_models.scan_id = scan_models.id").
+				Where("network_models.certificate_sha256 IN ?", values)
+		case "status":
+			query = query.Where("status IN ?", values)
+		case "before":
+			query = query.Where("created_at < ?", values[0])
+		case "after":
+			query = query.Where("created_at > ?", values[0])
+		case "default":
+			defaultQuery := database.DB.Where("1 = 0") // Start with a false condition
+			for _, value := range values {
+				defaultQuery = defaultQuery.Or(buildDefaultSearch(value))
+			}
+			query = query.Where(defaultQuery)
+		}
+	}
+
+	var results []models.ScanModel
+	if err := query.Preload("Lists").Preload("Findings").Find(&results).Error; err != nil {
+		return nil, err
+	}
+
+	return models.ConvertScans(results), nil
+}
+
+func buildDefaultSearch(term string) *gorm.DB {
+	sha256Regex := regexp.MustCompile(`^[a-fA-F0-9]{64}$`)
+	sha1Regex := regexp.MustCompile(`^[a-fA-F0-9]{40}$`)
+	md5Regex := regexp.MustCompile(`^[a-fA-F0-9]{32}$`)
+
+	switch {
+	case sha256Regex.MatchString(term):
+		return database.DB.Where("sha256 = ?", term)
+	case sha1Regex.MatchString(term):
+		return database.DB.Where("sha1 = ?", term)
+	case md5Regex.MatchString(term):
+		return database.DB.Where("md5 = ?", term)
+	default:
+		// If it's not a hash, search in multiple fields
+		return database.DB.Where(
+			database.DB.Where("website_url LIKE ?", "%"+term+"%").
+				Or("website_name LIKE ?", "%"+term+"%").
+				Or("sha256 LIKE ?", "%"+term+"%").
+				Or("sha1 LIKE ?", "%"+term+"%").
+				Or("md5 LIKE ?", "%"+term+"%"),
+		)
+	}
 }
