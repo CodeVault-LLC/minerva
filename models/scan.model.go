@@ -28,8 +28,8 @@ type ScanModel struct {
 	SHA1   string `gorm:"not null"`
 	MD5    string `gorm:"not null"`
 
-	UserID uint
-	User   UserModel
+	LicenseID uint          `gorm:"not null"`
+	License   *LicenseModel `gorm:"foreignKey:LicenseID"`
 
 	Network NetworkModel `gorm:"foreignKey:ScanID"`
 

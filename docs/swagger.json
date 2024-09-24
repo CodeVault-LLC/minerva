@@ -18,9 +18,9 @@
     "host": "localhost:3000",
     "basePath": "/api/v1",
     "paths": {
-        "/users/me": {
+        "/scans": {
             "get": {
-                "description": "Get the current user",
+                "description": "Get all scans",
                 "consumes": [
                     "application/json"
                 ],
@@ -28,14 +28,270 @@
                     "application/json"
                 ],
                 "tags": [
-                    "users"
+                    "scans"
                 ],
-                "summary": "Get current user",
+                "summary": "Get all scans",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.UserResponse"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.ScanAPIResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/types.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/types.Error"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a new scan",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "scans"
+                ],
+                "summary": "Create a new scan",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.ScanAPIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/types.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/types.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/scans/statistics": {
+            "get": {
+                "description": "Get scan statistics",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "scans"
+                ],
+                "summary": "Get scan statistics",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/scan.UserStatisticsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/types.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/types.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/scans/{scanID}": {
+            "get": {
+                "description": "Get a scan",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "scans"
+                ],
+                "summary": "Get a scan",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Scan ID",
+                        "name": "scanID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.ScanAPIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/types.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/types.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/scans/{scanID}/contents": {
+            "get": {
+                "description": "Get scan contents",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "scans"
+                ],
+                "summary": "Get scan contents",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Scan ID",
+                        "name": "scanID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.ContentResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/types.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/types.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/scans/{scanID}/findings": {
+            "get": {
+                "description": "Get scan findings",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "scans"
+                ],
+                "summary": "Get scan findings",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Scan ID",
+                        "name": "scanID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.FindingResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/types.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/types.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/scans/{scanID}/network": {
+            "get": {
+                "description": "Get scan network",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "scans"
+                ],
+                "summary": "Get scan network",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Scan ID",
+                        "name": "scanID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.NetworkResponse"
+                            }
                         }
                     },
                     "400": {
@@ -55,7 +311,50 @@
         }
     },
     "definitions": {
-        "models.NotificationResponse": {
+        "models.CertificateResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "issuer": {
+                    "type": "string"
+                },
+                "not_after": {
+                    "type": "string"
+                },
+                "not_before": {
+                    "type": "string"
+                },
+                "public_key_algorithm": {
+                    "type": "string"
+                },
+                "signature_algorithm": {
+                    "type": "string"
+                },
+                "subject": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.ContentResponse": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "scan_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.FindingResponse": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -64,115 +363,264 @@
                 "id": {
                     "type": "integer"
                 },
-                "is_read": {
-                    "type": "boolean"
+                "line": {
+                    "type": "integer"
                 },
-                "message": {
+                "match": {
                     "type": "string"
                 },
-                "type": {
-                    "$ref": "#/definitions/models.NotificationType"
+                "regex_description": {
+                    "type": "string"
                 },
-                "user_id": {
+                "regex_name": {
+                    "type": "string"
+                },
+                "scan_id": {
                     "type": "integer"
+                },
+                "source": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
                 }
             }
         },
-        "models.NotificationType": {
-            "type": "string",
-            "enum": [
-                "general",
-                "security",
-                "subscription"
-            ],
-            "x-enum-varnames": [
-                "NotificationGeneral",
-                "NotificationSecurity",
-                "NotificationSubscription"
-            ]
-        },
-        "models.RoleEnum": {
-            "type": "string",
-            "enum": [
-                "admin",
-                "user"
-            ],
-            "x-enum-varnames": [
-                "RoleAdmin",
-                "RoleUser"
-            ]
-        },
-        "models.SubscriptionResponse": {
+        "models.ListResponse": {
             "type": "object",
             "properties": {
-                "cancel_at_period_end": {
-                    "type": "boolean"
+                "categories": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
-                "currency": {
-                    "type": "string"
-                },
-                "current_period_end": {
-                    "type": "string"
-                },
-                "current_period_start": {
+                "description": {
                     "type": "string"
                 },
                 "id": {
                     "type": "integer"
                 },
-                "interval": {
+                "list_id": {
                     "type": "string"
                 },
-                "plan_name": {
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.NetworkResponse": {
+            "type": "object",
+            "properties": {
+                "certificates": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.CertificateResponse"
+                    }
+                },
+                "dns_names": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "excluded_dns": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "http_headers": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "ip_addresses": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "ip_ranges": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "permitted_dns": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "whois": {
+                    "$ref": "#/definitions/models.WhoisResponse"
+                }
+            }
+        },
+        "models.ScanAPIResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
                     "type": "string"
                 },
-                "price": {
-                    "type": "number"
+                "findings": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "lists": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.ListResponse"
+                    }
+                },
+                "md5": {
+                    "type": "string"
+                },
+                "redirect_chain": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "sha1": {
+                    "type": "string"
+                },
+                "sha256": {
+                    "type": "string"
                 },
                 "status": {
                     "type": "string"
+                },
+                "status_code": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "website_name": {
+                    "type": "string"
+                },
+                "website_url": {
+                    "type": "string"
                 }
             }
         },
-        "models.UserResponse": {
+        "models.WhoisResponse": {
             "type": "object",
             "properties": {
-                "avatar": {
+                "admin_city": {
                     "type": "string"
                 },
-                "avatar_url": {
+                "admin_country": {
+                    "type": "string"
+                },
+                "admin_email": {
+                    "type": "string"
+                },
+                "admin_name": {
+                    "type": "string"
+                },
+                "admin_org": {
+                    "type": "string"
+                },
+                "admin_phone": {
+                    "type": "string"
+                },
+                "admin_postal_code": {
+                    "type": "string"
+                },
+                "admin_state": {
+                    "type": "string"
+                },
+                "created": {
                     "type": "string"
                 },
                 "created_at": {
+                    "type": "string"
+                },
+                "domain_name": {
                     "type": "string"
                 },
                 "email": {
                     "type": "string"
                 },
+                "expires": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "integer"
                 },
-                "is_2fa_enabled": {
-                    "description": "Reflect 2FA status",
-                    "type": "boolean"
-                },
-                "notifications": {
+                "name_servers": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/models.NotificationResponse"
+                        "type": "string"
                     }
                 },
-                "role": {
-                    "$ref": "#/definitions/models.RoleEnum"
+                "phone": {
+                    "type": "string"
                 },
-                "subscription": {
-                    "$ref": "#/definitions/models.SubscriptionResponse"
+                "registrant_city": {
+                    "type": "string"
+                },
+                "registrant_country": {
+                    "type": "string"
+                },
+                "registrant_email": {
+                    "type": "string"
+                },
+                "registrant_name": {
+                    "type": "string"
+                },
+                "registrant_org": {
+                    "type": "string"
+                },
+                "registrant_phone": {
+                    "type": "string"
+                },
+                "registrant_postal_code": {
+                    "type": "string"
+                },
+                "registrant_state": {
+                    "type": "string"
+                },
+                "registrar": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "updated": {
+                    "type": "string"
                 },
                 "updated_at": {
                     "type": "string"
+                }
+            }
+        },
+        "scan.UserStatisticsResponse": {
+            "type": "object",
+            "properties": {
+                "lastScansIn24Hours": {
+                    "type": "integer"
                 },
-                "username": {
-                    "type": "string"
+                "mostScannedWebsites": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.ScanAPIResponse"
+                    }
+                },
+                "totalDomainsScanned": {
+                    "type": "integer"
+                },
+                "totalScans": {
+                    "type": "integer"
                 }
             }
         },

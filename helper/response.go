@@ -5,18 +5,28 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"reflect"
 
 	"github.com/codevault-llc/humblebrag-api/models"
 	"github.com/codevault-llc/humblebrag-api/pkg/logger"
 )
 
 func RespondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
-	response, _ := json.Marshal(payload)
+	if payload != nil && reflect.TypeOf(payload).Kind() == reflect.Slice && reflect.ValueOf(payload).Len() == 0 {
+		payload = []interface{}{}
+	}
+
+	response, err := json.Marshal(payload)
+	if err != nil {
+		RespondWithError(w, http.StatusInternalServerError, "Failed to marshal JSON payload")
+		return
+	}
 
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
-	_, err := w.Write(response)
+
+	_, err = w.Write(response)
 	if err != nil {
 		logger.Log.Error("Failed to write response: %v", err)
 	}
@@ -34,6 +44,6 @@ func DecodeJSON(body io.ReadCloser, v interface{}) {
 	}
 }
 
-func AddUserToContext(ctx context.Context, user models.UserModel) context.Context {
-	return context.WithValue(ctx, "user", user)
+func AddLicenseToContext(ctx context.Context, license models.LicenseModel) context.Context {
+	return context.WithValue(ctx, "license", license)
 }

@@ -22,9 +22,18 @@ type UserStatisticsResponse struct {
 	MostScannedDomains []models.ScanAPIResponse `json:"mostScannedWebsites"`
 }
 
+// @Summary Get scan statistics
+// @Description Get scan statistics
+// @Tags scans
+// @Accept json
+// @Produce json
+// @Success 200 {object} UserStatisticsResponse
+// @Failure 400 {object} types.Error
+// @Failure 404 {object} types.Error
+// @Router /scans/statistics [get]
 func GetScanStatistics(w http.ResponseWriter, r *http.Request) {
-	user := r.Context().Value("user").(models.UserModel)
-	if user.ID == 0 {
+	subscription := r.Context().Value("license").(models.LicenseModel)
+	if subscription.ID == 0 {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}

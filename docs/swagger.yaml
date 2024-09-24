@@ -1,86 +1,210 @@
 basePath: /api/v1
 definitions:
-  models.NotificationResponse:
+  models.CertificateResponse:
+    properties:
+      id:
+        type: integer
+      issuer:
+        type: string
+      not_after:
+        type: string
+      not_before:
+        type: string
+      public_key_algorithm:
+        type: string
+      signature_algorithm:
+        type: string
+      subject:
+        type: string
+    type: object
+  models.ContentResponse:
+    properties:
+      content:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      scan_id:
+        type: integer
+    type: object
+  models.FindingResponse:
     properties:
       created_at:
         type: string
       id:
         type: integer
-      is_read:
-        type: boolean
-      message:
-        type: string
-      type:
-        $ref: '#/definitions/models.NotificationType'
-      user_id:
+      line:
         type: integer
+      match:
+        type: string
+      regex_description:
+        type: string
+      regex_name:
+        type: string
+      scan_id:
+        type: integer
+      source:
+        type: string
+      updated_at:
+        type: string
     type: object
-  models.NotificationType:
-    enum:
-    - general
-    - security
-    - subscription
-    type: string
-    x-enum-varnames:
-    - NotificationGeneral
-    - NotificationSecurity
-    - NotificationSubscription
-  models.RoleEnum:
-    enum:
-    - admin
-    - user
-    type: string
-    x-enum-varnames:
-    - RoleAdmin
-    - RoleUser
-  models.SubscriptionResponse:
+  models.ListResponse:
     properties:
-      cancel_at_period_end:
-        type: boolean
-      currency:
-        type: string
-      current_period_end:
-        type: string
-      current_period_start:
+      categories:
+        items:
+          type: string
+        type: array
+      description:
         type: string
       id:
         type: integer
-      interval:
+      list_id:
         type: string
-      plan_name:
+      url:
         type: string
-      price:
-        type: number
+    type: object
+  models.NetworkResponse:
+    properties:
+      certificates:
+        items:
+          $ref: '#/definitions/models.CertificateResponse'
+        type: array
+      dns_names:
+        items:
+          type: string
+        type: array
+      excluded_dns:
+        items:
+          type: string
+        type: array
+      http_headers:
+        items:
+          type: string
+        type: array
+      id:
+        type: integer
+      ip_addresses:
+        items:
+          type: string
+        type: array
+      ip_ranges:
+        items:
+          type: string
+        type: array
+      permitted_dns:
+        items:
+          type: string
+        type: array
+      whois:
+        $ref: '#/definitions/models.WhoisResponse'
+    type: object
+  models.ScanAPIResponse:
+    properties:
+      created_at:
+        type: string
+      findings:
+        type: integer
+      id:
+        type: integer
+      lists:
+        items:
+          $ref: '#/definitions/models.ListResponse'
+        type: array
+      md5:
+        type: string
+      redirect_chain:
+        items:
+          type: string
+        type: array
+      sha1:
+        type: string
+      sha256:
+        type: string
       status:
         type: string
-    type: object
-  models.UserResponse:
-    properties:
-      avatar:
+      status_code:
+        type: integer
+      updated_at:
         type: string
-      avatar_url:
+      website_name:
+        type: string
+      website_url:
+        type: string
+    type: object
+  models.WhoisResponse:
+    properties:
+      admin_city:
+        type: string
+      admin_country:
+        type: string
+      admin_email:
+        type: string
+      admin_name:
+        type: string
+      admin_org:
+        type: string
+      admin_phone:
+        type: string
+      admin_postal_code:
+        type: string
+      admin_state:
+        type: string
+      created:
         type: string
       created_at:
+        type: string
+      domain_name:
         type: string
       email:
         type: string
+      expires:
+        type: string
       id:
         type: integer
-      is_2fa_enabled:
-        description: Reflect 2FA status
-        type: boolean
-      notifications:
+      name_servers:
         items:
-          $ref: '#/definitions/models.NotificationResponse'
+          type: string
         type: array
-      role:
-        $ref: '#/definitions/models.RoleEnum'
-      subscription:
-        $ref: '#/definitions/models.SubscriptionResponse'
+      phone:
+        type: string
+      registrant_city:
+        type: string
+      registrant_country:
+        type: string
+      registrant_email:
+        type: string
+      registrant_name:
+        type: string
+      registrant_org:
+        type: string
+      registrant_phone:
+        type: string
+      registrant_postal_code:
+        type: string
+      registrant_state:
+        type: string
+      registrar:
+        type: string
+      status:
+        type: string
+      updated:
+        type: string
       updated_at:
         type: string
-      username:
-        type: string
+    type: object
+  scan.UserStatisticsResponse:
+    properties:
+      lastScansIn24Hours:
+        type: integer
+      mostScannedWebsites:
+        items:
+          $ref: '#/definitions/models.ScanAPIResponse'
+        type: array
+      totalDomainsScanned:
+        type: integer
+      totalScans:
+        type: integer
     type: object
   types.Error:
     properties:
@@ -106,18 +230,20 @@ info:
   title: Humblebrag-API
   version: "1.0"
 paths:
-  /users/me:
+  /scans:
     get:
       consumes:
       - application/json
-      description: Get the current user
+      description: Get all scans
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.UserResponse'
+            items:
+              $ref: '#/definitions/models.ScanAPIResponse'
+            type: array
         "400":
           description: Bad Request
           schema:
@@ -126,7 +252,174 @@ paths:
           description: Not Found
           schema:
             $ref: '#/definitions/types.Error'
-      summary: Get current user
+      summary: Get all scans
       tags:
-      - users
+      - scans
+    post:
+      consumes:
+      - application/json
+      description: Create a new scan
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.ScanAPIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/types.Error'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/types.Error'
+      summary: Create a new scan
+      tags:
+      - scans
+  /scans/{scanID}:
+    get:
+      consumes:
+      - application/json
+      description: Get a scan
+      parameters:
+      - description: Scan ID
+        in: path
+        name: scanID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.ScanAPIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/types.Error'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/types.Error'
+      summary: Get a scan
+      tags:
+      - scans
+  /scans/{scanID}/contents:
+    get:
+      consumes:
+      - application/json
+      description: Get scan contents
+      parameters:
+      - description: Scan ID
+        in: path
+        name: scanID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.ContentResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/types.Error'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/types.Error'
+      summary: Get scan contents
+      tags:
+      - scans
+  /scans/{scanID}/findings:
+    get:
+      consumes:
+      - application/json
+      description: Get scan findings
+      parameters:
+      - description: Scan ID
+        in: path
+        name: scanID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.FindingResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/types.Error'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/types.Error'
+      summary: Get scan findings
+      tags:
+      - scans
+  /scans/{scanID}/network:
+    get:
+      consumes:
+      - application/json
+      description: Get scan network
+      parameters:
+      - description: Scan ID
+        in: path
+        name: scanID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.NetworkResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/types.Error'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/types.Error'
+      summary: Get scan network
+      tags:
+      - scans
+  /scans/statistics:
+    get:
+      consumes:
+      - application/json
+      description: Get scan statistics
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/scan.UserStatisticsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/types.Error'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/types.Error'
+      summary: Get scan statistics
+      tags:
+      - scans
 swagger: "2.0"

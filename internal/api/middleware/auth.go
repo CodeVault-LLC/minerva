@@ -10,70 +10,42 @@ import (
 	"github.com/codevault-llc/humblebrag-api/models"
 )
 
-func UserAuthMiddleware(next http.Handler) http.Handler {
+func SubscriptionAuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if (r.URL.Path == "/api/stripe" && r.Method == "POST") || (r.URL.Path == "/api/auth/discord/callback" && r.Method == "GET") || (r.URL.Path == "/api/auth/discord" && r.Method == "GET") {
+		if r.URL.Path == "/api/v1/stripe" && r.Method == "POST" {
 			next.ServeHTTP(w, r)
 			return
 		}
 
-		if cache.SessionManager.Get(r.Context(), "user") == nil {
-			token := r.Header.Get("Authorization")
+		if cache.SessionManager.Get(r.Context(), "license") == nil {
+			token := r.Header.Get("license")
 			if token == "" {
-				helper.RespondWithError(w, 401, "Missing token")
+				helper.RespondWithError(w, 401, "Missing license")
 				return
 			}
 
-			token = token[7:]
-
-			claims, err := helper.ValidateJWT(token)
-
+			license, err := service.GetLicenseByLicense(token)
 			if err != nil {
-				helper.RespondWithError(w, 401, "Invalid token")
+				helper.RespondWithError(w, 401, "Invalid license")
 				return
 			}
 
-			userToken, err := service.IsValidUserToken(token)
-			if err != nil {
-				helper.RespondWithError(w, 401, "Invalid token")
+			if license.ID == 0 {
+				helper.RespondWithError(w, 401, "Invalid license")
 				return
 			}
 
-			if userToken.ID == 0 {
-				helper.RespondWithError(w, 401, "Invalid token")
-				return
-			}
-
-			userIDFloat, ok := claims["id"].(float64)
-			if !ok {
-				helper.RespondWithError(w, 401, "Invalid token")
-				return
-			}
-
-			userID := uint(userIDFloat)
-
-			user, err := service.GetUserById(userID)
-			if err != nil {
-				helper.RespondWithError(w, 401, "Invalid token")
-				return
-			}
-
-			if user.ID == 0 {
-				helper.RespondWithError(w, 401, "Invalid token")
-				return
-			}
-
-			r = r.WithContext(helper.AddUserToContext(r.Context(), user))
+			r = r.WithContext(helper.AddLicenseToContext(r.Context(), license))
 			next.ServeHTTP(w, r)
 		} else {
-			user, ok := cache.SessionManager.Get(r.Context(), "user").(models.UserModel)
-			if !ok || user.ID == 0 {
+			license, ok := cache.SessionManager.Get(r.Context(), "license").(models.LicenseModel)
+			if !ok || license.ID == 0 {
 				log.Println("Unauthorized")
 				helper.RespondWithError(w, 401, "Unauthorized")
 				return
 			}
 
-			r = r.WithContext(helper.AddUserToContext(r.Context(), user))
+			r = r.WithContext(helper.AddLicenseToContext(r.Context(), license))
 			next.ServeHTTP(w, r)
 		}
 	})

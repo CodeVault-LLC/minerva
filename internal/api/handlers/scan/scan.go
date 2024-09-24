@@ -18,11 +18,19 @@ func RegisterScanRoutes(api *mux.Router) {
 	api.HandleFunc("/scan", CreateScan).Methods("POST")
 }
 
+// @Summary Create a new scan
+// @Description Create a new scan
+// @Tags scans
+// @Accept json
+// @Produce json
+// @Success 200 {object} models.ScanAPIResponse
+// @Failure 400 {object} types.Error
+// @Failure 404 {object} types.Error
+// @Router /scans [post]
 func CreateScan(w http.ResponseWriter, r *http.Request) {
-	user := r.Context().Value("user").(models.UserModel)
-
-	if !service.CanPerformScan(user, user.Scans) {
-		helper.RespondWithError(w, http.StatusForbidden, "Subscription limit reached")
+	license := r.Context().Value("license").(models.LicenseModel)
+	if license.ID == 0 {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
@@ -40,7 +48,7 @@ func CreateScan(w http.ResponseWriter, r *http.Request) {
 
 	scan.Url = utils.NormalizeURL(scan.Url)
 
-	scanResponse, err := scanner.ScanWebsite(scan.Url, user.ID)
+	scanResponse, err := scanner.ScanWebsite(scan.Url, license.ID)
 	if err != nil {
 		helper.RespondWithError(w, http.StatusInternalServerError, "Failed to scan website")
 		return
@@ -49,6 +57,15 @@ func CreateScan(w http.ResponseWriter, r *http.Request) {
 	helper.RespondWithJSON(w, http.StatusOK, models.ConvertScan(scanResponse))
 }
 
+// @Summary Get all scans
+// @Description Get all scans
+// @Tags scans
+// @Accept json
+// @Produce json
+// @Success 200 {array} models.ScanAPIResponse
+// @Failure 400 {object} types.Error
+// @Failure 404 {object} types.Error
+// @Router /scans [get]
 func GetScans(w http.ResponseWriter, r *http.Request) {
 	scans, err := service.GetScans()
 	if err != nil {
@@ -59,6 +76,16 @@ func GetScans(w http.ResponseWriter, r *http.Request) {
 	helper.RespondWithJSON(w, 200, scans)
 }
 
+// @Summary Get a scan
+// @Description Get a scan
+// @Tags scans
+// @Accept json
+// @Produce json
+// @Param scanID path string true "Scan ID"
+// @Success 200 {object} models.ScanAPIResponse
+// @Failure 400 {object} types.Error
+// @Failure 404 {object} types.Error
+// @Router /scans/{scanID} [get]
 func GetScan(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	scanID := vars["scanID"]

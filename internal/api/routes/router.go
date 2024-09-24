@@ -4,10 +4,7 @@ import (
 	"encoding/gob"
 	"net/http"
 
-	"github.com/codevault-llc/humblebrag-api/internal/api/handlers/notification"
 	"github.com/codevault-llc/humblebrag-api/internal/api/handlers/scan"
-	"github.com/codevault-llc/humblebrag-api/internal/api/handlers/user"
-	"github.com/codevault-llc/humblebrag-api/internal/api/handlers/webhook"
 	"github.com/codevault-llc/humblebrag-api/internal/api/middleware"
 	"github.com/codevault-llc/humblebrag-api/models"
 	"github.com/gorilla/mux"
@@ -15,7 +12,7 @@ import (
 )
 
 func SetupRouter(db *gorm.DB) *mux.Router {
-	gob.Register(models.UserModel{})
+	gob.Register(models.LicenseModel{})
 
 	r := mux.NewRouter()
 
@@ -23,27 +20,15 @@ func SetupRouter(db *gorm.DB) *mux.Router {
 
 	r.HandleFunc("/docs/", serveReDoc).Methods("GET")
 
-	api := r.PathPrefix("/api").Subrouter()
+	api := r.PathPrefix("/api/v1").Subrouter()
 
 	// Middlewares
-	api.Use(middleware.UserAuthMiddleware)
-
-	// User routes
-	user.RegisterAuthRoutes(api)
-	user.RegisterProfileRoutes(api)
-	user.RegisterSubscriptionRoutes(api)
-	user.RegisterCheckoutRoutes(api)
-
-	// Notification routes
-	notification.RegisterNotificationRoutes(api)
+	api.Use(middleware.SubscriptionAuthMiddleware)
 
 	// Scan routes
 	scan.RegisterModulesRoutes(api)
 	scan.RegisterStatisticsRoutes(api)
 	scan.RegisterScanRoutes(api)
-
-	// Webhook routes
-	webhook.RegisterStripeRoutes(api)
 
 	return r
 }

@@ -14,7 +14,7 @@ import (
 	"golang.org/x/net/html"
 )
 
-func ScanWebsite(url string, userId uint) (models.ScanModel, error) {
+func ScanWebsite(url string, licenseId uint) (models.ScanModel, error) {
 	logger.Log.Info("Starting website scan for URL: %s", url)
 
 	// Initial website scan
@@ -39,7 +39,7 @@ func ScanWebsite(url string, userId uint) (models.ScanModel, error) {
 		RedirectChain: requestedWebsite.RedirectChain,
 		StatusCode:    website.StatusCode,
 		Status:        models.ScanStatusPending, // Set status to pending for further processing
-		UserID:        userId,
+		LicenseID:     licenseId,
 		Sha256:        utils.SHA256(website.WebsiteUrl),
 		SHA1:          utils.SHA1(website.WebsiteUrl),
 		MD5:           utils.MD5(website.WebsiteUrl),

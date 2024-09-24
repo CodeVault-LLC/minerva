@@ -14,6 +14,16 @@ func RegisterModulesRoutes(api *mux.Router) {
 	api.HandleFunc("/scans/{scanID}/network", getScanNetwork).Methods("GET")
 }
 
+// @Summary Get scan findings
+// @Description Get scan findings
+// @Tags scans
+// @Accept json
+// @Produce json
+// @Param scanID path string true "Scan ID"
+// @Success 200 {array} models.FindingResponse
+// @Failure 400 {object} types.Error
+// @Failure 404 {object} types.Error
+// @Router /scans/{scanID}/findings [get]
 func getScanFindings(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	scanID := vars["scanID"]
@@ -27,6 +37,16 @@ func getScanFindings(w http.ResponseWriter, r *http.Request) {
 	helper.RespondWithJSON(w, 200, findings)
 }
 
+// @Summary Get scan contents
+// @Description Get scan contents
+// @Tags scans
+// @Accept json
+// @Produce json
+// @Param scanID path string true "Scan ID"
+// @Success 200 {array} models.ContentResponse
+// @Failure 400 {object} types.Error
+// @Failure 404 {object} types.Error
+// @Router /scans/{scanID}/contents [get]
 func getScanContents(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	scanID := vars["scanID"]
@@ -40,6 +60,16 @@ func getScanContents(w http.ResponseWriter, r *http.Request) {
 	helper.RespondWithJSON(w, 200, contents)
 }
 
+// @Summary Get scan network
+// @Description Get scan network
+// @Tags scans
+// @Accept json
+// @Produce json
+// @Param scanID path string true "Scan ID"
+// @Success 200 {array} models.NetworkResponse
+// @Failure 400 {object} types.Error
+// @Failure 404 {object} types.Error
+// @Router /scans/{scanID}/network [get]
 func getScanNetwork(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	scanID := vars["scanID"]
