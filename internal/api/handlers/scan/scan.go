@@ -5,9 +5,9 @@ import (
 	"net/http"
 
 	"github.com/codevault-llc/humblebrag-api/helper"
+	"github.com/codevault-llc/humblebrag-api/internal/database/models"
 	"github.com/codevault-llc/humblebrag-api/internal/scanner"
 	"github.com/codevault-llc/humblebrag-api/internal/service"
-	"github.com/codevault-llc/humblebrag-api/models"
 	"github.com/codevault-llc/humblebrag-api/pkg/utils"
 	"github.com/gorilla/mux"
 )
@@ -15,7 +15,7 @@ import (
 func RegisterScanRoutes(api *mux.Router) {
 	api.HandleFunc("/scans", GetScans).Methods("GET")
 	api.HandleFunc("/scans/{scanID}", GetScan).Methods("GET")
-	api.HandleFunc("/scan", CreateScan).Methods("POST")
+	api.HandleFunc("/scans", CreateScan).Methods("POST")
 }
 
 // @Summary Create a new scan
@@ -23,6 +23,7 @@ func RegisterScanRoutes(api *mux.Router) {
 // @Tags scans
 // @Accept json
 // @Produce json
+// @Param scan body models.ScanRequest true "Scan Request"
 // @Success 200 {object} models.ScanAPIResponse
 // @Failure 400 {object} types.Error
 // @Failure 404 {object} types.Error

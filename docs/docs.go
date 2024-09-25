@@ -73,6 +73,17 @@ const docTemplate = `{
                     "scans"
                 ],
                 "summary": "Create a new scan",
+                "parameters": [
+                    {
+                        "description": "Scan Request",
+                        "name": "scan",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.ScanRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -514,6 +525,14 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "website_url": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.ScanRequest": {
+            "type": "object",
+            "properties": {
+                "url": {
                     "type": "string"
                 }
             }

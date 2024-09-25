@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/codevault-llc/humblebrag-api/models"
+	"github.com/codevault-llc/humblebrag-api/internal/database/models"
 	"golang.org/x/net/html"
 )
 

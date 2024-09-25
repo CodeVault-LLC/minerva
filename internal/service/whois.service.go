@@ -2,7 +2,7 @@ package service
 
 import (
 	"github.com/codevault-llc/humblebrag-api/internal/database"
-	"github.com/codevault-llc/humblebrag-api/models"
+	"github.com/codevault-llc/humblebrag-api/internal/database/models"
 )
 
 func CreateWhois(whois models.WhoisModel) (models.WhoisModel, error) {

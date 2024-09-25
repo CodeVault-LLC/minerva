@@ -2,12 +2,12 @@ package service
 
 import (
 	"github.com/codevault-llc/humblebrag-api/internal/database"
-	"github.com/codevault-llc/humblebrag-api/models"
+	"github.com/codevault-llc/humblebrag-api/internal/database/models"
 	"github.com/codevault-llc/humblebrag-api/pkg/utils"
 )
 
 func CreateScan(scan models.ScanModel) (models.ScanModel, error) {
-	database.DB.Model(&models.ScanModel{}).Where("website_url = ?", scan.WebsiteUrl).Update("status", models.ScanStatusArchived)
+	database.DB.Model(&models.ScanModel{}).Where("url = ?", scan.Url).Update("status", models.ScanStatusArchived)
 
 	if err := database.DB.Create(&scan).Error; err != nil {
 		return scan, err
@@ -28,7 +28,7 @@ func UpdateScan(scan models.ScanModel) (models.ScanModel, error) {
 func GetScans() ([]models.ScanAPIResponse, error) {
 	var scans []models.ScanModel
 
-	if err := database.DB.Preload("Findings").Where("status IN (?, ?)", models.ScanStatusComplete, models.ScanStatusPending).Order("created_at desc").Find(&scans).Error; err != nil {
+	if err := database.DB.Where("status IN (?, ?)", models.ScanStatusComplete, models.ScanStatusPending).Order("created_at desc").Find(&scans).Error; err != nil {
 		return models.ConvertScans(scans), err
 	}
 

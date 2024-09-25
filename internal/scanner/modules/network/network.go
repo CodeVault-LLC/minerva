@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/codevault-llc/humblebrag-api/internal/database/models"
 	"github.com/codevault-llc/humblebrag-api/internal/service"
-	"github.com/codevault-llc/humblebrag-api/models"
 	"github.com/codevault-llc/humblebrag-api/pkg/logger"
 	"github.com/codevault-llc/humblebrag-api/pkg/utils"
 	whoisparser "github.com/likexian/whois-parser"

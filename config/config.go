@@ -20,12 +20,12 @@ type ViperConfig struct {
 		Keywords    []string
 	}
 
-	Lists []types.List
+	Lists []types.Filter
 }
 
 type Config struct {
 	Rules map[string]types.Rule
-	Lists map[string]types.List
+	Lists map[string]types.Filter
 }
 
 // Order the rules based on alphabetical order of the ID
@@ -232,10 +232,10 @@ var ConfigRules = []*types.Rule{
 	rules.EmailToken(),
 }
 
-var ConfigLists = []*types.List{
+var ConfigLists = []*types.Filter{
 	{
 		Description: "CPBL Filters for ABP & uBO",
-		ListID:      "cpbl-abp",
+		FilterID:    "cpbl-abp",
 		Categories:  []string{"adblock"},
 		Types:       []parsers.ListType{parsers.Domain},
 		URL:         "https://raw.githubusercontent.com/bongochong/CombinedPrivacyBlockLists/master/cpbl-abp-list.txt",
@@ -243,7 +243,7 @@ var ConfigLists = []*types.List{
 	},
 	{
 		Description: "CPBL Filters for uBO",
-		ListID:      "cpbl-ctld",
+		FilterID:    "cpbl-ctld",
 		Categories:  []string{"adblock"},
 		Types:       []parsers.ListType{parsers.Domain},
 		URL:         "https://raw.githubusercontent.com/bongochong/CombinedPrivacyBlockLists/master/NoFormatting/cpbl-ctld.txt",
@@ -251,7 +251,7 @@ var ConfigLists = []*types.List{
 	},
 	{
 		Description: "A merged hosts file from a variety of other lists.",
-		ListID:      "1hosts-pro",
+		FilterID:    "1hosts-pro",
 		Categories:  []string{"ads", "crypto", "malware", "privacy"},
 		Types:       []parsers.ListType{parsers.Domain},
 		URL:         "https://raw.githubusercontent.com/badmojr/1Hosts/master/Pro/hosts.txt",
@@ -259,7 +259,7 @@ var ConfigLists = []*types.List{
 	},
 	{
 		Description: "URLhaus is a project from abuse.ch with the goal of sharing malicious URLs that are being used for malware distribution.",
-		ListID:      "urlhaus-abuse-ch",
+		FilterID:    "urlhaus-abuse-ch",
 		Categories:  []string{"malware"},
 		Types:       []parsers.ListType{parsers.Domain},
 		URL:         "https://urlhaus.abuse.ch/downloads/text/",
@@ -267,7 +267,7 @@ var ConfigLists = []*types.List{
 	},
 	{
 		Description: "IPsum is a threat intelligence feed based on 30+ different publicly available lists of suspicious and/or malicious IP addresses.",
-		ListID:      "ipsum",
+		FilterID:    "ipsum",
 		Categories:  []string{"malware"},
 		Types:       []parsers.ListType{parsers.IPv4},
 		URL:         "https://raw.githubusercontent.com/stamparm/ipsum/master/ipsum.txt",
@@ -275,7 +275,7 @@ var ConfigLists = []*types.List{
 	},
 	/*{
 		Description: "Multi PRO++ - Maximum protection",
-		ListID:      "multi-pro-max",
+		FilterID:      "multi-pro-max",
 		Categories:  []string{"phishing", "malware", "ads", "scam", "metrics", "fake", "affiliate"},
 		Types:       []parsers.ListType{parsers.Domain},
 		URL:         "https://cdn.jsdelivr.net/gh/hagezi/dns-blocklists@latest/domains/ultimate.txt",

@@ -1,7 +1,7 @@
 package database
 
 import (
-	"github.com/codevault-llc/humblebrag-api/models"
+	"github.com/codevault-llc/humblebrag-api/internal/database/models"
 	"github.com/codevault-llc/humblebrag-api/pkg/logger"
 
 	"gorm.io/driver/postgres"
@@ -20,7 +20,7 @@ func InitPostgres(dsn string) (*gorm.DB, error) {
 
 	err = db.AutoMigrate(&models.LicenseModel{}, &models.ScanModel{}, &models.NetworkModel{},
 		&models.WhoisModel{}, &models.FindingModel{}, &models.CertificateModel{},
-		&models.ContentModel{}, &models.ListModel{})
+		&models.ContentModel{}, &models.FilterModel{})
 	if err != nil {
 		logger.Log.Error("Failed to auto migrate models: %v", err)
 		return nil, err

@@ -2,7 +2,7 @@ package service
 
 import (
 	"github.com/codevault-llc/humblebrag-api/internal/database"
-	"github.com/codevault-llc/humblebrag-api/models"
+	"github.com/codevault-llc/humblebrag-api/internal/database/models"
 )
 
 // CreateContent creates content in the database

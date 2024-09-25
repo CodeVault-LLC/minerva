@@ -2,9 +2,9 @@ package types
 
 import "github.com/codevault-llc/humblebrag-api/pkg/parsers"
 
-type List struct {
+type Filter struct {
 	Description string
-	ListID      string
+	FilterID      string
 	Categories  []string
 	Types       []parsers.ListType
 	URL         string

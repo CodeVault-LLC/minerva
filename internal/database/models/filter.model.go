@@ -6,48 +6,48 @@ import (
 	"gorm.io/gorm"
 )
 
-type ListModel struct {
+type FilterModel struct {
 	gorm.Model
 
 	ScanID uint
 	Scan   ScanModel
 
-	ListID string // match towards the listID in the config
+	FilterID string // match towards the listID in the config
 }
 
-type ListResponse struct {
+type FilterResponse struct {
 	ID uint `json:"id"`
 
 	Description string   `json:"description"`
-	ListID      string   `json:"list_id"`
+	FilterID    string   `json:"filter_id"`
 	Categories  []string `json:"categories"`
 	URL         string   `json:"url"`
 }
 
-func ConvertList(list ListModel) ListResponse {
-	var configList *types.List
+func ConvertFilter(list FilterModel) FilterResponse {
+	var configList *types.Filter
 	for _, l := range config.ConfigLists {
-		if l.ListID == list.ListID {
+		if l.FilterID == list.FilterID {
 			configList = l
 			break
 		}
 	}
 
-	return ListResponse{
+	return FilterResponse{
 		ID:          list.ID,
 		Description: configList.Description,
-		ListID:      list.ListID,
+		FilterID:    list.FilterID,
 		Categories:  configList.Categories,
 		URL:         configList.URL,
 	}
 }
 
-func ConvertLists(lists []ListModel) []ListResponse {
-	var listResponses []ListResponse
+func ConvertFilters(lists []FilterModel) []FilterResponse {
+	var filterResponses []FilterResponse
 
 	for _, list := range lists {
-		listResponses = append(listResponses, ConvertList(list))
+		filterResponses = append(filterResponses, ConvertFilter(list))
 	}
 
-	return listResponses
+	return filterResponses
 }

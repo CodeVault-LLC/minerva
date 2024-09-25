@@ -132,6 +132,11 @@ definitions:
       website_url:
         type: string
     type: object
+  models.ScanRequest:
+    properties:
+      url:
+        type: string
+    type: object
   models.WhoisResponse:
     properties:
       admin_city:
@@ -259,6 +264,13 @@ paths:
       consumes:
       - application/json
       description: Create a new scan
+      parameters:
+      - description: Scan Request
+        in: body
+        name: scan
+        required: true
+        schema:
+          $ref: '#/definitions/models.ScanRequest'
       produces:
       - application/json
       responses:

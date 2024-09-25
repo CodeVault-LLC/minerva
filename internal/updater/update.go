@@ -49,7 +49,7 @@ var (
 )
 
 func StartAutoUpdate(interval time.Duration) {
-	updateChan := make(chan *types.List, len(config.ConfigLists))
+	updateChan := make(chan *types.Filter, len(config.ConfigLists))
 	var wg sync.WaitGroup
 
 	// Start worker goroutines
@@ -79,7 +79,7 @@ func StartAutoUpdate(interval time.Duration) {
 	wg.Wait()
 }
 
-func updateWorker(updateChan <-chan *types.List, wg *sync.WaitGroup) {
+func updateWorker(updateChan <-chan *types.Filter, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	for list := range updateChan {
@@ -89,7 +89,7 @@ func updateWorker(updateChan <-chan *types.List, wg *sync.WaitGroup) {
 	}
 }
 
-func updateList(list *types.List) error {
+func updateList(list *types.Filter) error {
 	parsedData, err := fetchAndParseList(list)
 	if err != nil {
 		return fmt.Errorf("failed to fetch and parse list: %w", err)
@@ -97,7 +97,7 @@ func updateList(list *types.List) error {
 
 	log.Printf("Parsed %s with %d entries", list.Description, len(parsedData))
 
-	storedCount, err := storeParsedDataWithRetry(list.ListID, parsedData)
+	storedCount, err := storeParsedDataWithRetry(list.FilterID, parsedData)
 	if err != nil {
 		return fmt.Errorf("failed to store data: %w", err)
 	}
@@ -111,7 +111,7 @@ func updateList(list *types.List) error {
 	return nil
 }
 
-func fetchAndParseList(list *types.List) ([]parsers.Item, error) {
+func fetchAndParseList(list *types.Filter) ([]parsers.Item, error) {
 	resp, err := http.Get(list.URL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch list: %w", err)
@@ -187,8 +187,8 @@ func storeDataBatch(ctx context.Context, key string, batch []string) (int, error
 	return int(storedCount), nil
 }
 
-func CompareValues(comparedValue string, valueType parsers.ListType) []types.List {
-	var matchingLists []types.List
+func CompareValues(comparedValue string, valueType parsers.ListType) []types.Filter {
+	var matchingLists []types.Filter
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -198,9 +198,9 @@ func CompareValues(comparedValue string, valueType parsers.ListType) []types.Lis
 	for _, list := range config.ConfigLists {
 		for _, listType := range list.Types {
 			if listType == valueType {
-				key := fmt.Sprintf("%s:%s", list.ListID, valueType)
+				key := fmt.Sprintf("%s:%s", list.FilterID, valueType)
 				fmt.Println(key)
-				cmds[list.ListID] = pipe.SIsMember(ctx, key, comparedValue)
+				cmds[list.FilterID] = pipe.SIsMember(ctx, key, comparedValue)
 			}
 		}
 	}
@@ -212,10 +212,10 @@ func CompareValues(comparedValue string, valueType parsers.ListType) []types.Lis
 	}
 
 	for _, list := range config.ConfigLists {
-		if cmd, ok := cmds[list.ListID]; ok {
+		if cmd, ok := cmds[list.FilterID]; ok {
 			exists, err := cmd.Result()
 			if err != nil {
-				log.Printf("Failed to get result for %s: %v", list.ListID, err)
+				log.Printf("Failed to get result for %s: %v", list.FilterID, err)
 				continue
 			}
 			if exists {

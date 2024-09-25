@@ -3,12 +3,12 @@ package scanner
 import (
 	"sync"
 
+	"github.com/codevault-llc/humblebrag-api/internal/database/models"
 	"github.com/codevault-llc/humblebrag-api/internal/scanner/modules/content"
 	"github.com/codevault-llc/humblebrag-api/internal/scanner/modules/list"
 	"github.com/codevault-llc/humblebrag-api/internal/scanner/modules/network"
 	"github.com/codevault-llc/humblebrag-api/internal/scanner/websites"
 	"github.com/codevault-llc/humblebrag-api/internal/service"
-	"github.com/codevault-llc/humblebrag-api/models"
 	"github.com/codevault-llc/humblebrag-api/pkg/logger"
 	"github.com/codevault-llc/humblebrag-api/pkg/utils"
 	"golang.org/x/net/html"
@@ -34,8 +34,8 @@ func ScanWebsite(url string, licenseId uint) (models.ScanModel, error) {
 
 	// Save initial scan result
 	scanModel := models.ScanModel{
-		WebsiteUrl:    url,
-		WebsiteName:   website.WebsiteName,
+		Url:           url,
+		Name:          website.WebsiteName,
 		RedirectChain: requestedWebsite.RedirectChain,
 		StatusCode:    website.StatusCode,
 		Status:        models.ScanStatusPending, // Set status to pending for further processing

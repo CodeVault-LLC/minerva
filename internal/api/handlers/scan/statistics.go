@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"github.com/codevault-llc/humblebrag-api/helper"
+	"github.com/codevault-llc/humblebrag-api/internal/database/models"
 	"github.com/codevault-llc/humblebrag-api/internal/service"
-	"github.com/codevault-llc/humblebrag-api/models"
 	"github.com/gorilla/mux"
 )
 

@@ -17,10 +17,11 @@ const (
 type ScanModel struct {
 	gorm.Model
 
-	WebsiteUrl    string         `gorm:"not null"`
-	WebsiteName   string         `gorm:"not null"`
+	Url        string `gorm:"not null"`
+	Name       string `gorm:"not null"`
+	StatusCode int    `gorm:"not null"`
+
 	RedirectChain pq.StringArray `gorm:"type:text[]"`
-	StatusCode    int            `gorm:"not null"`
 
 	Status ScanStatus `gorm:"not null" default:"complete"`
 
@@ -33,7 +34,7 @@ type ScanModel struct {
 
 	Network NetworkModel `gorm:"foreignKey:ScanID"`
 
-	Lists    []ListModel    `gorm:"foreignKey:ScanID"`
+	Lists    []FilterModel  `gorm:"foreignKey:ScanID"`
 	Findings []FindingModel `gorm:"foreignKey:ScanID"`
 	Contents []ContentModel `gorm:"foreignKey:ScanID"`
 }
@@ -51,10 +52,11 @@ type ScanResponse struct {
 type ScanAPIResponse struct {
 	ID uint `json:"id"`
 
-	WebsiteUrl    string         `json:"website_url"`
-	WebsiteName   string         `json:"website_name"`
+	Url        string `json:"url"`
+	Name       string `json:"name"`
+	StatusCode int    `json:"status_code"`
+
 	RedirectChain pq.StringArray `json:"redirect_chain"`
-	StatusCode    int            `json:"status_code"`
 
 	Status string `json:"status"`
 
@@ -62,20 +64,16 @@ type ScanAPIResponse struct {
 	SHA1   string `json:"sha1"`
 	MD5    string `json:"md5"`
 
-	Findings int64          `json:"findings"`
-	Lists    []ListResponse `json:"lists"`
-
 	CreatedAt string `json:"created_at"`
 	UpdatedAt string `json:"updated_at"`
 }
 
 func ConvertScan(scan ScanModel) ScanAPIResponse {
 	return ScanAPIResponse{
-		ID:       scan.ID,
-		Findings: int64(len(scan.Findings)),
+		ID: scan.ID,
 
-		WebsiteUrl:    scan.WebsiteUrl,
-		WebsiteName:   scan.WebsiteName,
+		Url:           scan.Url,
+		Name:          scan.Name,
 		RedirectChain: scan.RedirectChain,
 		StatusCode:    scan.StatusCode,
 
@@ -84,7 +82,6 @@ func ConvertScan(scan ScanModel) ScanAPIResponse {
 		SHA1:   scan.SHA1,
 		MD5:    scan.MD5,
 
-		Lists:     ConvertLists(scan.Lists),
 		CreatedAt: scan.CreatedAt.Format("2006-01-02 15:04:05"),
 		UpdatedAt: scan.UpdatedAt.Format("2006-01-02 15:04:05"),
 	}
