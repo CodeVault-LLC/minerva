@@ -12,6 +12,7 @@ func RegisterModulesRoutes(api *mux.Router) {
 	api.HandleFunc("/scans/{scanID}/findings", getScanFindings).Methods("GET")
 	api.HandleFunc("/scans/{scanID}/contents", getScanContents).Methods("GET")
 	api.HandleFunc("/scans/{scanID}/network", getScanNetwork).Methods("GET")
+	api.HandleFunc("/scans/{scanID}/metadata", getScanMetadata).Methods("GET")
 }
 
 // @Summary Get scan findings
@@ -81,4 +82,27 @@ func getScanNetwork(w http.ResponseWriter, r *http.Request) {
 	}
 
 	helper.RespondWithJSON(w, 200, network)
+}
+
+// @Summary Get scan metadata
+// @Description Get scan metadata
+// @Tags scans
+// @Accept json
+// @Produce json
+// @Param scanID path string true "Scan ID"
+// @Success 200 {object} models.MetadataResponse
+// @Failure 400 {object} types.Error
+// @Failure 404 {object} types.Error
+// @Router /scans/{scanID}/metadata [get]
+func getScanMetadata(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	scanID := vars["scanID"]
+
+	metadata, err := service.GetScanMetadataByScanID(scanID)
+	if err != nil {
+		helper.RespondWithError(w, 500, "Failed to get scan metadata")
+		return
+	}
+
+	helper.RespondWithJSON(w, 200, metadata)
 }

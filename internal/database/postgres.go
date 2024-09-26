@@ -19,6 +19,7 @@ func InitPostgres(dsn string) (*gorm.DB, error) {
 	registerGlobalCallbacks(db)
 
 	err = db.AutoMigrate(&models.LicenseModel{}, &models.ScanModel{}, &models.NetworkModel{},
+		&models.DNSModel{}, &models.MetadataModel{},
 		&models.WhoisModel{}, &models.FindingModel{}, &models.CertificateModel{},
 		&models.ContentModel{}, &models.FilterModel{})
 	if err != nil {

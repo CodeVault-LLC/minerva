@@ -20,6 +20,7 @@ func GetScanNetwork(scanID string) (models.NetworkResponse, error) {
 
 	if err := database.DB.Where("scan_id = ?", scanID).
 		Preload("Certificates").
+		Preload("DNS").
 		Preload("Whois").
 		First(&network).Error; err != nil {
 		return models.NetworkResponse{}, err

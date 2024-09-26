@@ -112,13 +112,10 @@ func NetworkModule(scanId uint, url string) {
 	headers := <-headerChan
 
 	network := models.NetworkModel{
-		ScanID:       scanId,
-		IPAddresses:  ipAddresses,
-		IPRanges:     ipRanges,
-		DNSNames:     dnsResults.CNAME,
-		PermittedDNS: dnsResults.Permitted,
-		ExcludedDNS:  dnsResults.Excluded,
-		HTTPHeaders:  headers,
+		ScanID:      scanId,
+		IPAddresses: ipAddresses,
+		IPRanges:    ipRanges,
+		HTTPHeaders: headers,
 	}
 
 	networkResponse, err := service.CreateNetwork(network)
@@ -182,5 +179,22 @@ func NetworkModule(scanId uint, url string) {
 			logger.Log.Error("Failed to create certificate: %v", err)
 			return
 		}
+	}
+
+	dns := models.DNSModel{
+		NetworkId:   networkResponse.ID,
+		CNAME:       dnsResults.CNAME,
+		ARecords:    dnsResults.ARecords,
+		AAAARecords: dnsResults.AAAARecords,
+		MXRecords:   dnsResults.MXRecords,
+		NSRecords:   dnsResults.NSRecords,
+		TXTRecords:  dnsResults.TXTRecords,
+		PTRRecord:   dnsResults.PTRRecord,
+		DNSSEC:      dnsResults.DNSSEC,
+	}
+
+	_, err = service.CreateDNS(dns)
+	if err != nil {
+		logger.Log.Error("Failed to create DNS: %v", err)
 	}
 }

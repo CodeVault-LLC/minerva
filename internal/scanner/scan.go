@@ -6,6 +6,7 @@ import (
 	"github.com/codevault-llc/humblebrag-api/internal/database/models"
 	"github.com/codevault-llc/humblebrag-api/internal/scanner/modules/content"
 	"github.com/codevault-llc/humblebrag-api/internal/scanner/modules/list"
+	"github.com/codevault-llc/humblebrag-api/internal/scanner/modules/metadata"
 	"github.com/codevault-llc/humblebrag-api/internal/scanner/modules/network"
 	"github.com/codevault-llc/humblebrag-api/internal/scanner/websites"
 	"github.com/codevault-llc/humblebrag-api/internal/service"
@@ -23,8 +24,6 @@ func ScanWebsite(url string, licenseId uint) (models.ScanModel, error) {
 		logger.Log.Error("Failed to scan website: %v", err)
 		return models.ScanModel{}, err
 	}
-
-	logger.Log.Info("Redirect chain: %v", requestedWebsite.RedirectChain)
 
 	website, err := websites.AnalyzeWebsite(requestedWebsite)
 	if err != nil {
@@ -59,30 +58,27 @@ func ScanWebsite(url string, licenseId uint) (models.ScanModel, error) {
 }
 
 func runBackgroundModules(scanId uint, url string, requestedWebsite *html.Node) {
-	logger.Log.Info("Running background modules for scan ID: %d", scanId)
-
 	var wg sync.WaitGroup
-	wg.Add(3) // Adding 3 because we have 3 modules
+	wg.Add(4) // Amount of modules
 
 	go func() {
 		defer wg.Done() // Signal that the network module is done
-		logger.Log.Info("Starting network module for scan ID: %d", scanId)
 		network.NetworkModule(scanId, url)
-		logger.Log.Info("Completed network module for scan ID: %d", scanId)
 	}()
 
 	go func() {
 		defer wg.Done() // Signal that the content module is done
-		logger.Log.Info("Starting content module for scan ID %d", scanId)
 		content.ContentModule(scanId, requestedWebsite)
-		logger.Log.Info("Completed content module for scan ID %d", scanId)
 	}()
 
 	go func() {
 		defer wg.Done() // Signal that the list module is done
-		logger.Log.Info("Starting list module for scan ID %d", scanId)
 		list.ListModule(scanId, url)
-		logger.Log.Info("Completed list module for scan ID %d", scanId)
+	}()
+
+	go func() {
+		defer wg.Done() // Signal that the list module is done
+		metadata.MetadataModule(scanId, url)
 	}()
 
 	// Wait for all background processes to complete
@@ -90,7 +86,6 @@ func runBackgroundModules(scanId uint, url string, requestedWebsite *html.Node) 
 		wg.Wait() // This will block until all 3 modules call `wg.Done()`
 
 		// Once all modules are done, update the scan status to "Complete"
-		logger.Log.Info("All background modules completed for scan ID: %d", scanId)
 		scanModel := models.ScanModel{
 			Status: models.ScanStatusComplete,
 		}
@@ -99,8 +94,6 @@ func runBackgroundModules(scanId uint, url string, requestedWebsite *html.Node) 
 		_, err := service.UpdateScan(scanModel)
 		if err != nil {
 			logger.Log.Error("Failed to update scan status: %v", err)
-		} else {
-			logger.Log.Info("Successfully updated scan status to 'Complete' for scan ID: %d", scanId)
-		}
+		} 
 	}()
 }
