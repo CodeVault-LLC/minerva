@@ -19,8 +19,9 @@ func CreateMetadata(metadata models.MetadataModel) (models.MetadataModel, error)
 
 func GetScanMetadataByScanID(scanId string) (models.MetadataResponse, error) {
 	var metadata models.MetadataModel
+
 	if err := database.DB.Where("scan_id = ?", scanId).First(&metadata).Error; err != nil {
-		return models.ConvertMetadata(metadata), err
+		return models.MetadataResponse{}, err
 	}
 
 	return models.ConvertMetadata(metadata), nil
