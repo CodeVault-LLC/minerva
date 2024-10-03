@@ -32,6 +32,7 @@ type ScanModel struct {
 	LicenseID uint          `gorm:"not null"`
 	License   *LicenseModel `gorm:"foreignKey:LicenseID"`
 
+	Nmap     NmapModel     `gorm:"foreignKey:ScanID"`
 	Network  NetworkModel  `gorm:"foreignKey:ScanID"`
 	Metadata MetadataModel `gorm:"foreignKey:ScanID"`
 

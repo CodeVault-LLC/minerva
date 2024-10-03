@@ -20,7 +20,7 @@ type MetadataModel struct {
 	CMS            string         `gorm:"not null"`
 	ServerSoftware string         `gorm:"not null"`
 	Frameworks     pq.StringArray `gorm:"type:text[]"` // PostgreSQL array
-	ServerLanguage       string         `gorm:"not null"`
+	ServerLanguage string         `gorm:"not null"`
 }
 
 type MetadataResponse struct {
@@ -33,7 +33,7 @@ type MetadataResponse struct {
 	CMS            string   `json:"cms"`
 	ServerSoftware string   `json:"server_software"`
 	Frameworks     []string `json:"frameworks"`
-	ServerLanguage       string   `json:"server_language"`
+	ServerLanguage string   `json:"server_language"`
 }
 
 func ConvertMetadata(metadata MetadataModel) MetadataResponse {

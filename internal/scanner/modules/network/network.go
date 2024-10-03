@@ -168,11 +168,6 @@ func NetworkModule(scanId uint, url string) {
 		}
 	}
 
-	_, err = service.CreateWhois(whois)
-	if err != nil {
-		logger.Log.Error("Failed to create whois: %v", err)
-	}
-
 	for _, certificate := range certifiate {
 		err := service.CreateCertificate(networkResponse.ID, *certificate)
 		if err != nil {

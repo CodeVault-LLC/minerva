@@ -95,14 +95,10 @@ func updateList(list *types.Filter) error {
 		return fmt.Errorf("failed to fetch and parse list: %w", err)
 	}
 
-	log.Printf("Parsed %s with %d entries", list.Description, len(parsedData))
-
 	storedCount, err := storeParsedDataWithRetry(list.FilterID, parsedData)
 	if err != nil {
 		return fmt.Errorf("failed to store data: %w", err)
 	}
-
-	log.Printf("Successfully stored %d/%d entries for %s", storedCount, len(parsedData), list.Description)
 
 	if storedCount != len(parsedData) {
 		log.Printf("Warning: Mismatch in stored data count for %s. Expected: %d, Actual: %d", list.Description, len(parsedData), storedCount)
@@ -148,7 +144,6 @@ func storeParsedDataWithRetry(listID string, parsedData []parsers.Item) (int, er
 		if totalStored == len(parsedData) {
 			return totalStored, nil
 		}
-		log.Printf("Attempt %d: Stored %d/%d items for %s", attempt+1, totalStored, len(parsedData), listID)
 	}
 	return totalStored, fmt.Errorf("failed to store all data after %d attempts", maxRetries)
 }
@@ -199,7 +194,6 @@ func CompareValues(comparedValue string, valueType parsers.ListType) []types.Fil
 		for _, listType := range list.Types {
 			if listType == valueType {
 				key := fmt.Sprintf("%s:%s", list.FilterID, valueType)
-				fmt.Println(key)
 				cmds[list.FilterID] = pipe.SIsMember(ctx, key, comparedValue)
 			}
 		}

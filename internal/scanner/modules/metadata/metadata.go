@@ -46,7 +46,8 @@ func MetadataModule(scanId uint, url string) (models.MetadataModel, error) {
 
 	go func() {
 		defer wg.Done()
-		cmsChan <- detectCMS(client, url)
+		//cmsChan <- detectCMS(client, url)
+		cmsChan <- "Unknown"
 	}()
 
 	go func() {
@@ -140,7 +141,8 @@ func detectCMS(client *http.Client, url string) string {
 
 	// Check for CMS-specific URLs or files
 	if checkFileExists(client, url+"/wp-content/") || checkFileExists(client, url+"/feed") {
-		checkWordPressVersion(client, url)
+		//checkWordPressVersion(client, url)
+		return "WordPress"
 	}
 	if checkFileExists(client, url+"/administrator/") {
 		return "Joomla"

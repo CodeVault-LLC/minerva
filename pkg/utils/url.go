@@ -33,7 +33,6 @@ func NormalizeURL(input string) string {
 	// Remove trailing slash
 	urlNormalized = strings.TrimSuffix(urlNormalized, "/")
 
-	fmt.Println("Normalized URL:", urlNormalized)
 	return urlNormalized
 }
 
