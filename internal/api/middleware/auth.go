@@ -12,11 +12,6 @@ import (
 
 func SubscriptionAuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/api/v1/stripe" && r.Method == "POST" {
-			next.ServeHTTP(w, r)
-			return
-		}
-
 		if cache.SessionManager.Get(r.Context(), "license") == nil {
 			token := r.Header.Get("license")
 			if token == "" {

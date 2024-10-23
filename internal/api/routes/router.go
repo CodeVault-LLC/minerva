@@ -27,7 +27,6 @@ func SetupRouter(db *gorm.DB) *mux.Router {
 
 	// Scan routes
 	scan.RegisterModulesRoutes(api)
-	scan.RegisterStatisticsRoutes(api)
 	scan.RegisterScanRoutes(api)
 
 	return r

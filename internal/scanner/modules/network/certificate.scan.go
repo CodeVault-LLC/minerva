@@ -10,6 +10,7 @@ import (
 
 func GetCertificateWebsite(url string, port int) ([]*x509.Certificate, error) {
 	conf := &tls.Config{
+		// file deepcode ignore TooPermissiveTrustManager: a scanning module to verify third party certificates
 		InsecureSkipVerify: true,
 	}
 

@@ -9,7 +9,6 @@ import (
 	"github.com/codevault-llc/humblebrag-api/internal/scanner/modules/list"
 	"github.com/codevault-llc/humblebrag-api/internal/scanner/modules/metadata"
 	"github.com/codevault-llc/humblebrag-api/internal/scanner/modules/network"
-	"github.com/codevault-llc/humblebrag-api/internal/scanner/modules/nmap"
 	"github.com/codevault-llc/humblebrag-api/internal/scanner/websites"
 	"github.com/codevault-llc/humblebrag-api/internal/service"
 	"github.com/codevault-llc/humblebrag-api/pkg/logger"
@@ -61,7 +60,7 @@ func ScanWebsite(url string, licenseId uint) (models.ScanModel, error) {
 
 func runBackgroundModules(scanId uint, url string, requestedWebsite *html.Node) {
 	var wg sync.WaitGroup
-	wg.Add(5) // Amount of modules
+	wg.Add(4) // Amount of modules
 
 	go func() {
 		fmt.Println("Starting content module")
@@ -81,11 +80,12 @@ func runBackgroundModules(scanId uint, url string, requestedWebsite *html.Node) 
 		metadata.MetadataModule(scanId, url)
 	}()
 
-	go func() {
+	// Disabled due to high resource usage and potential safety concerns
+	/*go func() {
 		fmt.Println("Starting nmap module")
 		defer wg.Done()
 		nmap.NmapModule(scanId, url)
-	}()
+	}()*/
 
 	go func() {
 		fmt.Println("Starting network module")
