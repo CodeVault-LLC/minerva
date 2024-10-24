@@ -9,6 +9,7 @@ import (
 	"github.com/codevault-llc/humblebrag-api/config"
 	"github.com/codevault-llc/humblebrag-api/internal/database"
 	"github.com/codevault-llc/humblebrag-api/internal/database/cache"
+	"github.com/codevault-llc/humblebrag-api/internal/scanner/websites"
 	"github.com/codevault-llc/humblebrag-api/internal/updater"
 	"github.com/codevault-llc/humblebrag-api/pkg/logger"
 	"github.com/joho/godotenv"
@@ -51,6 +52,8 @@ func main() {
 	log.Info("Redis connected")
 
 	cache := cache.InitSessionManager()
+
+	websites.InitBrowser()
 
 	go updater.StartAutoUpdate(20 * time.Minute)
 	api.Start(postgres, redis, cache)

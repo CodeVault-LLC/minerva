@@ -16,11 +16,11 @@ import (
 	"golang.org/x/net/html"
 )
 
-func ScanWebsite(url string, licenseId uint) (models.ScanModel, error) {
+func ScanWebsite(url string, userAgent string, licenseId uint) (models.ScanModel, error) {
 	logger.Log.Info("Starting website scan for URL: %s", url)
 
 	// Initial website scan
-	requestedWebsite, err := websites.RequestWebsite(url, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36")
+	requestedWebsite, err := websites.RequestWebsite(url, userAgent)
 	if err != nil {
 		logger.Log.Error("Failed to scan website: %v", err)
 		return models.ScanModel{}, err

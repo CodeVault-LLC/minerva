@@ -42,13 +42,15 @@ type ScanModel struct {
 }
 
 type ScanRequest struct {
-	Url string `json:"url"`
+	Url       string `json:"url"`
+	UserAgent string `json:"userAgent"`
 }
 
 type ScanResponse struct {
-	WebsiteUrl  string `json:"websiteUrl"`
-	WebsiteName string `json:"websiteName"`
-	StatusCode  int    `json:"statusCode"`
+	WebsiteUrl  string   `json:"websiteUrl"`
+	WebsiteName string   `json:"websiteName"`
+	StatusCode  int      `json:"statusCode"`
+	Javascript  []string `json:"javascript"`
 }
 
 type ScanAPIResponse struct {

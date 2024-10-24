@@ -48,8 +48,12 @@ func CreateScan(w http.ResponseWriter, r *http.Request) {
 	}
 
 	scan.Url = utils.NormalizeURL(scan.Url)
+	userAgent := scan.UserAgent
+	if userAgent == "" {
+		userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36"
+	}
 
-	scanResponse, err := scanner.ScanWebsite(scan.Url, license.ID)
+	scanResponse, err := scanner.ScanWebsite(scan.Url, userAgent, license.ID)
 	if err != nil {
 		helper.RespondWithError(w, http.StatusInternalServerError, "Failed to scan website")
 		return
