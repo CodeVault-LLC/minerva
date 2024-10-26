@@ -144,24 +144,23 @@ func FetchWebsite(url, userAgent string) (*WebsiteResponse, error) {
 // AnalyzeHTML extracts scripts, styles, and metadata from the parsed HTML.
 func AnalyzeHTML(response *WebsiteResponse) (types.WebsiteAnalysis, error) {
 	var extractedFiles []types.FileRequest
-	title := extractTitle(response.ParsedHTML)
+	title := utils.ExtractTitle(response.ParsedHTML)
 
-	traverseHTML(response.ParsedHTML, func(node *html.Node) {
+	utils.TraverseHTML(response.ParsedHTML, func(node *html.Node) {
 		switch node.Data {
 		case "script":
-			extractedFiles = append(extractedFiles, processScriptNode(node))
+			extractedFiles = append(extractedFiles, utils.ProcessScriptNode(node))
 		case "style":
-			extractedFiles = append(extractedFiles, processStyleNode(node))
+			extractedFiles = append(extractedFiles, utils.ProcessStyleNode(node))
 		case "link":
-			if isStylesheet(node) {
-				extractedFiles = append(extractedFiles, processLinkNode(node))
-			} else if isFont(node) {
-				extractedFiles = append(extractedFiles, processFontNode(node))
+			if utils.IsStylesheet(node) {
+				extractedFiles = append(extractedFiles, utils.ProcessLinkNode(node))
+			} else if utils.IsFont(node) {
+				extractedFiles = append(extractedFiles, utils.ProcessFontNode(node))
 			}
 		}
 	})
 
-	// Combine extracted inline scripts/styles and those gathered during the network requests.
 	extractedFiles = append(extractedFiles, response.Files...)
 
 	return types.WebsiteAnalysis{
@@ -171,97 +170,4 @@ func AnalyzeHTML(response *WebsiteResponse) (types.WebsiteAnalysis, error) {
 		Assets:     extractedFiles,
 		Redirects:  response.Redirects,
 	}, nil
-}
-
-// extractTitle retrieves the title from the parsed HTML.
-func extractTitle(doc *html.Node) string {
-	var title string
-	traverseHTML(doc, func(node *html.Node) {
-		if node.Type == html.ElementNode && node.Data == "title" && node.FirstChild != nil {
-			title = node.FirstChild.Data
-		}
-	})
-	return title
-}
-
-// processScriptNode extracts data from a script element.
-func processScriptNode(node *html.Node) types.FileRequest {
-	// Handle inline script.
-	if node.FirstChild != nil && node.FirstChild.Type == html.TextNode {
-		return createFileRequest("inline-script", node.FirstChild.Data, "application/javascript")
-	}
-	return types.FileRequest{}
-}
-
-// processStyleNode extracts data from a style element.
-func processStyleNode(node *html.Node) types.FileRequest {
-	if node.FirstChild != nil && node.FirstChild.Type == html.TextNode {
-		return createFileRequest("inline-style", node.FirstChild.Data, "text/css")
-	}
-	return types.FileRequest{}
-}
-
-// processLinkNode extracts data from a link element if it's a stylesheet.
-func processLinkNode(node *html.Node) types.FileRequest {
-	for _, attr := range node.Attr {
-		if attr.Key == "href" {
-			return types.FileRequest{
-				Src:      attr.Val,
-				FileType: "text/css",
-			}
-		}
-	}
-	return types.FileRequest{}
-}
-
-// processFontNode extracts data from a link element if it's a font.
-func processFontNode(node *html.Node) types.FileRequest {
-	for _, attr := range node.Attr {
-		if attr.Key == "href" {
-			return types.FileRequest{
-				Src:      attr.Val,
-				FileType: "font",
-			}
-		}
-	}
-	return types.FileRequest{}
-}
-
-// isStylesheet checks if a link element is a stylesheet.
-func isStylesheet(node *html.Node) bool {
-	for _, attr := range node.Attr {
-		if attr.Key == "rel" && attr.Val == "stylesheet" {
-			return true
-		}
-	}
-	return false
-}
-
-// isFont checks if a link element points to a font.
-func isFont(node *html.Node) bool {
-	for _, attr := range node.Attr {
-		if attr.Key == "rel" && strings.Contains(attr.Val, "font") {
-			return true
-		}
-	}
-	return false
-}
-
-// createFileRequest constructs a FileRequest with content details.
-func createFileRequest(src, content, fileType string) types.FileRequest {
-	return types.FileRequest{
-		Src:        src,
-		Content:    content,
-		HashedBody: utils.SHA256(content),
-		FileSize:   uint(len(content)),
-		FileType:   fileType,
-	}
-}
-
-// traverseHTML recursively walks through the HTML nodes and applies the given function.
-func traverseHTML(node *html.Node, fn func(*html.Node)) {
-	fn(node)
-	for child := node.FirstChild; child != nil; child = child.NextSibling {
-		traverseHTML(child, fn)
-	}
 }

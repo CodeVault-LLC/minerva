@@ -6,6 +6,9 @@ import (
 	"net"
 	"net/url"
 	"strconv"
+	"strings"
+
+	"golang.org/x/net/html"
 )
 
 func IPsToStrings(ips []net.IP) []string {
@@ -71,4 +74,24 @@ func SafeString(s string) string {
 func IsNumeric(s string) bool {
 	_, err := strconv.ParseFloat(s, 64)
 	return err == nil
+}
+
+// IsStylesheet checks if a link element is a stylesheet.
+func IsStylesheet(node *html.Node) bool {
+	for _, attr := range node.Attr {
+		if attr.Key == "rel" && attr.Val == "stylesheet" {
+			return true
+		}
+	}
+	return false
+}
+
+// IsFont checks if a link element points to a font.
+func IsFont(node *html.Node) bool {
+	for _, attr := range node.Attr {
+		if attr.Key == "rel" && strings.Contains(attr.Val, "font") {
+			return true
+		}
+	}
+	return false
 }
