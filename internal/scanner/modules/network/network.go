@@ -10,6 +10,7 @@ import (
 	"github.com/codevault-llc/humblebrag-api/pkg/logger"
 	"github.com/codevault-llc/humblebrag-api/pkg/utils"
 	whoisparser "github.com/likexian/whois-parser"
+	"go.uber.org/zap"
 )
 
 func NetworkModule(scanId uint, url string) {
@@ -28,7 +29,7 @@ func NetworkModule(scanId uint, url string) {
 		ipAddresses, err := ScanIP(url)
 		if err != nil {
 			ipAddrChan <- nil // Handle error appropriately
-			logger.Log.Error("Failed to scan IP: %v", err)
+			logger.Log.Error("Failed to scan IP: %v", zap.Error(err))
 		} else {
 			ipAddrChan <- ipAddresses
 		}
@@ -39,7 +40,7 @@ func NetworkModule(scanId uint, url string) {
 		ipRanges, err := ScanIPRange(url)
 		if err != nil {
 			ipRangeChan <- nil // Handle error appropriately
-			logger.Log.Error("Failed to scan IP range: %v", err)
+			logger.Log.Error("Failed to scan IP range: %v", zap.Error(err))
 		} else {
 			ipRangeChan <- ipRanges
 		}
@@ -50,7 +51,7 @@ func NetworkModule(scanId uint, url string) {
 		dnsResults, err := GetDNSScan(url)
 		if err != nil {
 			dnsResultChan <- DNSResults{} // Handle error appropriately
-			logger.Log.Error("Failed to scan DNS: %v", err)
+			logger.Log.Error("Failed to scan DNS: %v", zap.Error(err))
 		} else {
 			dnsResultChan <- dnsResults
 		}
@@ -62,7 +63,7 @@ func NetworkModule(scanId uint, url string) {
 		if err != nil || whoisRecord.Domain.Name == "" {
 			// Handle the case where the domain doesn't exist or the whois data is incomplete
 			whoisChan <- whoisparser.WhoisInfo{}
-			logger.Log.Warning("No whois information found for: %s", url)
+			logger.Log.Error("Failed to scan whois: %v", zap.Error(err))
 		} else {
 			whoisChan <- whoisRecord
 		}
@@ -73,7 +74,7 @@ func NetworkModule(scanId uint, url string) {
 		certifiate, err := GetCertificateWebsite(url, 443)
 		if err != nil {
 			certificateChan <- nil // Handle error appropriately
-			logger.Log.Error("Failed to get certificate: %v", err)
+			logger.Log.Error("Failed to get certificate: %v", zap.Error(err))
 		} else {
 			certificateChan <- certifiate
 		}
@@ -84,7 +85,7 @@ func NetworkModule(scanId uint, url string) {
 		header, err := getHeaders(url)
 		if err != nil {
 			headerChan <- nil // Handle error appropriately
-			logger.Log.Error("Failed to get headers: %v", err)
+			logger.Log.Error("Failed to get headers: %v", zap.Error(err))
 		} else {
 			httpHeaders := make([]string, 0)
 			for key, value := range header.Headers {
@@ -120,7 +121,7 @@ func NetworkModule(scanId uint, url string) {
 
 	networkResponse, err := service.CreateNetwork(network)
 	if err != nil {
-		logger.Log.Error("Failed to create network: %v", err)
+		logger.Log.Error("Failed to create network: %v", zap.Error(err))
 		return
 	}
 
@@ -164,14 +165,14 @@ func NetworkModule(scanId uint, url string) {
 
 		_, err = service.CreateWhois(whois)
 		if err != nil {
-			logger.Log.Error("Failed to create whois: %v", err)
+			logger.Log.Error("Failed to create whois: %v", zap.Error(err))
 		}
 	}
 
 	for _, certificate := range certifiate {
 		err := service.CreateCertificate(networkResponse.ID, *certificate)
 		if err != nil {
-			logger.Log.Error("Failed to create certificate: %v", err)
+			logger.Log.Error("Failed to create certificate: %v", zap.Error(err))
 			return
 		}
 	}
@@ -190,6 +191,6 @@ func NetworkModule(scanId uint, url string) {
 
 	_, err = service.CreateDNS(dns)
 	if err != nil {
-		logger.Log.Error("Failed to create DNS: %v", err)
+		logger.Log.Error("Failed to create DNS: %v", zap.Error(err))
 	}
 }

@@ -2,121 +2,242 @@ package websites
 
 import (
 	"context"
+	"errors"
+	"io"
+	"net/http"
 	"strings"
 	"time"
 
-	"github.com/codevault-llc/humblebrag-api/internal/database/models"
+	"github.com/codevault-llc/humblebrag-api/pkg/logger"
+	"github.com/codevault-llc/humblebrag-api/pkg/types"
+	"github.com/codevault-llc/humblebrag-api/pkg/utils"
 	"github.com/go-rod/rod"
 	"github.com/go-rod/rod/lib/proto"
+	"go.uber.org/zap"
 	"golang.org/x/net/html"
 )
 
 var browser *rod.Browser
 
-// Initialize the browser instance globally and keep it running
-func InitBrowser() {
+// InitializeBrowser sets up the rod browser instance.
+func InitializeBrowser() {
 	if browser == nil {
 		browser = rod.New().MustConnect().NoDefaultDevice()
 	}
 }
 
-// Close the browser instance when the application is shutting down
+// CloseBrowser terminates the rod browser instance.
 func CloseBrowser() {
 	if browser != nil {
 		browser.MustClose()
 	}
 }
 
-type RequestWebsiteResponse struct {
-	RedirectChain   []string
-	JavaScriptFiles []string
-	FinalHTML       string
-	ParsedBody      *html.Node
+type WebsiteResponse struct {
+	Redirects    []string
+	Scripts      []types.FileRequest
+	FinalHTML    string
+	ParsedHTML   *html.Node
+	WebsiteTitle string
 }
 
-func RequestWebsite(url string, userAgent string) (*RequestWebsiteResponse, error) {
-	// Create a context with a 5-second timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+// FetchWebsite retrieves the website content and its scripts.
+func FetchWebsite(url, userAgent string) (*WebsiteResponse, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	page := browser.MustPage(url)
 	defer page.Close()
 
-	var redirectChain []string
-	var jsFiles []string
+	// Set the user agent before navigation
+	page.MustSetUserAgent(&proto.NetworkSetUserAgentOverride{
+		UserAgent: userAgent,
+	})
 
-	go page.EachEvent(func(e *proto.NetworkRequestWillBeSent) {
-		if e.Type == "Document" && e.Request.URL != url {
-			redirectChain = append(redirectChain, e.Request.URL)
-		}
-		if e.Type == "Script" {
-			jsFiles = append(jsFiles, e.Request.URL)
+	var redirects []string
+	var scriptFiles []types.FileRequest
+
+	// Capture network events to track redirects and script URLs.
+	go page.EachEvent(func(event *proto.NetworkRequestWillBeSent) {
+		if event.Type == proto.NetworkResourceTypeDocument && event.Request.URL != url {
+			redirects = append(redirects, event.Request.URL)
+		} else if event.Type == proto.NetworkResourceTypeScript && event.Request.URL != "" {
+			content, err := downloadContent(event.Request.URL)
+			if err != nil {
+				logger.Log.Error("Failed to download script", zap.Error(err))
+			}
+			scriptFiles = append(scriptFiles, createFileRequest(event.Request.URL, content, "application/javascript"))
 		}
 	})()
 
-	// Set the user-agent and navigate to the URL
-	page.MustSetUserAgent(&proto.NetworkSetUserAgentOverride{
-		UserAgent:      userAgent,
-		AcceptLanguage: "en-US,en;q=0.9",
-		Platform:       "Win32",
-	})
-
-	// Wait for the page to load or for the context to time out
-	err := rod.Try(func() {
+	// Navigate and wait for the page to load.
+	if err := rod.Try(func() {
 		page.Context(ctx).MustWaitLoad()
-	})
-
-	// If the context times out, proceed with whatever data is available
-	if err != nil {
-		// Log or handle the timeout error if needed
+	}); err != nil {
+		return nil, errors.New("page load timeout or error: " + err.Error())
 	}
 
-	// Capture the final HTML of the page, ignoring any further wait
 	htmlContent, err := page.HTML()
 	if err != nil {
 		return nil, err
 	}
 
-	// Parse the final HTML into a DOM structure
-	respBody := strings.NewReader(htmlContent)
-	doc, err := html.Parse(respBody)
+	parsedHTML, err := html.Parse(strings.NewReader(htmlContent))
 	if err != nil {
 		return nil, err
 	}
 
-	return &RequestWebsiteResponse{
-		RedirectChain:   redirectChain,
-		JavaScriptFiles: jsFiles,
-		FinalHTML:       htmlContent,
-		ParsedBody:      doc,
+	return &WebsiteResponse{
+		Redirects:  redirects,
+		Scripts:    scriptFiles,
+		FinalHTML:  htmlContent,
+		ParsedHTML: parsedHTML,
 	}, nil
 }
 
-// AnalyzeWebsite traverses the parsed HTML and extracts information.
-func AnalyzeWebsite(resp *RequestWebsiteResponse) (models.ScanResponse, error) {
-	var websiteName string = "Unknown"
+// AnalyzeHTML extracts scripts, styles, and metadata from the parsed HTML.
+func AnalyzeHTML(response *WebsiteResponse) (types.WebsiteAnalysis, error) {
+	var scriptsAndStyles []types.FileRequest
+	title := extractTitle(response.ParsedHTML)
 
-	// Traverse and extract data from the parsed HTML
-	var f func(*html.Node)
-	f = func(n *html.Node) {
-		// Extract website title if it exists
-		if n.Type == html.ElementNode && n.Data == "title" && n.FirstChild != nil {
-			websiteName = n.FirstChild.Data
+	traverseHTML(response.ParsedHTML, func(node *html.Node) {
+		switch node.Data {
+		case "script":
+			scriptsAndStyles = append(scriptsAndStyles, processScriptNode(node))
+		case "style":
+			scriptsAndStyles = append(scriptsAndStyles, processStyleNode(node))
+		case "link":
+			if isStylesheet(node) {
+				scriptsAndStyles = append(scriptsAndStyles, processLinkNode(node))
+			}
 		}
-		// Continue traversing
-		for c := n.FirstChild; c != nil; c = c.NextSibling {
-			f(c)
+	})
+
+	// Combine extracted scripts and those gathered during the network requests.
+	scriptsAndStyles = append(scriptsAndStyles, response.Scripts...)
+
+	return types.WebsiteAnalysis{
+		Url:        response.FinalHTML,
+		Title:      title,
+		StatusCode: 200,
+		Assets:     scriptsAndStyles,
+		Redirects:  response.Redirects,
+	}, nil
+}
+
+// extractTitle retrieves the title from the parsed HTML.
+func extractTitle(doc *html.Node) string {
+	var title string
+	traverseHTML(doc, func(node *html.Node) {
+		if node.Type == html.ElementNode && node.Data == "title" && node.FirstChild != nil {
+			title = node.FirstChild.Data
+		}
+	})
+	return title
+}
+
+// processScriptNode extracts data from a script element.
+func processScriptNode(node *html.Node) types.FileRequest {
+	for _, attr := range node.Attr {
+		if attr.Key == "src" {
+			url := attr.Val
+			if !strings.HasPrefix(url, "http://") && !strings.HasPrefix(url, "https://") {
+				url = "https://" + url
+			}
+			content, err := downloadContent(url)
+			if err != nil {
+				logger.Log.Error("Failed to download external script", zap.String("src", attr.Val), zap.Error(err))
+				return types.FileRequest{}
+			}
+			return createFileRequest(attr.Val, content, "application/javascript")
 		}
 	}
 
-	// Start traversing from the root of the parsed document
-	f(resp.ParsedBody)
+	// Handle inline script.
+	if node.FirstChild != nil && node.FirstChild.Type == html.TextNode {
+		return createFileRequest("inline-script", node.FirstChild.Data, "application/javascript")
+	}
 
-	// Return a more flexible response with various details
-	return models.ScanResponse{
-		WebsiteUrl:  resp.FinalHTML,
-		WebsiteName: websiteName,
-		StatusCode:  200,
-		Javascript:  resp.JavaScriptFiles,
-	}, nil
+	return types.FileRequest{}
+}
+
+// processStyleNode extracts data from a style element.
+func processStyleNode(node *html.Node) types.FileRequest {
+	if node.FirstChild != nil && node.FirstChild.Type == html.TextNode {
+		return createFileRequest("inline-style", node.FirstChild.Data, "text/css")
+	}
+	return types.FileRequest{}
+}
+
+// processLinkNode extracts data from a link element if it's a stylesheet.
+func processLinkNode(node *html.Node) types.FileRequest {
+	for _, attr := range node.Attr {
+		if attr.Key == "href" {
+			url := attr.Val
+			if !strings.HasPrefix(url, "http://") && !strings.HasPrefix(url, "https://") {
+				url = "https://" + url
+			}
+
+			content, err := downloadContent(url)
+			if err != nil {
+				logger.Log.Error("Failed to download stylesheet", zap.String("href", attr.Val), zap.Error(err))
+				return types.FileRequest{}
+			}
+			return createFileRequest(attr.Val, content, "text/css")
+		}
+	}
+	return types.FileRequest{}
+}
+
+// isStylesheet checks if a link element is a stylesheet.
+func isStylesheet(node *html.Node) bool {
+	for _, attr := range node.Attr {
+		if attr.Key == "rel" && attr.Val == "stylesheet" {
+			return true
+		}
+	}
+	return false
+}
+
+// createFileRequest constructs a FileRequest with content details.
+func createFileRequest(src, content, fileType string) types.FileRequest {
+	return types.FileRequest{
+		Src:        src,
+		Content:    content,
+		HashedBody: utils.SHA256(content),
+		FileSize:   uint(len(content)),
+		FileType:   fileType,
+	}
+}
+
+// downloadContent retrieves content from a URL.
+func downloadContent(url string) (string, error) {
+	client := &http.Client{
+		Timeout: 5 * time.Second,
+	}
+
+	resp, err := client.Get(url)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", errors.New("failed to download content, status code: " + resp.Status)
+	}
+
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	return string(data), nil
+}
+
+// traverseHTML recursively walks through the HTML nodes and applies the given function.
+func traverseHTML(node *html.Node, fn func(*html.Node)) {
+	fn(node)
+	for child := node.FirstChild; child != nil; child = child.NextSibling {
+		traverseHTML(child, fn)
+	}
 }

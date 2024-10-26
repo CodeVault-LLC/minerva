@@ -4,12 +4,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/alexedwards/scs/v2"
 	"github.com/codevault-llc/humblebrag-api/internal/api/routes"
-	"github.com/go-redis/redis/v8"
 	"github.com/gorilla/handlers"
 	"github.com/rs/cors"
-	"gorm.io/gorm"
 )
 
 // @title Humblebrag-API
@@ -23,8 +20,8 @@ import (
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
 // @host localhost:3000
 // @BasePath /api/v1
-func Start(db *gorm.DB, redis *redis.Client, cache *scs.SessionManager) {
-	api := routes.SetupRouter(db)
+func Start() {
+	api := routes.SetupRouter()
 
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"http://localhost:5173"},
@@ -37,7 +34,7 @@ func Start(db *gorm.DB, redis *redis.Client, cache *scs.SessionManager) {
 	handler := handlers.CompressHandler(c.Handler(api))
 
 	fmt.Println("Server started on port 3000")
-	err := http.ListenAndServe(":3000", cache.LoadAndSave(handler))
+	err := http.ListenAndServe(":3000", handler)
 	if err != nil {
 		panic(err)
 	}

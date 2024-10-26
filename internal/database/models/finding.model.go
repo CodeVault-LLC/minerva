@@ -16,10 +16,7 @@ type FindingModel struct {
 	Line   int    `gorm:"not null"`
 }
 
-type ScriptRequest struct {
-	Src     string `json:"src"`
-	Content string `json:"content"`
-}
+
 
 type FindingResponse struct {
 	ID     uint `json:"id"`

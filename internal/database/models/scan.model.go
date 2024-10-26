@@ -18,12 +18,12 @@ type ScanModel struct {
 	gorm.Model
 
 	Url        string `gorm:"not null"`
-	Name       string `gorm:"not null"`
+	Title      string `gorm:"not null"`
 	StatusCode int    `gorm:"not null"`
 
 	RedirectChain pq.StringArray `gorm:"type:text[]"`
 
-	Status ScanStatus `gorm:"not null" default:"complete"`
+	Status ScanStatus `gorm:"not null;default:'complete'"`
 
 	Sha256 string `gorm:"not null"`
 	SHA1   string `gorm:"not null"`
@@ -32,13 +32,14 @@ type ScanModel struct {
 	LicenseID uint          `gorm:"not null"`
 	License   *LicenseModel `gorm:"foreignKey:LicenseID"`
 
-	Nmap     NmapModel     `gorm:"foreignKey:ScanID"`
 	Network  NetworkModel  `gorm:"foreignKey:ScanID"`
 	Metadata MetadataModel `gorm:"foreignKey:ScanID"`
 
 	Lists    []FilterModel  `gorm:"foreignKey:ScanID"`
 	Findings []FindingModel `gorm:"foreignKey:ScanID"`
-	Contents []ContentModel `gorm:"foreignKey:ScanID"`
+
+	// Define the many-to-many relationship through the join table.
+	Contents []ContentModel `gorm:"many2many:scan_contents"`
 }
 
 type ScanRequest struct {
@@ -46,18 +47,11 @@ type ScanRequest struct {
 	UserAgent string `json:"userAgent"`
 }
 
-type ScanResponse struct {
-	WebsiteUrl  string   `json:"websiteUrl"`
-	WebsiteName string   `json:"websiteName"`
-	StatusCode  int      `json:"statusCode"`
-	Javascript  []string `json:"javascript"`
-}
-
 type ScanAPIResponse struct {
 	ID uint `json:"id"`
 
 	Url        string `json:"url"`
-	Name       string `json:"name"`
+	Title      string `json:"title"`
 	StatusCode int    `json:"status_code"`
 
 	RedirectChain pq.StringArray `json:"redirect_chain"`
@@ -77,7 +71,7 @@ func ConvertScan(scan ScanModel) ScanAPIResponse {
 		ID: scan.ID,
 
 		Url:           scan.Url,
-		Name:          scan.Name,
+		Title:         scan.Title,
 		RedirectChain: scan.RedirectChain,
 		StatusCode:    scan.StatusCode,
 

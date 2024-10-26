@@ -9,6 +9,7 @@ import (
 
 	"github.com/codevault-llc/humblebrag-api/internal/database/models"
 	"github.com/codevault-llc/humblebrag-api/pkg/logger"
+	"go.uber.org/zap"
 )
 
 func RespondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
@@ -28,7 +29,7 @@ func RespondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 
 	_, err = w.Write(response)
 	if err != nil {
-		logger.Log.Error("Failed to write response: %v", err)
+		logger.Log.Error("Failed to write response: %v", zap.Error(err))
 	}
 }
 
@@ -40,7 +41,7 @@ func DecodeJSON(body io.ReadCloser, v interface{}) {
 	decoder := json.NewDecoder(body)
 	err := decoder.Decode(v)
 	if err != nil {
-		logger.Log.Error("Failed to decode JSON: %v", err)
+		logger.Log.Error("Failed to decode JSON: %v", zap.Error(err))
 	}
 }
 

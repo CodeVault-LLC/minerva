@@ -4,7 +4,7 @@ import (
 	b64 "encoding/base64"
 	"fmt"
 
-	"github.com/codevault-llc/humblebrag-api/types"
+	"github.com/codevault-llc/humblebrag-api/pkg/types"
 	regexp "github.com/wasilibs/go-re2"
 )
 

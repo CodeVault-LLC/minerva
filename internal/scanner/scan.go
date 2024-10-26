@@ -12,60 +12,61 @@ import (
 	"github.com/codevault-llc/humblebrag-api/internal/scanner/websites"
 	"github.com/codevault-llc/humblebrag-api/internal/service"
 	"github.com/codevault-llc/humblebrag-api/pkg/logger"
+	"github.com/codevault-llc/humblebrag-api/pkg/types"
 	"github.com/codevault-llc/humblebrag-api/pkg/utils"
-	"golang.org/x/net/html"
+	"go.uber.org/zap"
 )
 
 func ScanWebsite(url string, userAgent string, licenseId uint) (models.ScanModel, error) {
-	logger.Log.Info("Starting website scan for URL: %s", url)
+	logger.Log.Info("Starting website scan for URL: %s", zap.String("url", url))
 
 	// Initial website scan
-	requestedWebsite, err := websites.RequestWebsite(url, userAgent)
+	requestedWebsite, err := websites.FetchWebsite(url, userAgent)
 	if err != nil {
-		logger.Log.Error("Failed to scan website: %v", err)
+		logger.Log.Error("Failed to scan website: %v", zap.Error(err))
 		return models.ScanModel{}, err
 	}
 
-	website, err := websites.AnalyzeWebsite(requestedWebsite)
+	website, err := websites.AnalyzeHTML(requestedWebsite)
 	if err != nil {
-		logger.Log.Error("Failed to analyze website: %v", err)
+		logger.Log.Error("Failed to analyze website: %v", zap.Error(err))
 		return models.ScanModel{}, err
 	}
 
 	// Save initial scan result
 	scanModel := models.ScanModel{
 		Url:           url,
-		Name:          website.WebsiteName,
-		RedirectChain: requestedWebsite.RedirectChain,
+		Title:         website.Title,
+		RedirectChain: requestedWebsite.Redirects,
 		StatusCode:    website.StatusCode,
 		Status:        models.ScanStatusPending, // Set status to pending for further processing
 		LicenseID:     licenseId,
-		Sha256:        utils.SHA256(website.WebsiteUrl),
-		SHA1:          utils.SHA1(website.WebsiteUrl),
-		MD5:           utils.MD5(website.WebsiteUrl),
+		Sha256:        utils.SHA256(website.Url),
+		SHA1:          utils.SHA1(website.Url),
+		MD5:           utils.MD5(website.Url),
 	}
 
 	scanModel, err = service.CreateScan(scanModel)
 	if err != nil {
-		logger.Log.Error("Failed to save initial scan result: %v", err)
+		logger.Log.Error("Failed to save initial scan result: %v", zap.Error(err))
 		return models.ScanModel{}, err
 	}
 
 	// Start background goroutines to handle further scans asynchronously
-	go runBackgroundModules(scanModel.ID, url, requestedWebsite.ParsedBody)
+	go runBackgroundModules(scanModel.ID, url, website)
 
 	// Return the response immediately, without waiting for the background tasks
 	return scanModel, nil
 }
 
-func runBackgroundModules(scanId uint, url string, requestedWebsite *html.Node) {
+func runBackgroundModules(scanId uint, url string, website types.WebsiteAnalysis) {
 	var wg sync.WaitGroup
 	wg.Add(4) // Amount of modules
 
 	go func() {
 		fmt.Println("Starting content module")
 		defer wg.Done() // Signal that the content module is done
-		content.ContentModule(scanId, requestedWebsite)
+		content.ContentModule(scanId, website.Assets)
 	}()
 
 	go func() {
@@ -79,13 +80,6 @@ func runBackgroundModules(scanId uint, url string, requestedWebsite *html.Node) 
 		defer wg.Done() // Signal that the list module is done
 		metadata.MetadataModule(scanId, url)
 	}()
-
-	// Disabled due to high resource usage and potential safety concerns
-	/*go func() {
-		fmt.Println("Starting nmap module")
-		defer wg.Done()
-		nmap.NmapModule(scanId, url)
-	}()*/
 
 	go func() {
 		fmt.Println("Starting network module")
@@ -106,7 +100,7 @@ func runBackgroundModules(scanId uint, url string, requestedWebsite *html.Node) 
 
 		_, err := service.UpdateScan(scanModel)
 		if err != nil {
-			logger.Log.Error("Failed to update scan status: %v", err)
+			logger.Log.Error("Failed to update scan status: %v", zap.Error(err))
 		}
 	}()
 }

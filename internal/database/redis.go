@@ -32,8 +32,6 @@ func InitRedis() (*redis.Client, error) {
 		log.Println(err)
 
 		return nil, err
-	} else {
-		log.Println("Connected to Redis")
 	}
 
 	return Rdb, nil

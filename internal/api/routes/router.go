@@ -8,10 +8,9 @@ import (
 	"github.com/codevault-llc/humblebrag-api/internal/api/middleware"
 	"github.com/codevault-llc/humblebrag-api/internal/database/models"
 	"github.com/gorilla/mux"
-	"gorm.io/gorm"
 )
 
-func SetupRouter(db *gorm.DB) *mux.Router {
+func SetupRouter() *mux.Router {
 	gob.Register(models.LicenseModel{})
 
 	r := mux.NewRouter()

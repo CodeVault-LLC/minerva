@@ -675,8 +675,6 @@ var SwaggerInfo = &swag.Spec{
 	Description:      "Humblebrag is a scanner service which detects and reports on the presence of sensitive data in your codebase and infrastructure.",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
-	LeftDelim:        "{{",
-	RightDelim:       "}}",
 }
 
 func init() {

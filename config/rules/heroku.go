@@ -1,6 +1,6 @@
 package rules
 
-import "github.com/codevault-llc/humblebrag-api/types"
+import "github.com/codevault-llc/humblebrag-api/pkg/types"
 
 func Heroku() *types.Rule {
 	// define types.Rule

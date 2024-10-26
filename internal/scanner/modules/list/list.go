@@ -7,6 +7,7 @@ import (
 	"github.com/codevault-llc/humblebrag-api/pkg/logger"
 	"github.com/codevault-llc/humblebrag-api/pkg/parsers"
 	"github.com/codevault-llc/humblebrag-api/pkg/utils"
+	"go.uber.org/zap"
 )
 
 func ListModule(scanId uint, url string) {
@@ -20,7 +21,7 @@ func ListModule(scanId uint, url string) {
 
 		_, err := service.CreateFilter(filterModel)
 		if err != nil {
-			logger.Log.Error("Failed to save list: %v", err)
+			logger.Log.Error("Failed to save list: %v", zap.Error(err))
 		}
 	}
 }

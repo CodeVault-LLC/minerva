@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/codevault-llc/humblebrag-api/pkg/types"
 	"github.com/codevault-llc/humblebrag-api/pkg/utils"
-	"github.com/codevault-llc/humblebrag-api/types"
 	regexp "github.com/wasilibs/go-re2"
 
 	"github.com/rs/zerolog/log"
@@ -82,7 +82,7 @@ func validate(r types.Rule, truePositives []string, falsePositives []string) *ty
 	rules := make(map[string]types.Rule)
 	rules[r.RuleID] = r
 	for _, tp := range truePositives {
-		if len(utils.GenericScan(r, utils.Script{
+		if len(utils.GenericScan(r, types.FileRequest{
 			Src:     "validate.js",
 			Content: tp,
 		})) != 1 {
@@ -90,7 +90,7 @@ func validate(r types.Rule, truePositives []string, falsePositives []string) *ty
 		}
 	}
 	for _, fp := range falsePositives {
-		if len(utils.GenericScan(r, utils.Script{
+		if len(utils.GenericScan(r, types.FileRequest{
 			Src:     "validate.js",
 			Content: fp,
 		})) != 0 {

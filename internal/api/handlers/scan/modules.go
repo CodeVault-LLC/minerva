@@ -2,10 +2,10 @@ package scan
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/codevault-llc/humblebrag-api/helper"
 	"github.com/codevault-llc/humblebrag-api/internal/service"
-	"github.com/codevault-llc/humblebrag-api/pkg/utils"
 	"github.com/gorilla/mux"
 )
 
@@ -14,7 +14,6 @@ func RegisterModulesRoutes(api *mux.Router) {
 	api.HandleFunc("/scans/{scanID}/contents", getScanContents).Methods("GET")
 	api.HandleFunc("/scans/{scanID}/network", getScanNetwork).Methods("GET")
 	api.HandleFunc("/scans/{scanID}/metadata", getScanMetadata).Methods("GET")
-	api.HandleFunc("/scans/{scanID}/nmap", getScanNmap).Methods("GET")
 }
 
 // @Summary Get scan findings
@@ -54,7 +53,13 @@ func getScanContents(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	scanID := vars["scanID"]
 
-	contents, err := service.GetScanContent(scanID)
+	scanIDUint, err := strconv.ParseUint(scanID, 10, 64)
+	if err != nil {
+		helper.RespondWithError(w, 400, "Invalid scan ID")
+		return
+	}
+
+	contents, err := service.GetScanContent(uint(scanIDUint))
 	if err != nil {
 		helper.RespondWithError(w, 500, "Failed to get scan contents")
 		return
@@ -107,32 +112,4 @@ func getScanMetadata(w http.ResponseWriter, r *http.Request) {
 	}
 
 	helper.RespondWithJSON(w, 200, metadata)
-}
-
-// @Summary Get scan nmap
-// @Description Get scan nmap
-// @Tags scans
-// @Accept json
-// @Produce json
-// @Param scanID path string true "Scan ID"
-// @Success 200 {object} models.NmapResponse
-// @Failure 400 {object} types.Error
-// @Failure 404 {object} types.Error
-// @Router /scans/{scanID}/nmap [get]
-func getScanNmap(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	scanID := vars["scanID"]
-
-	if utils.IsNmapInstalled() == false {
-		helper.RespondWithError(w, 400, "The Nmap Module is not installed. You may try again later.")
-		return
-	}
-
-	nmap, err := service.GetNmap(scanID)
-	if err != nil {
-		helper.RespondWithError(w, 500, "Failed to get scan nmap")
-		return
-	}
-
-	helper.RespondWithJSON(w, 200, nmap)
 }

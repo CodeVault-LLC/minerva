@@ -6,7 +6,7 @@ import (
 	"github.com/codevault-llc/humblebrag-api/config/lists"
 	"github.com/codevault-llc/humblebrag-api/config/rules"
 	"github.com/codevault-llc/humblebrag-api/pkg/parsers"
-	"github.com/codevault-llc/humblebrag-api/types"
+	"github.com/codevault-llc/humblebrag-api/pkg/types"
 	regexp "github.com/wasilibs/go-re2"
 )
 
@@ -21,13 +21,11 @@ type ViperConfig struct {
 	}
 
 	Lists []types.Filter
-	Ports []types.Port
 }
 
 type Config struct {
 	Rules map[string]types.Rule
 	Lists map[string]types.Filter
-	Ports map[int]types.Port
 }
 
 // Order the rules based on alphabetical order of the ID
@@ -283,71 +281,4 @@ var ConfigLists = []*types.Filter{
 		URL:         "https://cdn.jsdelivr.net/gh/hagezi/dns-blocklists@latest/domains/ultimate.txt",
 		Parser:      lists.DomainListParser,
 	},*/
-}
-
-var PortLists = []types.Port{
-	{
-		Port: 80,
-		Name: "http",
-	},
-	{
-		Port: 443,
-		Name: "https",
-	},
-	{
-		Port: 21,
-		Name: "ftp",
-	},
-	{
-		Port: 22,
-		Name: "ssh",
-	},
-	{
-		Port: 23,
-		Name: "telnet",
-	},
-	{
-		Port: 25,
-		Name: "smtp",
-	},
-	{
-		Port: 53,
-		Name: "dns",
-	},
-	{
-		Port: 110,
-		Name: "pop3",
-	},
-	{
-		Port: 143,
-		Name: "imap",
-	},
-	{
-		Port: 161,
-		Name: "snmp",
-	},
-	{
-		Port: 194,
-		Name: "irc",
-	},
-	{
-		Port: 389,
-		Name: "ldap",
-	},
-	{
-		Port: 465,
-		Name: "smtps",
-	},
-	{
-		Port: 587,
-		Name: "submission",
-	},
-	{
-		Port: 636,
-		Name: "ldaps",
-	},
-	{
-		Port: 993,
-		Name: "imaps",
-	},
 }

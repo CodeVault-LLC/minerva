@@ -3,7 +3,7 @@ package utils
 import (
 	"testing"
 
-	"github.com/codevault-llc/humblebrag-api/types"
+	"github.com/codevault-llc/humblebrag-api/pkg/types"
 	regexp "github.com/wasilibs/go-re2"
 )
 
@@ -17,9 +17,12 @@ func TestGenericScan(t *testing.T) {
 
 	content := "Hello, this is just a simple little fun test string which should work perfectly."
 
-	script := Script{
-		Src:     "test",
-		Content: content,
+	script := types.FileRequest{
+		Src:        "test",
+		Content:    content,
+		HashedBody: "test",
+		FileSize:   0,
+		FileType:   "text",
 	}
 
 	matches := GenericScan(rule, script)

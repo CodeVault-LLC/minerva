@@ -2,7 +2,7 @@ package models
 
 import (
 	"github.com/codevault-llc/humblebrag-api/config"
-	"github.com/codevault-llc/humblebrag-api/types"
+	"github.com/codevault-llc/humblebrag-api/pkg/types"
 	"gorm.io/gorm"
 )
 
