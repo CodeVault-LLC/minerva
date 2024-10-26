@@ -5,6 +5,7 @@ import (
 	"context"
 
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/codevault-llc/humblebrag-api/internal/database"
 )
 
@@ -16,13 +17,25 @@ func DetermineStorageType(content string) string {
 	return "cold"
 }
 
-func UploadFile(bucketName string, objectKey string, fileContents []byte) error {
-	_, err := database.AWS.PutObject(context.TODO(), &s3.PutObjectInput{
-		Bucket: &bucketName,
-		Key:    &objectKey,
-		Body:   bytes.NewReader(fileContents),
-	})
-	return err
+func UploadFile(bucketName string, objectKey string, fileContents []byte, readable bool) error {
+	if readable {
+		_, err := database.AWS.PutObject(context.TODO(), &s3.PutObjectInput{
+			Bucket: &bucketName,
+			Key:    &objectKey,
+			Body:   bytes.NewReader(fileContents),
+			ACL:    types.ObjectCannedACLPublicRead,
+		})
+
+		return err
+	} else {
+		_, err := database.AWS.PutObject(context.TODO(), &s3.PutObjectInput{
+			Bucket: &bucketName,
+			Key:    &objectKey,
+			Body:   bytes.NewReader(fileContents),
+		})
+
+		return err
+	}
 }
 
 func DownloadFile(bucketName string, objectKey string) ([]byte, error) {

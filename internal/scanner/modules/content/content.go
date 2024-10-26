@@ -18,32 +18,38 @@ func ContentModule(scanId uint, assets []types.FileRequest) {
 	for _, script := range assets {
 		hashedBody := utils.SHA256(script.Content)
 
-		// Check if content already exists by hash
 		existingContent, err := service.FindContentByHash(hashedBody)
 		if err != nil {
 			logger.Log.Error("Failed to find content by hash: %v", zap.Error(err))
+
+			var jsFiles []types.FileRequest
+			for _, asset := range assets {
+				if asset.FileType == "application/javascript" {
+					jsFiles = append(jsFiles, asset)
+				}
+			}
+
+			findings := scanSecrets(jsFiles)
+			service.CreateFindings(scanId, findings)
 			continue
 		}
 
 		var contentID uint
 
 		if existingContent.ID != 0 {
-			// Increment access count if the content already exists
 			err := service.IncrementAccessCount(existingContent.ID)
 			if err != nil {
 				logger.Log.Error("Failed to increment access count: %v", zap.Error(err))
 			}
 			contentID = existingContent.ID
 		} else {
-			// Upload the new file to S3
 			storageType := storage.DetermineStorageType(script.Content)
-			err = storage.UploadFile("content-bucket", hashedBody, []byte(script.Content))
+			err = storage.UploadFile("content-bucket", hashedBody, []byte(script.Content), true)
 			if err != nil {
 				logger.Log.Error("Failed to upload file: %v", zap.Error(err))
 				continue
 			}
 
-			// Create new content record
 			content := models.ContentModel{
 				FileSize:       int64(script.FileSize),
 				FileType:       script.FileType,
@@ -77,14 +83,20 @@ func ContentModule(scanId uint, assets []types.FileRequest) {
 			contentID = newContent.ID
 		}
 
-		// Associate the content with the scan
 		err = service.AddContentToScan(scanId, contentID)
 		if err != nil {
 			logger.Log.Error("Failed to associate content with scan: %v", zap.Error(err))
 		}
 	}
 
-	findings := scanSecrets(assets)
+	var jsFiles []types.FileRequest
+	for _, asset := range assets {
+		if asset.FileType == "application/javascript" {
+			jsFiles = append(jsFiles, asset)
+		}
+	}
+
+	findings := scanSecrets(jsFiles)
 	service.CreateFindings(scanId, findings)
 }
 
