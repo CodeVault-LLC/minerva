@@ -1,19 +1,19 @@
 package scan
 
 import (
-	"net/http"
-	"strconv"
-
 	"github.com/codevault-llc/humblebrag-api/internal/service"
 	"github.com/codevault-llc/humblebrag-api/pkg/responder"
-	"github.com/gorilla/mux"
+	"github.com/codevault-llc/humblebrag-api/pkg/utils"
+	"github.com/gofiber/fiber/v2"
 )
 
-func RegisterModulesRoutes(api *mux.Router) {
-	api.HandleFunc("/scans/{scanID}/findings", getScanFindings).Methods("GET")
-	api.HandleFunc("/scans/{scanID}/contents", getScanContents).Methods("GET")
-	api.HandleFunc("/scans/{scanID}/network", getScanNetwork).Methods("GET")
-	api.HandleFunc("/scans/{scanID}/metadata", getScanMetadata).Methods("GET")
+func RegisterModulesRoutes(router fiber.Router) error {
+	router.Get("/scans/:scanID/findings", getScanFindings)
+	router.Get("/scans/:scanID/contents", getScanContents)
+	router.Get("/scans/:scanID/network", getScanNetwork)
+	router.Get("/scans/:scanID/metadata", getScanMetadata)
+
+	return nil
 }
 
 // @Summary Get scan findings
@@ -26,23 +26,21 @@ func RegisterModulesRoutes(api *mux.Router) {
 // @Failure 400 {object} responder.APIResponse{error=responder.APIError}
 // @Failure 404 {object} responder.APIResponse{error=responder.APIError}
 // @Router /scans/{scanID}/findings [get]
-func getScanFindings(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	scanID := vars["scanID"]
+func getScanFindings(c *fiber.Ctx) error {
+	scanID := c.Params("scanID")
 
-	_, err := strconv.ParseUint(scanID, 10, 64)
+	scanUint, err := utils.ParseUint(scanID)
 	if err != nil {
-		responder.WriteJSONResponse(w, responder.CreateError(responder.ErrInvalidRequest))
-		return
+		return responder.CreateError(responder.ErrInvalidRequest).Error
 	}
 
-	findings, err := service.GetScanFindings(scanID)
+	findings, err := service.GetScanFindings(uint(scanUint))
 	if err != nil {
-		responder.WriteJSONResponse(w, responder.CreateError(responder.ErrDatabaseQueryFailed))
-		return
+		return responder.CreateError(responder.ErrDatabaseQueryFailed).Error
 	}
 
-	responder.WriteJSONResponse(w, responder.CreateSuccessResponse(findings, "Successfully retrieved scan findings"))
+	responder.WriteJSONResponse(c, responder.CreateSuccessResponse(findings, "Successfully retrieved scan findings"))
+	return nil
 }
 
 // @Summary Get scan contents
@@ -55,23 +53,21 @@ func getScanFindings(w http.ResponseWriter, r *http.Request) {
 // @Failure 400 {object} responder.APIResponse{error=responder.APIError}
 // @Failure 404 {object} responder.APIResponse{error=responder.APIError}
 // @Router /scans/{scanID}/contents [get]
-func getScanContents(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	scanID := vars["scanID"]
+func getScanContents(c *fiber.Ctx) error {
+	scanID := c.Params("scanID")
 
-	scanIDUint, err := strconv.ParseUint(scanID, 10, 64)
+	scanUint, err := utils.ParseUint(scanID)
 	if err != nil {
-		responder.WriteJSONResponse(w, responder.CreateError(responder.ErrInvalidRequest))
-		return
+		return responder.CreateError(responder.ErrInvalidRequest).Error
 	}
 
-	contents, err := service.GetScanContent(uint(scanIDUint))
+	contents, err := service.GetScanContent(uint(scanUint))
 	if err != nil {
-		responder.WriteJSONResponse(w, responder.CreateError(responder.ErrDatabaseQueryFailed))
-		return
+		return responder.CreateError(responder.ErrDatabaseQueryFailed).Error
 	}
 
-	responder.WriteJSONResponse(w, responder.CreateSuccessResponse(contents, "Successfully retrieved scan contents"))
+	responder.WriteJSONResponse(c, responder.CreateSuccessResponse(contents, "Successfully retrieved scan contents"))
+	return nil
 }
 
 // @Summary Get scan network
@@ -84,17 +80,25 @@ func getScanContents(w http.ResponseWriter, r *http.Request) {
 // @Failure 400 {object} responder.APIResponse{error=responder.APIError}
 // @Failure 404 {object} responder.APIResponse{error=responder.APIError}
 // @Router /scans/{scanID}/network [get]
-func getScanNetwork(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	scanID := vars["scanID"]
+func getScanNetwork(c *fiber.Ctx) error {
+	scanID := c.Params("scanID")
 
-	network, err := service.GetScanNetwork(scanID)
+	scanUint, err := utils.ParseUint(scanID)
 	if err != nil {
-		responder.WriteJSONResponse(w, responder.CreateError(responder.ErrDatabaseQueryFailed))
-		return
+		return responder.CreateError(responder.ErrInvalidRequest).Error
 	}
 
-	responder.WriteJSONResponse(w, responder.CreateSuccessResponse(network, "Successfully retrieved scan network"))
+	network, err := service.GetScanNetwork(uint(scanUint))
+	if err != nil {
+		return responder.CreateError(responder.ErrDatabaseQueryFailed).Error
+	}
+
+	if network.ID == 0 {
+		return responder.CreateError(responder.ErrResourceNotFound).Error
+	}
+
+	responder.WriteJSONResponse(c, responder.CreateSuccessResponse(network, "Successfully retrieved scan network"))
+	return nil
 }
 
 // @Summary Get scan metadata
@@ -107,15 +111,24 @@ func getScanNetwork(w http.ResponseWriter, r *http.Request) {
 // @Failure 400 {object} responder.APIResponse{error=responder.APIError}
 // @Failure 404 {object} responder.APIResponse{error=responder.APIError}
 // @Router /scans/{scanID}/metadata [get]
-func getScanMetadata(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	scanID := vars["scanID"]
+func getScanMetadata(c *fiber.Ctx) error {
+	scanID := c.Params("scanID")
 
-	metadata, err := service.GetScanMetadataByScanID(scanID)
+	scanUint, err := utils.ParseUint(scanID)
 	if err != nil {
-		responder.WriteJSONResponse(w, responder.CreateError(responder.ErrDatabaseQueryFailed))
-		return
+		return responder.CreateError(responder.ErrInvalidRequest).Error
 	}
 
-	responder.WriteJSONResponse(w, responder.CreateSuccessResponse(metadata, "Successfully retrieved scan metadata"))
+	metadata, err := service.GetScanMetadataByScanID(uint(scanUint))
+	if err != nil {
+		responder.WriteJSONResponse(c, responder.CreateError(responder.ErrDatabaseQueryFailed))
+		return responder.CreateError(responder.ErrDatabaseQueryFailed).Error
+	}
+
+	if metadata.ID == 0 {
+		return responder.CreateError(responder.ErrResourceNotFound).Error
+	}
+
+	responder.WriteJSONResponse(c, responder.CreateSuccessResponse(metadata, "Successfully retrieved scan metadata"))
+	return nil
 }

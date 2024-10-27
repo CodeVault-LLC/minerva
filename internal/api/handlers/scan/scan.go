@@ -2,20 +2,21 @@ package scan
 
 import (
 	"encoding/json"
-	"net/http"
 
 	"github.com/codevault-llc/humblebrag-api/internal/database/models"
 	"github.com/codevault-llc/humblebrag-api/internal/scanner"
 	"github.com/codevault-llc/humblebrag-api/internal/service"
 	"github.com/codevault-llc/humblebrag-api/pkg/responder"
 	"github.com/codevault-llc/humblebrag-api/pkg/utils"
-	"github.com/gorilla/mux"
+	"github.com/gofiber/fiber/v2"
 )
 
-func RegisterScanRoutes(api *mux.Router) {
-	api.HandleFunc("/scans", GetScans).Methods("GET")
-	api.HandleFunc("/scans/{scanID}", GetScan).Methods("GET")
-	api.HandleFunc("/scans", CreateScan).Methods("POST")
+func RegisterScanRoutes(router fiber.Router) error {
+	router.Get("/scans", GetScans)
+	router.Get("/scans/:scanID", GetScan)
+	router.Post("/scans", CreateScan)
+
+	return nil
 }
 
 // @Summary Create a new scan
@@ -28,23 +29,20 @@ func RegisterScanRoutes(api *mux.Router) {
 // @Failure 400 {object} responder.APIResponse{error=responder.APIError}
 // @Failure 404 {object} responder.APIResponse{error=responder.APIError}
 // @Router /scans [post]
-func CreateScan(w http.ResponseWriter, r *http.Request) {
-	license := r.Context().Value("license").(models.LicenseModel)
+func CreateScan(c *fiber.Ctx) error {
+	license := c.Locals("license").(models.LicenseModel)
 	if license.ID == 0 {
-		responder.WriteJSONResponse(w, responder.CreateError(responder.ErrAuthInvalidToken))
-		return
+		return responder.CreateError(responder.ErrAuthInvalidToken).Error
 	}
 
 	var scan models.ScanRequest
-	err := json.NewDecoder(r.Body).Decode(&scan)
+	err := json.Unmarshal(c.Body(), &scan)
 	if err != nil {
-		responder.WriteJSONResponse(w, responder.CreateError(responder.ErrInvalidRequest))
-		return
+		return responder.CreateError(responder.ErrInvalidRequest).Error
 	}
 
 	if !utils.ValidateURL(scan.Url) {
-		responder.WriteJSONResponse(w, responder.CreateError(responder.ErrInvalidRequest))
-		return
+		return responder.CreateError(responder.ErrInvalidRequest).Error
 	}
 
 	scan.Url = utils.NormalizeURL(scan.Url)
@@ -55,11 +53,11 @@ func CreateScan(w http.ResponseWriter, r *http.Request) {
 
 	scanResponse, err := scanner.ScanWebsite(scan.Url, userAgent, license.ID)
 	if err != nil {
-		responder.WriteJSONResponse(w, responder.CreateError(responder.ErrScannerFailed))
-		return
+		return responder.CreateError(responder.ErrScannerFailed).Error
 	}
 
-	responder.WriteJSONResponse(w, responder.CreateSuccessResponse(models.ConvertScan(scanResponse), "Scan created successfully"))
+	responder.WriteJSONResponse(c, responder.CreateSuccessResponse(models.ConvertScan(scanResponse), "Scan created successfully"))
+	return nil
 }
 
 // @Summary Get all scans
@@ -71,14 +69,14 @@ func CreateScan(w http.ResponseWriter, r *http.Request) {
 // @Failure 400 {object} responder.APIResponse{error=responder.APIError}
 // @Failure 404 {object} responder.APIResponse{error=responder.APIError}
 // @Router /scans [get]
-func GetScans(w http.ResponseWriter, r *http.Request) {
+func GetScans(c *fiber.Ctx) error {
 	scans, err := service.GetScans()
 	if err != nil {
-		responder.WriteJSONResponse(w, responder.CreateError(responder.ErrDatabaseQueryFailed))
-		return
+		return responder.CreateError(responder.ErrDatabaseQueryFailed).Error
 	}
 
-	responder.WriteJSONResponse(w, responder.CreateSuccessResponse(scans, "Scans retrieved successfully"))
+	responder.WriteJSONResponse(c, responder.CreateSuccessResponse(scans, "Scans retrieved successfully"))
+	return nil
 }
 
 // @Summary Get a scan
@@ -91,15 +89,23 @@ func GetScans(w http.ResponseWriter, r *http.Request) {
 // @Failure 400 {object} responder.APIResponse{error=responder.APIError}
 // @Failure 404 {object} responder.APIResponse{error=responder.APIError}
 // @Router /scans/{scanID} [get]
-func GetScan(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	scanID := vars["scanID"]
+func GetScan(c *fiber.Ctx) error {
+	scanID := c.Params("scanID")
 
-	scan, err := service.GetScan(scanID)
+	scanUint, err := utils.ParseUint(scanID)
 	if err != nil {
-		responder.WriteJSONResponse(w, responder.CreateError(responder.ErrDatabaseQueryFailed))
-		return
+		return responder.CreateError(responder.ErrInvalidRequest).Error
 	}
 
-	responder.WriteJSONResponse(w, responder.CreateSuccessResponse(scan, "Scan retrieved successfully"))
+	scan, err := service.GetScan(uint(scanUint))
+	if err != nil {
+		return responder.CreateError(responder.ErrDatabaseQueryFailed).Error
+	}
+
+	if scan.ID == 0 {
+		return responder.CreateError(responder.ErrResourceNotFound).Error
+	}
+
+	responder.WriteJSONResponse(c, responder.CreateSuccessResponse(scan, "Scan retrieved successfully"))
+	return nil
 }

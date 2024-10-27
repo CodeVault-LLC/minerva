@@ -35,7 +35,7 @@ func GetScans() ([]models.ScanAPIResponse, error) {
 	return models.ConvertScans(scans), nil
 }
 
-func GetScan(scanID string) (models.ScanAPIResponse, error) {
+func GetScan(scanID uint) (models.ScanAPIResponse, error) {
 	var scan models.ScanModel
 
 	if err := database.DB.Where("id = ?", scanID).Preload("Findings").Preload("Lists").Where("status IN (?, ?)", models.ScanStatusComplete, models.ScanStatusPending).First(&scan).Error; err != nil {

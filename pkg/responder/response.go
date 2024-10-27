@@ -1,8 +1,9 @@
 package responder
 
 import (
-	"encoding/json"
 	"net/http"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 type ResponseType string
@@ -27,6 +28,11 @@ type APIError struct {
 	Hint        string `json:"hint"`        // Optional hint for the user on how to resolve the issue.
 }
 
+// Error returns the error message of the APIError.
+func (e *APIError) Error() string {
+	return e.Description
+}
+
 // CreateSuccessResponse generates a success response with data.
 func CreateSuccessResponse(data interface{}, message string) APIResponse {
 	return APIResponse{
@@ -37,8 +43,8 @@ func CreateSuccessResponse(data interface{}, message string) APIResponse {
 	}
 }
 
-// CreateErrorResponse generates an error response with a specified status code.
-func CreateErrorResponse(code string, description string, hint string, statusCode int) APIResponse {
+// createErrorResponse generates an error response with a specified status code.
+func createErrorResponse(code string, description string, hint string, statusCode int) APIResponse {
 	return APIResponse{
 		Type:       ResponseTypeError,
 		StatusCode: statusCode,
@@ -52,13 +58,24 @@ func CreateErrorResponse(code string, description string, hint string, statusCod
 }
 
 // WriteJSONResponse writes the API response as JSON to the HTTP response writer.
-func WriteJSONResponse(w http.ResponseWriter, apiResponse APIResponse) {
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("X-Content-Type-Options", "nosniff")
-	w.Header().Set("X-Frame-Options", "DENY")
-	w.Header().Set("X-XSS-Protection", "1; mode=block")
+func WriteJSONResponse(c *fiber.Ctx, apiResponse APIResponse) {
+	c.Response().Header.Set("Content-Type", "application/json")
+	c.Response().Header.Set("X-Content-Type-Options", "nosniff")
+	c.Response().Header.Set("X-Frame-Options", "DENY")
+	c.Response().Header.Set("X-XSS-Protection", "1; mode=block")
 
+	c.Status(apiResponse.StatusCode)
+	c.JSON(apiResponse)
+}
 
-	w.WriteHeader(apiResponse.StatusCode)
-	json.NewEncoder(w).Encode(apiResponse)
+func ErrorHandler(c *fiber.Ctx, err error) error {
+	apiError, ok := err.(*APIError)
+	if !ok {
+		WriteJSONResponse(c, createErrorResponse("internal_server_error", "An internal server error occurred.", "Try again later or contact support.", http.StatusInternalServerError))
+		return err
+	}
+
+	apiResponse := createErrorResponse(apiError.Code, apiError.Description, apiError.Hint, c.Response().StatusCode())
+	WriteJSONResponse(c, apiResponse)
+	return nil
 }

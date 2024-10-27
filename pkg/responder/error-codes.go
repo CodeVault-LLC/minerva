@@ -19,6 +19,7 @@ const (
 	ErrInvalidRequest         ErrorCode = 40004
 	ErrValidationInvalidField ErrorCode = 40010
 	ErrValidationMissingField ErrorCode = 40011
+	ErrResourceNotFound       ErrorCode = 40400
 
 	// Database error codes.
 	ErrDatabaseQueryFailed    ErrorCode = 50001
@@ -54,6 +55,8 @@ var errorMapping = map[ErrorCode]errorDetails{
 	ErrForbiddenAccess:        {"Access to the requested resource is forbidden.", "Contact support if you believe this is a mistake."},
 	ErrInternalServerError:    {"An internal server error occurred.", "Try again later or contact support."},
 	ErrBadRequest:             {"The request could not be processed due to client error.", "Check the request format and parameters."},
+	ErrInvalidRequest:         {"The request is invalid or malformed.", "Ensure the request is correctly formatted."},
+	ErrResourceNotFound:       {"The requested resource was not found.", "Ensure the resource exists and the ID is correct."},
 }
 
 // statusCodeMapping derives HTTP status codes from error codes.
@@ -84,5 +87,5 @@ func CreateError(code ErrorCode) APIResponse {
 		}
 	}
 
-	return CreateErrorResponse(strconv.Itoa(int(code)), details.Description, details.Hint, statusCodeMapping(code))
+	return createErrorResponse(strconv.Itoa(int(code)), details.Description, details.Hint, statusCodeMapping(code))
 }

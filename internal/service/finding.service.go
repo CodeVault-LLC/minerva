@@ -51,7 +51,7 @@ func UpdateFindings(scanID uint, secrets []utils.RegexReturn) {
 }
 
 // GetScanFindings retrieves findings from the database
-func GetScanFindings(scanID string) ([]models.FindingResponse, error) {
+func GetScanFindings(scanID uint) ([]models.FindingResponse, error) {
 	var findings []models.FindingModel
 
 	if err := database.DB.Where("scan_id = ?", scanID).

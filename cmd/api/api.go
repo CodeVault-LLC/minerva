@@ -1,12 +1,14 @@
 package api
 
 import (
-	"fmt"
-	"net/http"
-
 	"github.com/codevault-llc/humblebrag-api/internal/api/routes"
-	"github.com/gorilla/handlers"
-	"github.com/rs/cors"
+	"github.com/codevault-llc/humblebrag-api/pkg/responder"
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/compress"
+	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/helmet"
+	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/gofiber/fiber/v2/middleware/recover"
 )
 
 // @title Humblebrag-API
@@ -21,21 +23,40 @@ import (
 // @host localhost:3000
 // @BasePath /api/v1
 func Start() {
-	api := routes.SetupRouter()
-
-	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:5173"},
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
-		AllowedHeaders:   []string{"*"},
-		AllowCredentials: true,
-		MaxAge:           300,
+	app := fiber.New(fiber.Config{
+		Prefork:       false,
+		CaseSensitive: true,
+		ErrorHandler:  responder.ErrorHandler,
 	})
 
-	handler := handlers.CompressHandler(c.Handler(api))
+	app.Use(compress.New(compress.Config{
+		Level: compress.LevelBestSpeed, // 1
+	}))
+	app.Use(helmet.New())
 
-	fmt.Println("Server started on port 3000")
-	err := http.ListenAndServe(":3000", handler)
-	if err != nil {
-		panic(err)
-	}
+	app.Use(func(c *fiber.Ctx) error {
+		c.Set("Content-Security-Policy", "default-src 'self'")
+		c.Set("Strict-Transport-Security", "max-age=31536000")
+		c.Set("X-Frame-Options", "DENY")
+		c.Set("X-Content-Type-Options", "nosniff")
+		c.Set("X-XSS-Protection", "1; mode=block")
+
+		return c.Next()
+	})
+
+	app.Use(recover.New())
+	app.Use(logger.New())
+
+	app.Use(cors.New(cors.Config{
+		AllowCredentials: false,
+		MaxAge:           3600,
+		AllowOrigins:     "*",
+		AllowMethods:     "GET,POST,HEAD,PUT,DELETE,PATCH",
+		AllowHeaders:     "Origin, Content-Type, Accept",
+		ExposeHeaders:    "",
+	}))
+
+	api := routes.SetupRouter(app)
+
+	api.Listen(":3000")
 }

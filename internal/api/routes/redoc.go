@@ -1,8 +1,8 @@
 package routes
 
-import "net/http"
+import "github.com/gofiber/fiber/v2"
 
-func serveReDoc(w http.ResponseWriter, r *http.Request) {
+func serveReDoc(c *fiber.Ctx) error {
 	html := `
 	<!DOCTYPE html>
 	<html>
@@ -17,7 +17,8 @@ func serveReDoc(w http.ResponseWriter, r *http.Request) {
 	</body>
 	</html>
 	`
-	w.Header().Set("Content-Type", "text/html")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(html))
+
+	c.Set("Content-Type", "text/html")
+	c.SendString(html)
+	return nil
 }

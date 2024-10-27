@@ -1,25 +1,22 @@
 package routes
 
 import (
-	"encoding/gob"
 	"net/http"
 
 	"github.com/codevault-llc/humblebrag-api/internal/api/handlers/scan"
 	"github.com/codevault-llc/humblebrag-api/internal/api/middleware"
-	"github.com/codevault-llc/humblebrag-api/internal/database/models"
-	"github.com/gorilla/mux"
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/filesystem"
 )
 
-func SetupRouter() *mux.Router {
-	gob.Register(models.LicenseModel{})
+func SetupRouter(app *fiber.App) *fiber.App {
+	app.Use(filesystem.New(filesystem.Config{
+		Root: http.Dir("./swagger"),
+	}))
 
-	r := mux.NewRouter()
+	app.Get("/docs", serveReDoc)
 
-	r.PathPrefix("/swagger/").Handler(http.StripPrefix("/swagger/", http.FileServer(http.Dir("./docs"))))
-
-	r.HandleFunc("/docs/", serveReDoc).Methods("GET")
-
-	api := r.PathPrefix("/api/v1").Subrouter()
+	api := app.Group("/api/v1")
 
 	// Middlewares
 	api.Use(middleware.SubscriptionAuthMiddleware)
@@ -28,5 +25,5 @@ func SetupRouter() *mux.Router {
 	scan.RegisterModulesRoutes(api)
 	scan.RegisterScanRoutes(api)
 
-	return r
+	return app
 }

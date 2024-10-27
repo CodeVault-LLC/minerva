@@ -1,33 +1,27 @@
 package middleware
 
 import (
-	"net/http"
-
-	"github.com/codevault-llc/humblebrag-api/helper"
 	"github.com/codevault-llc/humblebrag-api/internal/service"
 	"github.com/codevault-llc/humblebrag-api/pkg/responder"
+	"github.com/gofiber/fiber/v2"
 )
 
-func SubscriptionAuthMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		token := r.Header.Get("license")
-		if token == "" {
-			responder.WriteJSONResponse(w, responder.CreateError(responder.ErrAuthInvalidToken))
-			return
-		}
+func SubscriptionAuthMiddleware(c *fiber.Ctx) error {
+	token := c.Get("license")
+	if token == "" {
+		return responder.CreateError(responder.ErrAuthInvalidToken).Error
+	}
 
-		license, err := service.GetLicenseByLicense(token)
-		if err != nil {
-			responder.WriteJSONResponse(w, responder.CreateError(responder.ErrAuthInvalidToken))
-			return
-		}
+	license, err := service.GetLicenseByLicense(token)
+	if err != nil {
+		return responder.CreateError(responder.ErrAuthInvalidToken).Error
+	}
 
-		if license.ID == 0 {
-			responder.WriteJSONResponse(w, responder.CreateError(responder.ErrAuthInvalidToken))
-			return
-		}
+	if license.ID == 0 {
+		responder.WriteJSONResponse(c, responder.CreateError(responder.ErrAuthInvalidToken))
+		return responder.CreateError(responder.ErrAuthInvalidToken).Error
+	}
 
-		r = r.WithContext(helper.AddLicenseToContext(r.Context(), license))
-		next.ServeHTTP(w, r)
-	})
+	c.Locals("license", license)
+	return c.Next()
 }

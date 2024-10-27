@@ -15,7 +15,7 @@ func CreateNetwork(network models.NetworkModel) (models.NetworkModel, error) {
 }
 
 // GetScanNetwork retrieves network from the database
-func GetScanNetwork(scanID string) (models.NetworkResponse, error) {
+func GetScanNetwork(scanID uint) (models.NetworkResponse, error) {
 	var network models.NetworkModel
 
 	if err := database.DB.Where("scan_id = ?", scanID).
