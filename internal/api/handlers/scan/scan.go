@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/codevault-llc/humblebrag-api/helper"
 	"github.com/codevault-llc/humblebrag-api/internal/database/models"
 	"github.com/codevault-llc/humblebrag-api/internal/scanner"
 	"github.com/codevault-llc/humblebrag-api/internal/service"
+	"github.com/codevault-llc/humblebrag-api/pkg/responder"
 	"github.com/codevault-llc/humblebrag-api/pkg/utils"
 	"github.com/gorilla/mux"
 )
@@ -24,26 +24,26 @@ func RegisterScanRoutes(api *mux.Router) {
 // @Accept json
 // @Produce json
 // @Param scan body models.ScanRequest true "Scan Request"
-// @Success 200 {object} models.ScanAPIResponse
-// @Failure 400 {object} types.Error
-// @Failure 404 {object} types.Error
+// @Success 200 {object} responder.APIResponse{data=models.ScanAPIResponse}
+// @Failure 400 {object} responder.APIResponse{error=responder.APIError}
+// @Failure 404 {object} responder.APIResponse{error=responder.APIError}
 // @Router /scans [post]
 func CreateScan(w http.ResponseWriter, r *http.Request) {
 	license := r.Context().Value("license").(models.LicenseModel)
 	if license.ID == 0 {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		responder.WriteJSONResponse(w, responder.CreateError(responder.ErrAuthInvalidToken))
 		return
 	}
 
 	var scan models.ScanRequest
 	err := json.NewDecoder(r.Body).Decode(&scan)
 	if err != nil {
-		helper.RespondWithError(w, http.StatusBadRequest, "Invalid request")
+		responder.WriteJSONResponse(w, responder.CreateError(responder.ErrInvalidRequest))
 		return
 	}
 
 	if !utils.ValidateURL(scan.Url) {
-		helper.RespondWithError(w, http.StatusBadRequest, "Invalid URL")
+		responder.WriteJSONResponse(w, responder.CreateError(responder.ErrInvalidRequest))
 		return
 	}
 
@@ -55,11 +55,11 @@ func CreateScan(w http.ResponseWriter, r *http.Request) {
 
 	scanResponse, err := scanner.ScanWebsite(scan.Url, userAgent, license.ID)
 	if err != nil {
-		helper.RespondWithError(w, http.StatusInternalServerError, "Failed to scan website")
+		responder.WriteJSONResponse(w, responder.CreateError(responder.ErrScannerFailed))
 		return
 	}
 
-	helper.RespondWithJSON(w, http.StatusOK, models.ConvertScan(scanResponse))
+	responder.WriteJSONResponse(w, responder.CreateSuccessResponse(models.ConvertScan(scanResponse), "Scan created successfully"))
 }
 
 // @Summary Get all scans
@@ -67,18 +67,18 @@ func CreateScan(w http.ResponseWriter, r *http.Request) {
 // @Tags scans
 // @Accept json
 // @Produce json
-// @Success 200 {array} models.ScanAPIResponse
-// @Failure 400 {object} types.Error
-// @Failure 404 {object} types.Error
+// @Success 200 {object} responder.APIResponse{data=[]models.ScanAPIResponse}
+// @Failure 400 {object} responder.APIResponse{error=responder.APIError}
+// @Failure 404 {object} responder.APIResponse{error=responder.APIError}
 // @Router /scans [get]
 func GetScans(w http.ResponseWriter, r *http.Request) {
 	scans, err := service.GetScans()
 	if err != nil {
-		helper.RespondWithError(w, 500, "Failed to get scans")
+		responder.WriteJSONResponse(w, responder.CreateError(responder.ErrDatabaseQueryFailed))
 		return
 	}
 
-	helper.RespondWithJSON(w, 200, scans)
+	responder.WriteJSONResponse(w, responder.CreateSuccessResponse(scans, "Scans retrieved successfully"))
 }
 
 // @Summary Get a scan
@@ -87,9 +87,9 @@ func GetScans(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce json
 // @Param scanID path string true "Scan ID"
-// @Success 200 {object} models.ScanAPIResponse
-// @Failure 400 {object} types.Error
-// @Failure 404 {object} types.Error
+// @Success 200 {object} responder.APIResponse{data=models.ScanAPIResponse}
+// @Failure 400 {object} responder.APIResponse{error=responder.APIError}
+// @Failure 404 {object} responder.APIResponse{error=responder.APIError}
 // @Router /scans/{scanID} [get]
 func GetScan(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
@@ -97,9 +97,9 @@ func GetScan(w http.ResponseWriter, r *http.Request) {
 
 	scan, err := service.GetScan(scanID)
 	if err != nil {
-		helper.RespondWithError(w, 500, "Failed to get scan")
+		responder.WriteJSONResponse(w, responder.CreateError(responder.ErrDatabaseQueryFailed))
 		return
 	}
 
-	helper.RespondWithJSON(w, 200, scan)
+	responder.WriteJSONResponse(w, responder.CreateSuccessResponse(scan, "Scan retrieved successfully"))
 }

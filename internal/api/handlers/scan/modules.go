@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/codevault-llc/humblebrag-api/helper"
 	"github.com/codevault-llc/humblebrag-api/internal/service"
+	"github.com/codevault-llc/humblebrag-api/pkg/responder"
 	"github.com/gorilla/mux"
 )
 
@@ -22,21 +22,27 @@ func RegisterModulesRoutes(api *mux.Router) {
 // @Accept json
 // @Produce json
 // @Param scanID path string true "Scan ID"
-// @Success 200 {array} models.FindingResponse
-// @Failure 400 {object} types.Error
-// @Failure 404 {object} types.Error
+// @Success 200 {array} responder.APIResponse{data=models.FindingResponse}
+// @Failure 400 {object} responder.APIResponse{error=responder.APIError}
+// @Failure 404 {object} responder.APIResponse{error=responder.APIError}
 // @Router /scans/{scanID}/findings [get]
 func getScanFindings(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	scanID := vars["scanID"]
 
-	findings, err := service.GetScanFindings(scanID)
+	_, err := strconv.ParseUint(scanID, 10, 64)
 	if err != nil {
-		helper.RespondWithError(w, 500, "Failed to get scan findings")
+		responder.WriteJSONResponse(w, responder.CreateError(responder.ErrInvalidRequest))
 		return
 	}
 
-	helper.RespondWithJSON(w, 200, findings)
+	findings, err := service.GetScanFindings(scanID)
+	if err != nil {
+		responder.WriteJSONResponse(w, responder.CreateError(responder.ErrDatabaseQueryFailed))
+		return
+	}
+
+	responder.WriteJSONResponse(w, responder.CreateSuccessResponse(findings, "Successfully retrieved scan findings"))
 }
 
 // @Summary Get scan contents
@@ -45,9 +51,9 @@ func getScanFindings(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce json
 // @Param scanID path string true "Scan ID"
-// @Success 200 {array} models.ContentResponse
-// @Failure 400 {object} types.Error
-// @Failure 404 {object} types.Error
+// @Success 200 {array} responder.APIResponse{data=models.ContentResponse}
+// @Failure 400 {object} responder.APIResponse{error=responder.APIError}
+// @Failure 404 {object} responder.APIResponse{error=responder.APIError}
 // @Router /scans/{scanID}/contents [get]
 func getScanContents(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
@@ -55,17 +61,17 @@ func getScanContents(w http.ResponseWriter, r *http.Request) {
 
 	scanIDUint, err := strconv.ParseUint(scanID, 10, 64)
 	if err != nil {
-		helper.RespondWithError(w, 400, "Invalid scan ID")
+		responder.WriteJSONResponse(w, responder.CreateError(responder.ErrInvalidRequest))
 		return
 	}
 
 	contents, err := service.GetScanContent(uint(scanIDUint))
 	if err != nil {
-		helper.RespondWithError(w, 500, "Failed to get scan contents")
+		responder.WriteJSONResponse(w, responder.CreateError(responder.ErrDatabaseQueryFailed))
 		return
 	}
 
-	helper.RespondWithJSON(w, 200, contents)
+	responder.WriteJSONResponse(w, responder.CreateSuccessResponse(contents, "Successfully retrieved scan contents"))
 }
 
 // @Summary Get scan network
@@ -74,9 +80,9 @@ func getScanContents(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce json
 // @Param scanID path string true "Scan ID"
-// @Success 200 {array} models.NetworkResponse
-// @Failure 400 {object} types.Error
-// @Failure 404 {object} types.Error
+// @Success 200 {array} responder.APIResponse{data=models.NetworkResponse}
+// @Failure 400 {object} responder.APIResponse{error=responder.APIError}
+// @Failure 404 {object} responder.APIResponse{error=responder.APIError}
 // @Router /scans/{scanID}/network [get]
 func getScanNetwork(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
@@ -84,11 +90,11 @@ func getScanNetwork(w http.ResponseWriter, r *http.Request) {
 
 	network, err := service.GetScanNetwork(scanID)
 	if err != nil {
-		helper.RespondWithError(w, 500, "Failed to get scan network")
+		responder.WriteJSONResponse(w, responder.CreateError(responder.ErrDatabaseQueryFailed))
 		return
 	}
 
-	helper.RespondWithJSON(w, 200, network)
+	responder.WriteJSONResponse(w, responder.CreateSuccessResponse(network, "Successfully retrieved scan network"))
 }
 
 // @Summary Get scan metadata
@@ -97,9 +103,9 @@ func getScanNetwork(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce json
 // @Param scanID path string true "Scan ID"
-// @Success 200 {object} models.MetadataResponse
-// @Failure 400 {object} types.Error
-// @Failure 404 {object} types.Error
+// @Success 200 {object} responder.APIResponse{data=models.MetadataResponse}
+// @Failure 400 {object} responder.APIResponse{error=responder.APIError}
+// @Failure 404 {object} responder.APIResponse{error=responder.APIError}
 // @Router /scans/{scanID}/metadata [get]
 func getScanMetadata(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
@@ -107,9 +113,9 @@ func getScanMetadata(w http.ResponseWriter, r *http.Request) {
 
 	metadata, err := service.GetScanMetadataByScanID(scanID)
 	if err != nil {
-		helper.RespondWithError(w, 500, "Failed to get scan metadata")
+		responder.WriteJSONResponse(w, responder.CreateError(responder.ErrDatabaseQueryFailed))
 		return
 	}
 
-	helper.RespondWithJSON(w, 200, metadata)
+	responder.WriteJSONResponse(w, responder.CreateSuccessResponse(metadata, "Successfully retrieved scan metadata"))
 }

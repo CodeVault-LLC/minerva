@@ -53,6 +53,7 @@ func ContentModule(scanId uint, assets []types.FileRequest) {
 			content := models.ContentModel{
 				FileSize:       int64(script.FileSize),
 				FileType:       script.FileType,
+				Source:         script.Src,
 				StorageType:    storageType,
 				AccessCount:    1,
 				HashedBody:     hashedBody,

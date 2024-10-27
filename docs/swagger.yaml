@@ -19,14 +19,57 @@ definitions:
     type: object
   models.ContentResponse:
     properties:
-      content:
+      access_count:
+        type: integer
+      file_size:
+        type: integer
+      file_type:
         type: string
       id:
         type: integer
-      name:
+      last_accessed:
         type: string
-      scan_id:
+      object_key:
+        type: string
+      storage_type:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+    type: object
+  models.DNSResponse:
+    properties:
+      a_records:
+        items:
+          type: string
+        type: array
+      aaaa_records:
+        items:
+          type: string
+        type: array
+      cname:
+        items:
+          type: string
+        type: array
+      dnssec:
+        type: boolean
+      id:
         type: integer
+      mx_records:
+        items:
+          type: string
+        type: array
+      ns_records:
+        items:
+          type: string
+        type: array
+      ptr_record:
+        type: string
+      txt_records:
+        items:
+          type: string
+        type: array
     type: object
   models.FindingResponse:
     properties:
@@ -49,19 +92,25 @@ definitions:
       updated_at:
         type: string
     type: object
-  models.ListResponse:
+  models.MetadataResponse:
     properties:
-      categories:
+      cms:
+        type: string
+      frameworks:
         items:
           type: string
         type: array
-      description:
-        type: string
       id:
         type: integer
-      list_id:
+      license:
         type: string
-      url:
+      readme:
+        type: string
+      robots:
+        type: string
+      server_language:
+        type: string
+      server_software:
         type: string
     type: object
   models.NetworkResponse:
@@ -70,14 +119,8 @@ definitions:
         items:
           $ref: '#/definitions/models.CertificateResponse'
         type: array
-      dns_names:
-        items:
-          type: string
-        type: array
-      excluded_dns:
-        items:
-          type: string
-        type: array
+      dns:
+        $ref: '#/definitions/models.DNSResponse'
       http_headers:
         items:
           type: string
@@ -92,10 +135,6 @@ definitions:
         items:
           type: string
         type: array
-      permitted_dns:
-        items:
-          type: string
-        type: array
       whois:
         $ref: '#/definitions/models.WhoisResponse'
     type: object
@@ -103,14 +142,8 @@ definitions:
     properties:
       created_at:
         type: string
-      findings:
-        type: integer
       id:
         type: integer
-      lists:
-        items:
-          $ref: '#/definitions/models.ListResponse'
-        type: array
       md5:
         type: string
       redirect_chain:
@@ -125,16 +158,18 @@ definitions:
         type: string
       status_code:
         type: integer
+      title:
+        type: string
       updated_at:
         type: string
-      website_name:
-        type: string
-      website_url:
+      url:
         type: string
     type: object
   models.ScanRequest:
     properties:
       url:
+        type: string
+      userAgent:
         type: string
     type: object
   models.WhoisResponse:
@@ -198,28 +233,41 @@ definitions:
       updated_at:
         type: string
     type: object
-  scan.UserStatisticsResponse:
-    properties:
-      lastScansIn24Hours:
-        type: integer
-      mostScannedWebsites:
-        items:
-          $ref: '#/definitions/models.ScanAPIResponse'
-        type: array
-      totalDomainsScanned:
-        type: integer
-      totalScans:
-        type: integer
-    type: object
-  types.Error:
+  responder.APIError:
     properties:
       code:
-        description: Error Code
-        type: integer
-      message:
-        description: Error Message
+        description: Error code string (e.g., "auth_invalid_token").
+        type: string
+      description:
+        description: User-friendly description of the error.
+        type: string
+      hint:
+        description: Optional hint for the user on how to resolve the issue.
         type: string
     type: object
+  responder.APIResponse:
+    properties:
+      data:
+        description: Populated in case of success responses.
+      error:
+        allOf:
+        - $ref: '#/definitions/responder.APIError'
+        description: Populated in case of error responses.
+      message:
+        type: string
+      status_code:
+        type: integer
+      type:
+        $ref: '#/definitions/responder.ResponseType'
+    type: object
+  responder.ResponseType:
+    enum:
+    - success
+    - error
+    type: string
+    x-enum-varnames:
+    - ResponseTypeSuccess
+    - ResponseTypeError
 host: localhost:3000
 info:
   contact:
@@ -246,17 +294,32 @@ paths:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/models.ScanAPIResponse'
-            type: array
+            allOf:
+            - $ref: '#/definitions/responder.APIResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.ScanAPIResponse'
+                  type: array
+              type: object
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/types.Error'
+            allOf:
+            - $ref: '#/definitions/responder.APIResponse'
+            - properties:
+                error:
+                  $ref: '#/definitions/responder.APIError'
+              type: object
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/types.Error'
+            allOf:
+            - $ref: '#/definitions/responder.APIResponse'
+            - properties:
+                error:
+                  $ref: '#/definitions/responder.APIError'
+              type: object
       summary: Get all scans
       tags:
       - scans
@@ -277,15 +340,30 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.ScanAPIResponse'
+            allOf:
+            - $ref: '#/definitions/responder.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.ScanAPIResponse'
+              type: object
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/types.Error'
+            allOf:
+            - $ref: '#/definitions/responder.APIResponse'
+            - properties:
+                error:
+                  $ref: '#/definitions/responder.APIError'
+              type: object
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/types.Error'
+            allOf:
+            - $ref: '#/definitions/responder.APIResponse'
+            - properties:
+                error:
+                  $ref: '#/definitions/responder.APIError'
+              type: object
       summary: Create a new scan
       tags:
       - scans
@@ -306,15 +384,30 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.ScanAPIResponse'
+            allOf:
+            - $ref: '#/definitions/responder.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.ScanAPIResponse'
+              type: object
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/types.Error'
+            allOf:
+            - $ref: '#/definitions/responder.APIResponse'
+            - properties:
+                error:
+                  $ref: '#/definitions/responder.APIError'
+              type: object
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/types.Error'
+            allOf:
+            - $ref: '#/definitions/responder.APIResponse'
+            - properties:
+                error:
+                  $ref: '#/definitions/responder.APIError'
+              type: object
       summary: Get a scan
       tags:
       - scans
@@ -341,11 +434,21 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/types.Error'
+            allOf:
+            - $ref: '#/definitions/responder.APIResponse'
+            - properties:
+                error:
+                  $ref: '#/definitions/responder.APIError'
+              type: object
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/types.Error'
+            allOf:
+            - $ref: '#/definitions/responder.APIResponse'
+            - properties:
+                error:
+                  $ref: '#/definitions/responder.APIError'
+              type: object
       summary: Get scan contents
       tags:
       - scans
@@ -372,12 +475,61 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/types.Error'
+            allOf:
+            - $ref: '#/definitions/responder.APIResponse'
+            - properties:
+                error:
+                  $ref: '#/definitions/responder.APIError'
+              type: object
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/types.Error'
+            allOf:
+            - $ref: '#/definitions/responder.APIResponse'
+            - properties:
+                error:
+                  $ref: '#/definitions/responder.APIError'
+              type: object
       summary: Get scan findings
+      tags:
+      - scans
+  /scans/{scanID}/metadata:
+    get:
+      consumes:
+      - application/json
+      description: Get scan metadata
+      parameters:
+      - description: Scan ID
+        in: path
+        name: scanID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.MetadataResponse'
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/responder.APIResponse'
+            - properties:
+                error:
+                  $ref: '#/definitions/responder.APIError'
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - $ref: '#/definitions/responder.APIResponse'
+            - properties:
+                error:
+                  $ref: '#/definitions/responder.APIError'
+              type: object
+      summary: Get scan metadata
       tags:
       - scans
   /scans/{scanID}/network:
@@ -403,35 +555,22 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/types.Error'
+            allOf:
+            - $ref: '#/definitions/responder.APIResponse'
+            - properties:
+                error:
+                  $ref: '#/definitions/responder.APIError'
+              type: object
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/types.Error'
+            allOf:
+            - $ref: '#/definitions/responder.APIResponse'
+            - properties:
+                error:
+                  $ref: '#/definitions/responder.APIError'
+              type: object
       summary: Get scan network
-      tags:
-      - scans
-  /scans/statistics:
-    get:
-      consumes:
-      - application/json
-      description: Get scan statistics
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/scan.UserStatisticsResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/types.Error'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/types.Error'
-      summary: Get scan statistics
       tags:
       - scans
 swagger: "2.0"

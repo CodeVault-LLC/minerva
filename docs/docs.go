@@ -41,22 +41,58 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.ScanAPIResponse"
-                            }
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/responder.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/models.ScanAPIResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/types.Error"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/responder.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "$ref": "#/definitions/responder.APIError"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/types.Error"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/responder.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "$ref": "#/definitions/responder.APIError"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     }
                 }
@@ -88,54 +124,55 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.ScanAPIResponse"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/responder.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/models.ScanAPIResponse"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/types.Error"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/responder.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "$ref": "#/definitions/responder.APIError"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/types.Error"
-                        }
-                    }
-                }
-            }
-        },
-        "/scans/statistics": {
-            "get": {
-                "description": "Get scan statistics",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "scans"
-                ],
-                "summary": "Get scan statistics",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/scan.UserStatisticsResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/types.Error"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/types.Error"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/responder.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "$ref": "#/definitions/responder.APIError"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     }
                 }
@@ -167,19 +204,55 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.ScanAPIResponse"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/responder.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/models.ScanAPIResponse"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/types.Error"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/responder.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "$ref": "#/definitions/responder.APIError"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/types.Error"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/responder.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "$ref": "#/definitions/responder.APIError"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     }
                 }
@@ -220,13 +293,37 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/types.Error"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/responder.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "$ref": "#/definitions/responder.APIError"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/types.Error"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/responder.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "$ref": "#/definitions/responder.APIError"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     }
                 }
@@ -267,13 +364,105 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/types.Error"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/responder.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "$ref": "#/definitions/responder.APIError"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/types.Error"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/responder.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "$ref": "#/definitions/responder.APIError"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/scans/{scanID}/metadata": {
+            "get": {
+                "description": "Get scan metadata",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "scans"
+                ],
+                "summary": "Get scan metadata",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Scan ID",
+                        "name": "scanID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.MetadataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/responder.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "$ref": "#/definitions/responder.APIError"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/responder.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "$ref": "#/definitions/responder.APIError"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     }
                 }
@@ -314,13 +503,37 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/types.Error"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/responder.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "$ref": "#/definitions/responder.APIError"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/types.Error"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/responder.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "$ref": "#/definitions/responder.APIError"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     }
                 }
@@ -357,17 +570,82 @@ const docTemplate = `{
         "models.ContentResponse": {
             "type": "object",
             "properties": {
-                "content": {
+                "access_count": {
+                    "type": "integer"
+                },
+                "file_size": {
+                    "type": "integer"
+                },
+                "file_type": {
                     "type": "string"
                 },
                 "id": {
                     "type": "integer"
                 },
-                "name": {
+                "last_accessed": {
                     "type": "string"
                 },
-                "scan_id": {
+                "object_key": {
+                    "type": "string"
+                },
+                "storage_type": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "models.DNSResponse": {
+            "type": "object",
+            "properties": {
+                "a_records": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "aaaa_records": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "cname": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "dnssec": {
+                    "type": "boolean"
+                },
+                "id": {
                     "type": "integer"
+                },
+                "mx_records": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "ns_records": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "ptr_record": {
+                    "type": "string"
+                },
+                "txt_records": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },
@@ -403,25 +681,34 @@ const docTemplate = `{
                 }
             }
         },
-        "models.ListResponse": {
+        "models.MetadataResponse": {
             "type": "object",
             "properties": {
-                "categories": {
+                "cms": {
+                    "type": "string"
+                },
+                "frameworks": {
                     "type": "array",
                     "items": {
                         "type": "string"
                     }
                 },
-                "description": {
-                    "type": "string"
-                },
                 "id": {
                     "type": "integer"
                 },
-                "list_id": {
+                "license": {
                     "type": "string"
                 },
-                "url": {
+                "readme": {
+                    "type": "string"
+                },
+                "robots": {
+                    "type": "string"
+                },
+                "server_language": {
+                    "type": "string"
+                },
+                "server_software": {
                     "type": "string"
                 }
             }
@@ -435,17 +722,8 @@ const docTemplate = `{
                         "$ref": "#/definitions/models.CertificateResponse"
                     }
                 },
-                "dns_names": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "excluded_dns": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
+                "dns": {
+                    "$ref": "#/definitions/models.DNSResponse"
                 },
                 "http_headers": {
                     "type": "array",
@@ -468,12 +746,6 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
-                "permitted_dns": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
                 "whois": {
                     "$ref": "#/definitions/models.WhoisResponse"
                 }
@@ -485,17 +757,8 @@ const docTemplate = `{
                 "created_at": {
                     "type": "string"
                 },
-                "findings": {
-                    "type": "integer"
-                },
                 "id": {
                     "type": "integer"
-                },
-                "lists": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.ListResponse"
-                    }
                 },
                 "md5": {
                     "type": "string"
@@ -518,13 +781,13 @@ const docTemplate = `{
                 "status_code": {
                     "type": "integer"
                 },
+                "title": {
+                    "type": "string"
+                },
                 "updated_at": {
                     "type": "string"
                 },
-                "website_name": {
-                    "type": "string"
-                },
-                "website_url": {
+                "url": {
                     "type": "string"
                 }
             }
@@ -533,6 +796,9 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "url": {
+                    "type": "string"
+                },
+                "userAgent": {
                     "type": "string"
                 }
             }
@@ -629,38 +895,58 @@ const docTemplate = `{
                 }
             }
         },
-        "scan.UserStatisticsResponse": {
-            "type": "object",
-            "properties": {
-                "lastScansIn24Hours": {
-                    "type": "integer"
-                },
-                "mostScannedWebsites": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.ScanAPIResponse"
-                    }
-                },
-                "totalDomainsScanned": {
-                    "type": "integer"
-                },
-                "totalScans": {
-                    "type": "integer"
-                }
-            }
-        },
-        "types.Error": {
+        "responder.APIError": {
             "type": "object",
             "properties": {
                 "code": {
-                    "description": "Error Code",
-                    "type": "integer"
+                    "description": "Error code string (e.g., \"auth_invalid_token\").",
+                    "type": "string"
                 },
-                "message": {
-                    "description": "Error Message",
+                "description": {
+                    "description": "User-friendly description of the error.",
+                    "type": "string"
+                },
+                "hint": {
+                    "description": "Optional hint for the user on how to resolve the issue.",
                     "type": "string"
                 }
             }
+        },
+        "responder.APIResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "description": "Populated in case of success responses."
+                },
+                "error": {
+                    "description": "Populated in case of error responses.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/responder.APIError"
+                        }
+                    ]
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status_code": {
+                    "type": "integer"
+                },
+                "type": {
+                    "$ref": "#/definitions/responder.ResponseType"
+                }
+            }
+        },
+        "responder.ResponseType": {
+            "type": "string",
+            "enum": [
+                "success",
+                "error"
+            ],
+            "x-enum-varnames": [
+                "ResponseTypeSuccess",
+                "ResponseTypeError"
+            ]
         }
     }
 }`
@@ -675,6 +961,8 @@ var SwaggerInfo = &swag.Spec{
 	Description:      "Humblebrag is a scanner service which detects and reports on the presence of sensitive data in your codebase and infrastructure.",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
+	LeftDelim:        "{{",
+	RightDelim:       "}}",
 }
 
 func init() {
