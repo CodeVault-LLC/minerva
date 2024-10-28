@@ -4,17 +4,12 @@ import (
 	"log"
 	"strings"
 
-	"github.com/codevault-llc/humblebrag-api/types"
+	"github.com/codevault-llc/humblebrag-api/pkg/types"
 	"github.com/lucasjones/reggen"
 	regexp "github.com/wasilibs/go-re2"
 )
 
-type Script struct {
-	Src     string `json:"src"`
-	Content string `json:"content"`
-}
-
-func GenericScan(rule types.Rule, script Script) []Match {
+func GenericScan(rule types.Rule, script types.FileRequest) []Match {
 	re, err := regexp.Compile(rule.Regex.String())
 	if err != nil {
 		log.Fatalf("Failed to compile regex: %v", err)

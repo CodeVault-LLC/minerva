@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 	"net/url"
+	"strconv"
 	"strings"
 
 	regexp "github.com/wasilibs/go-re2"
@@ -33,7 +34,6 @@ func NormalizeURL(input string) string {
 	// Remove trailing slash
 	urlNormalized = strings.TrimSuffix(urlNormalized, "/")
 
-	fmt.Println("Normalized URL:", urlNormalized)
 	return urlNormalized
 }
 
@@ -74,4 +74,8 @@ func ValidateURL(input string) bool {
 
 	fmt.Println("Valid URL:", parsedURL.String())
 	return true
+}
+
+func ParseUint(input string) (uint64, error) {
+	return strconv.ParseUint(input, 10, 64)
 }

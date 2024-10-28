@@ -2,7 +2,7 @@ package service
 
 import (
 	"github.com/codevault-llc/humblebrag-api/internal/database"
-	"github.com/codevault-llc/humblebrag-api/models"
+	"github.com/codevault-llc/humblebrag-api/internal/database/models"
 	"github.com/codevault-llc/humblebrag-api/pkg/utils"
 )
 
@@ -51,7 +51,7 @@ func UpdateFindings(scanID uint, secrets []utils.RegexReturn) {
 }
 
 // GetScanFindings retrieves findings from the database
-func GetScanFindings(scanID string) ([]models.FindingResponse, error) {
+func GetScanFindings(scanID uint) ([]models.FindingResponse, error) {
 	var findings []models.FindingModel
 
 	if err := database.DB.Where("scan_id = ?", scanID).

@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/codevault-llc/humblebrag-api/internal/database/models"
 	"github.com/codevault-llc/humblebrag-api/internal/service"
-	"github.com/codevault-llc/humblebrag-api/models"
 	"github.com/codevault-llc/humblebrag-api/pkg/logger"
 	"github.com/codevault-llc/humblebrag-api/pkg/utils"
 	whoisparser "github.com/likexian/whois-parser"
+	"go.uber.org/zap"
 )
 
 func NetworkModule(scanId uint, url string) {
@@ -18,7 +19,6 @@ func NetworkModule(scanId uint, url string) {
 	dnsResultChan := make(chan DNSResults)
 	whoisChan := make(chan whoisparser.WhoisInfo)
 	certificateChan := make(chan []*x509.Certificate)
-	certificateResultChan := make(chan models.CertificateResult)
 	headerChan := make(chan []string)
 
 	var wg sync.WaitGroup
@@ -29,7 +29,7 @@ func NetworkModule(scanId uint, url string) {
 		ipAddresses, err := ScanIP(url)
 		if err != nil {
 			ipAddrChan <- nil // Handle error appropriately
-			logger.Log.Error("Failed to scan IP: %v", err)
+			logger.Log.Error("Failed to scan IP: %v", zap.Error(err))
 		} else {
 			ipAddrChan <- ipAddresses
 		}
@@ -40,7 +40,7 @@ func NetworkModule(scanId uint, url string) {
 		ipRanges, err := ScanIPRange(url)
 		if err != nil {
 			ipRangeChan <- nil // Handle error appropriately
-			logger.Log.Error("Failed to scan IP range: %v", err)
+			logger.Log.Error("Failed to scan IP range: %v", zap.Error(err))
 		} else {
 			ipRangeChan <- ipRanges
 		}
@@ -51,7 +51,7 @@ func NetworkModule(scanId uint, url string) {
 		dnsResults, err := GetDNSScan(url)
 		if err != nil {
 			dnsResultChan <- DNSResults{} // Handle error appropriately
-			logger.Log.Error("Failed to scan DNS: %v", err)
+			logger.Log.Error("Failed to scan DNS: %v", zap.Error(err))
 		} else {
 			dnsResultChan <- dnsResults
 		}
@@ -63,7 +63,7 @@ func NetworkModule(scanId uint, url string) {
 		if err != nil || whoisRecord.Domain.Name == "" {
 			// Handle the case where the domain doesn't exist or the whois data is incomplete
 			whoisChan <- whoisparser.WhoisInfo{}
-			logger.Log.Warning("No whois information found for: %s", url)
+			logger.Log.Error("Failed to scan whois: %v", zap.Error(err))
 		} else {
 			whoisChan <- whoisRecord
 		}
@@ -71,14 +71,12 @@ func NetworkModule(scanId uint, url string) {
 
 	go func() {
 		defer wg.Done()
-		certifiate, result, err := GetCertificateWebsite(url, 443)
+		certifiate, err := GetCertificateWebsite(url, 443)
 		if err != nil {
-			certificateChan <- nil                              // Handle error appropriately
-			certificateResultChan <- models.CertificateResult{} // Handle error appropriately
-			logger.Log.Error("Failed to get certificate: %v", err)
+			certificateChan <- nil // Handle error appropriately
+			logger.Log.Error("Failed to get certificate: %v", zap.Error(err))
 		} else {
 			certificateChan <- certifiate
-			certificateResultChan <- result
 		}
 	}()
 
@@ -87,7 +85,7 @@ func NetworkModule(scanId uint, url string) {
 		header, err := getHeaders(url)
 		if err != nil {
 			headerChan <- nil // Handle error appropriately
-			logger.Log.Error("Failed to get headers: %v", err)
+			logger.Log.Error("Failed to get headers: %v", zap.Error(err))
 		} else {
 			httpHeaders := make([]string, 0)
 			for key, value := range header.Headers {
@@ -112,28 +110,23 @@ func NetworkModule(scanId uint, url string) {
 	dnsResults := <-dnsResultChan
 	whoisRecord := <-whoisChan
 	certifiate := <-certificateChan
-	certificateResult := <-certificateResultChan
 	headers := <-headerChan
 
 	network := models.NetworkModel{
-		ScanID:       scanId,
-		IPAddresses:  ipAddresses,
-		IPRanges:     ipRanges,
-		DNSNames:     dnsResults.CNAME,
-		PermittedDNS: dnsResults.Permitted,
-		ExcludedDNS:  dnsResults.Excluded,
-		HTTPHeaders:  headers,
+		ScanID:      scanId,
+		IPAddresses: ipAddresses,
+		IPRanges:    ipRanges,
+		HTTPHeaders: headers,
 	}
 
 	networkResponse, err := service.CreateNetwork(network)
 	if err != nil {
-		logger.Log.Error("Failed to create network: %v", err)
+		logger.Log.Error("Failed to create network: %v", zap.Error(err))
 		return
 	}
 
-	whois := models.WhoisModel{}
 	if whoisRecord.Registrar != nil {
-		whois = models.WhoisModel{
+		whois := models.WhoisModel{
 			NetworkId: networkResponse.ID,
 			Status: func() string {
 				if len(whoisRecord.Domain.Status) > 0 {
@@ -171,31 +164,32 @@ func NetworkModule(scanId uint, url string) {
 
 		_, err = service.CreateWhois(whois)
 		if err != nil {
-			logger.Log.Error("Failed to create whois: %v", err)
+			logger.Log.Error("Failed to create whois: %v", zap.Error(err))
 		}
 	}
 
-	_, err = service.CreateWhois(whois)
-	if err != nil {
-		logger.Log.Error("Failed to create whois: %v", err)
-	}
-
-	var firstCertificateId uint
 	for _, certificate := range certifiate {
-		certificate, err := service.CreateCertificate(networkResponse.ID, *certificate)
+		err := service.CreateCertificate(networkResponse.ID, *certificate)
 		if err != nil {
-			logger.Log.Error("Failed to create certificate: %v", err)
+			logger.Log.Error("Failed to create certificate: %v", zap.Error(err))
 			return
 		}
-
-		if firstCertificateId == 0 {
-			firstCertificateId = certificate.ID
-		}
 	}
 
-	err = service.CreateCertificateResult(firstCertificateId, certificateResult)
+	dns := models.DNSModel{
+		NetworkId:   networkResponse.ID,
+		CNAME:       dnsResults.CNAME,
+		ARecords:    dnsResults.ARecords,
+		AAAARecords: dnsResults.AAAARecords,
+		MXRecords:   dnsResults.MXRecords,
+		NSRecords:   dnsResults.NSRecords,
+		TXTRecords:  dnsResults.TXTRecords,
+		PTRRecord:   dnsResults.PTRRecord,
+		DNSSEC:      dnsResults.DNSSEC,
+	}
+
+	_, err = service.CreateDNS(dns)
 	if err != nil {
-		logger.Log.Error("Failed to create certificate result: %v", err)
-		return
+		logger.Log.Error("Failed to create DNS: %v", zap.Error(err))
 	}
 }

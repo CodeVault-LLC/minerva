@@ -149,3 +149,16 @@ func TestSafeString(t *testing.T) {
 		t.Errorf("Expected 'N/A', got '%s'", safe)
 	}
 }
+
+// TestIsNumeric tests the IsNumeric function
+func TestIsNumeric(t *testing.T) {
+	// Test with a number
+	if !IsNumeric("123") {
+		t.Error("Expected '123' to be numeric")
+	}
+
+	// Test with a non-number
+	if IsNumeric("abc") {
+		t.Error("Expected 'abc' to not be numeric")
+	}
+}

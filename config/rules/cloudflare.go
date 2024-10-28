@@ -1,6 +1,6 @@
 package rules
 
-import "github.com/codevault-llc/humblebrag-api/types"
+import "github.com/codevault-llc/humblebrag-api/pkg/types"
 
 var global_keys = []string{
 	`cloudflare_global_api_key = "d3d1443e0adc9c24564c6c5676d679d47e2ca"`, // gitleaks:allow

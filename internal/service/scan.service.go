@@ -4,13 +4,13 @@ import (
 	"regexp"
 
 	"github.com/codevault-llc/humblebrag-api/internal/database"
-	"github.com/codevault-llc/humblebrag-api/models"
+	"github.com/codevault-llc/humblebrag-api/internal/database/models"
 	"github.com/codevault-llc/humblebrag-api/pkg/utils"
 	"gorm.io/gorm"
 )
 
 func CreateScan(scan models.ScanModel) (models.ScanModel, error) {
-	database.DB.Model(&models.ScanModel{}).Where("website_url = ?", scan.WebsiteUrl).Update("status", models.ScanStatusArchived)
+	database.DB.Model(&models.ScanModel{}).Where("url = ?", scan.Url).Update("status", models.ScanStatusArchived)
 
 	if err := database.DB.Create(&scan).Error; err != nil {
 		return scan, err
@@ -31,14 +31,14 @@ func UpdateScan(scan models.ScanModel) (models.ScanModel, error) {
 func GetScans() ([]models.ScanAPIResponse, error) {
 	var scans []models.ScanModel
 
-	if err := database.DB.Preload("Findings").Where("status IN (?, ?)", models.ScanStatusComplete, models.ScanStatusPending).Order("created_at desc").Find(&scans).Error; err != nil {
+	if err := database.DB.Where("status IN (?, ?)", models.ScanStatusComplete, models.ScanStatusPending).Order("created_at desc").Find(&scans).Error; err != nil {
 		return models.ConvertScans(scans), err
 	}
 
 	return models.ConvertScans(scans), nil
 }
 
-func GetScan(scanID string) (models.ScanAPIResponse, error) {
+func GetScan(scanID uint) (models.ScanAPIResponse, error) {
 	var scan models.ScanModel
 
 	if err := database.DB.Where("id = ?", scanID).Preload("Findings").Preload("Lists").Where("status IN (?, ?)", models.ScanStatusComplete, models.ScanStatusPending).First(&scan).Error; err != nil {

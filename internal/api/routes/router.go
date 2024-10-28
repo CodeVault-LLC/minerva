@@ -1,43 +1,29 @@
 package routes
 
 import (
-	"encoding/gob"
+	"net/http"
 
-	"github.com/codevault-llc/humblebrag-api/internal/api/handlers/notification"
 	"github.com/codevault-llc/humblebrag-api/internal/api/handlers/scan"
-	"github.com/codevault-llc/humblebrag-api/internal/api/handlers/user"
-	"github.com/codevault-llc/humblebrag-api/internal/api/handlers/webhook"
 	"github.com/codevault-llc/humblebrag-api/internal/api/middleware"
-	"github.com/codevault-llc/humblebrag-api/models"
-	"github.com/gorilla/mux"
-	"gorm.io/gorm"
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/filesystem"
 )
 
-func SetupRouter(db *gorm.DB) *mux.Router {
-	gob.Register(models.UserModel{})
-	r := mux.NewRouter()
+func SetupRouter(app *fiber.App) *fiber.App {
+	app.Use(filesystem.New(filesystem.Config{
+		Root: http.Dir("./swagger"),
+	}))
 
-	api := r.PathPrefix("/api").Subrouter()
+	app.Get("/docs", serveReDoc)
+
+	api := app.Group("/api/v1")
 
 	// Middlewares
-	api.Use(middleware.UserAuthMiddleware)
-
-	// User routes
-	user.RegisterAuthRoutes(api)
-	user.RegisterProfileRoutes(api)
-	user.RegisterSubscriptionRoutes(api)
-	user.RegisterCheckoutRoutes(api)
-
-	// Notification routes
-	notification.RegisterNotificationRoutes(api)
+	api.Use(middleware.SubscriptionAuthMiddleware)
 
 	// Scan routes
-	scan.RegisterModulesRoutes(api)
-	scan.RegisterStatisticsRoutes(api)
-	scan.RegisterScanRoutes(api)
+	_ = scan.RegisterModulesRoutes(api)
+	_ = scan.RegisterScanRoutes(api)
 
-	// Webhook routes
-	webhook.RegisterStripeRoutes(api)
-
-	return r
+	return app
 }

@@ -1,0 +1,21 @@
+{
+  "request_count": 1555,
+  "load_type": "waved",
+  "duration": 21,
+  "steps": [
+    {
+      "id": 1,
+      "url": "http://localhost:3000/api/v1/scans",
+      "method": "POST",
+      "headers": {
+        "Content-Type": "application/json",
+        "Accept": "*/*",
+        "license": "ea803a20-a895-49af-a19b-3b10c724c811",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With"
+      }
+    }
+  ],
+  "output": "stdout"
+}

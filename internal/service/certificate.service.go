@@ -6,15 +6,15 @@ import (
 	"encoding/json"
 
 	"github.com/codevault-llc/humblebrag-api/internal/database"
-	"github.com/codevault-llc/humblebrag-api/models"
+	"github.com/codevault-llc/humblebrag-api/internal/database/models"
 	"github.com/codevault-llc/humblebrag-api/pkg/utils"
 	"github.com/lib/pq"
 )
 
-func CreateCertificate(networkId uint, cert x509.Certificate) (models.CertificateModel, error) {
+func CreateCertificate(networkId uint, cert x509.Certificate) error {
 	publicKeyJSON, err := json.Marshal(cert.PublicKey)
 	if err != nil {
-		return models.CertificateModel{}, err
+		return err
 	}
 
 	signatureBase64 := base64.StdEncoding.EncodeToString(cert.Signature)
@@ -50,7 +50,7 @@ func CreateCertificate(networkId uint, cert x509.Certificate) (models.Certificat
 	}
 
 	database.DB.Create(&certificate)
-	return certificate, nil
+	return nil
 }
 
 func DeleteCertificates(networkId uint) error {
@@ -58,27 +58,5 @@ func DeleteCertificates(networkId uint) error {
 		return err
 	}
 
-	return nil
-}
-
-func CreateCertificateResult(certId uint, result models.CertificateResult) error {
-	tx := database.DB.Begin()
-
-	certResult := models.CertificateResultModel{
-		CertificateId:   certId,
-		Expired:         result.Expired,
-		Trusted:         result.Trusted,
-		Weak:            result.Weak,
-		MaliciousIssuer: result.MaliciousIssuer,
-		Revoked:         result.Revoked,
-		Domain:          result.Domain,
-	}
-
-	if err := tx.Create(&certResult).Error; err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	tx.Commit()
 	return nil
 }

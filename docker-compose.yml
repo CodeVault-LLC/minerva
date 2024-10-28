@@ -3,15 +3,16 @@ version: "3"
 volumes:
   db-data:
   cache-data:
+  minio-data:
 
 services:
   db:
     image: postgres:alpine
     container_name: humblebrag-db
     environment:
-      POSTGRES_DB: humblebrag
-      POSTGRES_USER: codevaultllc
-      POSTGRES_PASSWORD: 7c7ebd9a50c3ba4ae73e0c21b87c02f0267d23eb439bf55968472af46b3f8c5ca0f31cc6664d864e6df6d829c9c04c31693af43294e37c2e23c62c9dc469f815
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     expose:
       - "5434"
     ports:
@@ -25,6 +26,28 @@ services:
     container_name: humblebrag-cache
     restart: always
     ports:
-      - "6379:6379" # Changed from 6389:6389 to 6379:6379
+      - "6379:6379"
     volumes:
       - cache-data:/data
+
+  minio:
+    image: minio/minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: admin123
+    command: server /data
+    volumes:
+      - minio-data:/data
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+networks:
+  web_network:
+    name: web_network

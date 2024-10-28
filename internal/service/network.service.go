@@ -2,7 +2,7 @@ package service
 
 import (
 	"github.com/codevault-llc/humblebrag-api/internal/database"
-	"github.com/codevault-llc/humblebrag-api/models"
+	"github.com/codevault-llc/humblebrag-api/internal/database/models"
 )
 
 // CreateNetwork creates network in the database
@@ -15,12 +15,12 @@ func CreateNetwork(network models.NetworkModel) (models.NetworkModel, error) {
 }
 
 // GetScanNetwork retrieves network from the database
-func GetScanNetwork(scanID string) (models.NetworkResponse, error) {
+func GetScanNetwork(scanID uint) (models.NetworkResponse, error) {
 	var network models.NetworkModel
 
 	if err := database.DB.Where("scan_id = ?", scanID).
 		Preload("Certificates").
-		Preload("Certificates.CertificateResult").
+		Preload("DNS").
 		Preload("Whois").
 		First(&network).Error; err != nil {
 		return models.NetworkResponse{}, err

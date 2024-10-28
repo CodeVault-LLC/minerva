@@ -1,8 +1,9 @@
 package database
 
 import (
-	"github.com/codevault-llc/humblebrag-api/models"
+	"github.com/codevault-llc/humblebrag-api/internal/database/models"
 	"github.com/codevault-llc/humblebrag-api/pkg/logger"
+	"go.uber.org/zap"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -18,9 +19,12 @@ func InitPostgres(dsn string) (*gorm.DB, error) {
 
 	registerGlobalCallbacks(db)
 
-	err = db.AutoMigrate(&models.UserModel{}, &models.NotificationModel{}, &models.SubscriptionModel{}, &models.ScanModel{}, &models.NetworkModel{}, &models.WhoisModel{}, &models.FindingModel{}, &models.CertificateModel{}, &models.CertificateResultModel{}, &models.HistoryModel{}, &models.UserTokenModel{}, &models.ContentModel{}, &models.ListModel{})
+	err = db.AutoMigrate(&models.LicenseModel{}, &models.ScanModel{}, &models.NetworkModel{},
+		&models.DNSModel{}, &models.MetadataModel{}, &models.WhoisModel{}, &models.FindingModel{},
+		&models.CertificateModel{}, &models.ContentModel{}, &models.ContentStorageModel{}, &models.ContentTagsModel{}, &models.ContentAccessLogModel{},
+		&models.FilterModel{})
 	if err != nil {
-		logger.Log.Error("Failed to auto migrate models: %v", err)
+		logger.Log.Error("Failed to auto migrate models: %v", zap.Error(err))
 		return nil, err
 	}
 	DB = db
@@ -38,6 +42,6 @@ func registerGlobalCallbacks(db *gorm.DB) {
 	err := db.Callback().Query().After("gorm:query").Register("app:handle_record_not_found", handleRecordNotFound)
 
 	if err != nil {
-		logger.Log.Error("Failed to register global callbacks: %v", err)
+		logger.Log.Error("Failed to register global callbacks: %v", zap.Error(err))
 	}
 }
