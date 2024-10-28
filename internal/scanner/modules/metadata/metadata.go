@@ -1,7 +1,6 @@
 package metadata
 
 import (
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -113,7 +112,7 @@ func fetchFileContent(client *http.Client, url string) string {
 }
 
 // detectCMS improves CMS detection by checking meta tags, common CMS directories, and the /feed endpoint for WordPress.
-func detectCMS(client *http.Client, url string) string {
+/*func detectCMS(client *http.Client, url string) string {
 	resp, err := client.Get(url)
 	if err != nil || resp.StatusCode != http.StatusOK {
 		return "Unknown"
@@ -151,10 +150,10 @@ func detectCMS(client *http.Client, url string) string {
 			}
 		}
 	}
-}
+}*/
 
 // checkWordPressVersion checks the WordPress version from the /feed page.
-func checkWordPressVersion(client *http.Client, url string) string {
+/*func checkWordPressVersion(client *http.Client, url string) string {
 	resp, err := client.Get(url + "/feed")
 	if err != nil || resp.StatusCode != http.StatusOK {
 		return "WordPress (version unknown)"
@@ -171,7 +170,7 @@ func checkWordPressVersion(client *http.Client, url string) string {
 	}
 
 	return "WordPress (version unknown)"
-}
+}*/
 
 // detectLanguage inspects headers or URLs to determine the server-side language (PHP, Python, etc.).
 func detectLanguage(client *http.Client, url string) string {
@@ -263,14 +262,14 @@ func detectFrameworks(client *http.Client, url string) []string {
 }
 
 // getMetaContent extracts the content attribute from a meta tag.
-func getMetaContent(attrs []html.Attribute) string {
+/*func getMetaContent(attrs []html.Attribute) string {
 	for _, attr := range attrs {
 		if attr.Key == "content" {
 			return attr.Val
 		}
 	}
 	return "Unknown"
-}
+}*/
 
 // checkFileExists checks if a file exists on the given URL.
 func checkFileExists(client *http.Client, url string) bool {

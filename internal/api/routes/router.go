@@ -22,8 +22,8 @@ func SetupRouter(app *fiber.App) *fiber.App {
 	api.Use(middleware.SubscriptionAuthMiddleware)
 
 	// Scan routes
-	scan.RegisterModulesRoutes(api)
-	scan.RegisterScanRoutes(api)
+	_ = scan.RegisterModulesRoutes(api)
+	_ = scan.RegisterScanRoutes(api)
 
 	return app
 }

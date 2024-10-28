@@ -19,6 +19,9 @@ func serveReDoc(c *fiber.Ctx) error {
 	`
 
 	c.Set("Content-Type", "text/html")
-	c.SendString(html)
+	err := c.SendString(html)
+	if err != nil {
+		return err
+	}
 	return nil
 }

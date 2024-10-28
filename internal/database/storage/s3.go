@@ -48,7 +48,10 @@ func DownloadFile(bucketName string, objectKey string) ([]byte, error) {
 	}
 
 	buf := new(bytes.Buffer)
-	buf.ReadFrom(resp.Body)
+	_, err = buf.ReadFrom(resp.Body)
+	if err != nil {
+		return nil, err
+	}
 
 	return buf.Bytes(), nil
 }

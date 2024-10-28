@@ -78,7 +78,10 @@ func runBackgroundModules(scanId uint, url string, website types.WebsiteAnalysis
 	go func() {
 		fmt.Println("Starting metadata module")
 		defer wg.Done() // Signal that the list module is done
-		metadata.MetadataModule(scanId, url)
+		_, err := metadata.MetadataModule(scanId, url)
+		if err != nil {
+			logger.Log.Error("Failed to run metadata module: %v", zap.Error(err))
+		}
 	}()
 
 	go func() {

@@ -58,5 +58,8 @@ func Start() {
 
 	api := routes.SetupRouter(app)
 
-	api.Listen(":3000")
+	err := api.Listen(":3000")
+	if err != nil {
+		panic(err)
+	}
 }

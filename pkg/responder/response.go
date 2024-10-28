@@ -3,7 +3,9 @@ package responder
 import (
 	"net/http"
 
+	"github.com/codevault-llc/humblebrag-api/pkg/logger"
 	"github.com/gofiber/fiber/v2"
+	"go.uber.org/zap"
 )
 
 type ResponseType string
@@ -65,7 +67,10 @@ func WriteJSONResponse(c *fiber.Ctx, apiResponse APIResponse) {
 	c.Response().Header.Set("X-XSS-Protection", "1; mode=block")
 
 	c.Status(apiResponse.StatusCode)
-	c.JSON(apiResponse)
+	err := c.JSON(apiResponse)
+	if err != nil {
+		logger.Log.Error("Failed to write JSON response", zap.Error(err))
+	}
 }
 
 func ErrorHandler(c *fiber.Ctx, err error) error {
