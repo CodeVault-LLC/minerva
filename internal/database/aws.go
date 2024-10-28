@@ -10,9 +10,19 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
+	smithyendpoints "github.com/aws/smithy-go/endpoints"
 )
 
 var AWS *s3.Client
+
+type awsEndpointResolver struct {
+}
+
+func (*awsEndpointResolver) ResolveEndpoint(ctx context.Context, params s3.EndpointParameters) (
+	smithyendpoints.Endpoint, error,
+) {
+	return s3.NewDefaultEndpointResolverV2().ResolveEndpoint(ctx, params)
+}
 
 // InitAWS initializes the AWS S3 client and ensures specified buckets exist.
 func InitAWS() error {
@@ -23,12 +33,6 @@ func InitAWS() error {
 			"admin123", // Secret Access Key (matches MINIO_ROOT_PASSWORD)
 			"",         // Session Token (not needed for MinIO)
 		)),
-		awsConfig.WithEndpointResolver(aws.EndpointResolverFunc(func(service, region string) (aws.Endpoint, error) {
-			return aws.Endpoint{
-				URL:           "http://localhost:9000", // MinIO endpoint
-				SigningRegion: "us-east-1",
-			}, nil
-		})),
 	)
 
 	if err != nil {
@@ -38,6 +42,8 @@ func InitAWS() error {
 
 	AWS = s3.NewFromConfig(cfg, func(o *s3.Options) {
 		o.UsePathStyle = true // Necessary for MinIO compatibility
+		o.BaseEndpoint = aws.String("http://localhost:9000")
+		o.EndpointResolverV2 = &awsEndpointResolver{}
 	})
 
 	// Test the connection by listing buckets.

@@ -1,7 +1,7 @@
 package metadata
 
 import (
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 	"sync"
@@ -103,7 +103,7 @@ func fetchFileContent(client *http.Client, url string) string {
 	}
 	defer resp.Body.Close()
 
-	content, err := ioutil.ReadAll(resp.Body)
+	content, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return ""
 	}

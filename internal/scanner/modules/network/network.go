@@ -125,9 +125,8 @@ func NetworkModule(scanId uint, url string) {
 		return
 	}
 
-	whois := models.WhoisModel{}
 	if whoisRecord.Registrar != nil {
-		whois = models.WhoisModel{
+		whois := models.WhoisModel{
 			NetworkId: networkResponse.ID,
 			Status: func() string {
 				if len(whoisRecord.Domain.Status) > 0 {
