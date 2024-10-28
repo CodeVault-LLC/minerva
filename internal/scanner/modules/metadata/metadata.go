@@ -121,26 +121,9 @@ func detectCMS(client *http.Client, url string) string {
 	defer resp.Body.Close()
 
 	// Tokenize HTML to detect CMS via meta tags
-	tokenizer := html.NewTokenizer(resp.Body)
-	for {
-		tt := tokenizer.Next()
-		switch {
-		case tt == html.ErrorToken:
-			break
-		case tt == html.StartTagToken:
-			t := tokenizer.Token()
-			if t.Data == "meta" {
-				for _, attr := range t.Attr {
-					if attr.Key == "name" && (strings.Contains(attr.Val, "generator") || strings.Contains(attr.Val, "cms")) {
-						return getMetaContent(t.Attr)
-					}
-				}
-			}
-		}
-	}
 
 	// Check for CMS-specific URLs or files
-	if checkFileExists(client, url+"/wp-content/") || checkFileExists(client, url+"/feed") {
+	if checkFileExists(client, url+"/wp-content/") || checkFileExists(client, url+"/wp-includes/") {
 		//checkWordPressVersion(client, url)
 		return "WordPress"
 	}
@@ -151,7 +134,23 @@ func detectCMS(client *http.Client, url string) string {
 		return "Drupal"
 	}
 
-	return "Unknown"
+	tokenizer := html.NewTokenizer(resp.Body)
+	for {
+		tt := tokenizer.Next()
+		switch tt {
+		case html.ErrorToken:
+			return "Unknown"
+		case html.StartTagToken:
+			t := tokenizer.Token()
+			if t.Data == "meta" {
+				for _, attr := range t.Attr {
+					if attr.Key == "name" && (strings.Contains(attr.Val, "generator") || strings.Contains(attr.Val, "cms")) {
+						return getMetaContent(t.Attr)
+					}
+				}
+			}
+		}
+	}
 }
 
 // checkWordPressVersion checks the WordPress version from the /feed page.
@@ -276,8 +275,8 @@ func getMetaContent(attrs []html.Attribute) string {
 // checkFileExists checks if a file exists on the given URL.
 func checkFileExists(client *http.Client, url string) bool {
 	resp, err := client.Head(url)
-	if err != nil || resp.StatusCode != http.StatusOK {
+	if err != nil {
 		return false
 	}
-	return true
+	return resp.StatusCode == http.StatusOK
 }
