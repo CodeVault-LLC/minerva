@@ -19,7 +19,6 @@ func NetworkModule(scanId uint, url string) {
 	dnsResultChan := make(chan DNSResults)
 	whoisChan := make(chan whoisparser.WhoisInfo)
 	certificateChan := make(chan []*x509.Certificate)
-	certificateResultChan := make(chan models.CertificateResult)
 	headerChan := make(chan []string)
 
 	var wg sync.WaitGroup
@@ -72,13 +71,12 @@ func NetworkModule(scanId uint, url string) {
 
 	go func() {
 		defer wg.Done()
-		certifiate, result, err := GetCertificateWebsite(url, 443)
+		certifiate, err := GetCertificateWebsite(url, 443)
 		if err != nil {
 			certificateChan <- nil // Handle error appropriately
 			logger.Log.Error("Failed to get certificate: %v", zap.Error(err))
 		} else {
 			certificateChan <- certifiate
-			certificateResultChan <- result
 		}
 	}()
 
@@ -112,7 +110,6 @@ func NetworkModule(scanId uint, url string) {
 	dnsResults := <-dnsResultChan
 	whoisRecord := <-whoisChan
 	certifiate := <-certificateChan
-	certificateResult := <-certificateResultChan
 	headers := <-headerChan
 
 	network := models.NetworkModel{
@@ -173,7 +170,7 @@ func NetworkModule(scanId uint, url string) {
 	}
 
 	for _, certificate := range certifiate {
-		certificate, err := service.CreateCertificate(networkResponse.ID, *certificate)
+		err := service.CreateCertificate(networkResponse.ID, *certificate)
 		if err != nil {
 			logger.Log.Error("Failed to create certificate: %v", zap.Error(err))
 			return

@@ -48,8 +48,6 @@ type CertificateModel struct {
 	ExcludedEmailAddresses      pq.StringArray `gorm:"type:text[]"` // PostgreSQL array
 	PermittedURIDomains         pq.StringArray `gorm:"type:text[]"` // PostgreSQL array
 	ExcludedURIDomains          pq.StringArray `gorm:"type:text[]"` // PostgreSQL array
-
-	CertificateResult CertificateResultModel `gorm:"foreignKey:CertificateId"`
 }
 
 // Custom methods to handle PublicKey marshaling/unmarshaling
@@ -85,8 +83,6 @@ type CertificateResponse struct {
 
 	SignatureAlgorithm string `json:"signature_algorithm"`
 	PublicKeyAlgorithm string `json:"public_key_algorithm"`
-
-	CertificateResult CertificateResultModelResponse `json:"certificate_result"`
 }
 
 func ConvertCertificate(certificate CertificateModel) CertificateResponse {
@@ -98,8 +94,6 @@ func ConvertCertificate(certificate CertificateModel) CertificateResponse {
 		NotAfter:           certificate.NotAfter,
 		SignatureAlgorithm: certificate.SignatureAlgorithm.String(),
 		PublicKeyAlgorithm: certificate.PublicKeyAlgorithm.String(),
-
-		CertificateResult: ConvertCertificateResult(certificate.CertificateResult),
 	}
 }
 
@@ -115,8 +109,6 @@ func ConvertCertificates(certificates []CertificateModel) []CertificateResponse 
 			NotAfter:           certificate.NotAfter,
 			SignatureAlgorithm: certificate.SignatureAlgorithm.String(),
 			PublicKeyAlgorithm: certificate.PublicKeyAlgorithm.String(),
-
-			CertificateResult: ConvertCertificateResult(certificate.CertificateResult),
 		})
 	}
 
