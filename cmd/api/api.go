@@ -7,6 +7,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/compress"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/helmet"
+	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 )
@@ -43,6 +44,17 @@ func Start() {
 
 		return c.Next()
 	})
+
+	app.Use(limiter.New(limiter.Config{
+		Max:        2,
+		Expiration: 60,
+		KeyGenerator: func(c *fiber.Ctx) string {
+			return c.IP()
+		},
+		LimitReached: func(c *fiber.Ctx) error {
+			return responder.CreateError(responder.ErrLimitReached).Error
+		},
+	}))
 
 	app.Use(recover.New())
 	app.Use(logger.New())

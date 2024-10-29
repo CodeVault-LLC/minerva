@@ -28,6 +28,7 @@ type APIError struct {
 	Code        string `json:"code"`        // Error code string (e.g., "auth_invalid_token").
 	Description string `json:"description"` // User-friendly description of the error.
 	Hint        string `json:"hint"`        // Optional hint for the user on how to resolve the issue.
+	StatusCode  int    `json:"status_code"` // HTTP status code.
 }
 
 // Error returns the error message of the APIError.
@@ -92,7 +93,7 @@ func ErrorHandler(c *fiber.Ctx, err error) error {
 		return nil
 	}
 
-	apiResponse := createErrorResponse(apiError.Code, apiError.Description, apiError.Hint, c.Response().StatusCode())
+	apiResponse := createErrorResponse(apiError.Code, apiError.Description, apiError.Hint, apiError.StatusCode)
 	WriteJSONResponse(c, apiResponse)
 	return nil
 }
