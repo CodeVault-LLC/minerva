@@ -23,7 +23,6 @@ func ScanWebsite(url string, userAgent string, licenseId uint) (models.ScanModel
 	// Initial website scan
 	requestedWebsite, err := websites.FetchWebsite(url, userAgent)
 	if err != nil {
-		logger.Log.Error("Failed to scan website: %v", zap.Error(err))
 		return models.ScanModel{}, err
 	}
 

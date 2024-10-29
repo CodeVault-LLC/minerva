@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/codevault-llc/humblebrag-api/pkg/logger"
+	"github.com/codevault-llc/humblebrag-api/pkg/responder"
 	"github.com/codevault-llc/humblebrag-api/pkg/types"
 	"github.com/codevault-llc/humblebrag-api/pkg/utils"
 	"github.com/go-rod/rod"
@@ -44,7 +45,10 @@ func FetchWebsite(url, userAgent string) (*WebsiteResponse, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
-	page := browser.MustPage(url)
+	page, err := browser.Page(proto.TargetCreateTarget{URL: url})
+	if err != nil {
+		return nil, responder.CreateError(responder.ErrInvalidRequest).Error
+	}
 	defer page.Close()
 
 	page.MustSetUserAgent(&proto.NetworkSetUserAgentOverride{

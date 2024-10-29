@@ -126,6 +126,8 @@ func NetworkModule(scanId uint, url string) {
 	}
 
 	if whoisRecord.Registrar != nil {
+		logger.Log.Debug("Whois record: %v", zap.Any("whois", whoisRecord.Administrative))
+
 		whois := models.WhoisModel{
 			NetworkId: networkResponse.ID,
 			Status: func() string {
@@ -149,13 +151,48 @@ func NetworkModule(scanId uint, url string) {
 			RegistrantPhone:      utils.SafeString(whoisRecord.Registrant.Phone),
 			RegistrantOrg:        utils.SafeString(whoisRecord.Registrant.Organization),
 
-			AdminName:       utils.SafeString(whoisRecord.Administrative.Name),
-			AdminEmail:      utils.SafeString(whoisRecord.Administrative.Email),
-			AdminPhone:      utils.SafeString(whoisRecord.Administrative.Phone),
-			AdminOrg:        utils.SafeString(whoisRecord.Administrative.Organization),
-			AdminCity:       utils.SafeString(whoisRecord.Administrative.City),
-			AdminPostalCode: utils.SafeString(whoisRecord.Administrative.PostalCode),
-			AdminCountry:    utils.SafeString(whoisRecord.Administrative.Country),
+			AdminName: func() string {
+				if whoisRecord.Administrative != nil && whoisRecord.Administrative.Name != "" {
+					return whoisRecord.Administrative.Name
+				}
+				return ""
+			}(),
+			AdminEmail: func() string {
+				if whoisRecord.Administrative != nil {
+					return utils.SafeString(whoisRecord.Administrative.Email)
+				}
+				return ""
+			}(),
+			AdminPhone: func() string {
+				if whoisRecord.Administrative != nil {
+					return utils.SafeString(whoisRecord.Administrative.Phone)
+				}
+				return ""
+			}(),
+			AdminOrg: func() string {
+				if whoisRecord.Administrative != nil {
+					return utils.SafeString(whoisRecord.Administrative.Organization)
+				}
+				return ""
+			}(),
+			AdminCity: func() string {
+				if whoisRecord.Administrative != nil {
+					return utils.SafeString(whoisRecord.Administrative.City)
+				}
+				return ""
+			}(),
+			AdminPostalCode: func() string {
+				if whoisRecord.Administrative != nil {
+					return utils.SafeString(whoisRecord.Administrative.PostalCode)
+				}
+				return ""
+			}(),
+			AdminCountry: func() string {
+				if whoisRecord.Administrative != nil {
+					return utils.SafeString(whoisRecord.Administrative.Country)
+				}
+				return ""
+			}(),
 
 			Updated: whoisRecord.Domain.UpdatedDate,
 			Created: whoisRecord.Domain.CreatedDate,

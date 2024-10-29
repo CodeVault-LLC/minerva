@@ -76,8 +76,20 @@ func WriteJSONResponse(c *fiber.Ctx, apiResponse APIResponse) {
 func ErrorHandler(c *fiber.Ctx, err error) error {
 	apiError, ok := err.(*APIError)
 	if !ok {
+		apiError, ok := err.(*fiber.Error)
+		if !ok {
+			logger.Log.Error("An internal server error occurred", zap.Error(err))
+			WriteJSONResponse(c, createErrorResponse("internal_server_error", "An internal server error occurred.", "Try again later or contact support.", http.StatusInternalServerError))
+			return err
+		}
+
+		if apiError.Code == fiber.ErrNotFound.Code {
+			WriteJSONResponse(c, createErrorResponse("not_found", "The requested resource was not found.", "Ensure the resource exists and the ID is correct.", http.StatusNotFound))
+			return nil
+		}
+
 		WriteJSONResponse(c, createErrorResponse("internal_server_error", "An internal server error occurred.", "Try again later or contact support.", http.StatusInternalServerError))
-		return err
+		return nil
 	}
 
 	apiResponse := createErrorResponse(apiError.Code, apiError.Description, apiError.Hint, c.Response().StatusCode())

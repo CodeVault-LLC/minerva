@@ -39,6 +39,10 @@ func getScanFindings(c *fiber.Ctx) error {
 		return responder.CreateError(responder.ErrDatabaseQueryFailed).Error
 	}
 
+	if len(findings) == 0 {
+		return responder.CreateError(responder.ErrResourceNotFound).Error
+	}
+
 	responder.WriteJSONResponse(c, responder.CreateSuccessResponse(findings, "Successfully retrieved scan findings"))
 	return nil
 }
@@ -64,6 +68,10 @@ func getScanContents(c *fiber.Ctx) error {
 	contents, err := service.GetScanContent(uint(scanUint))
 	if err != nil {
 		return responder.CreateError(responder.ErrDatabaseQueryFailed).Error
+	}
+
+	if len(contents) == 0 {
+		return responder.CreateError(responder.ErrResourceNotFound).Error
 	}
 
 	responder.WriteJSONResponse(c, responder.CreateSuccessResponse(contents, "Successfully retrieved scan contents"))

@@ -13,7 +13,7 @@ type ContentModel struct {
 	ID uint `gorm:"primaryKey"` // Unique identifier for the content
 
 	HashedBody     string    `gorm:"type:varchar(255);not null;unique"` // Hash of the content body for deduplication
-	Source         string    `gorm:"type:varchar(255);not null"`        // Source of the content (eg: url, file path)
+	Source         string    `gorm:"type:text;not null"`                // Source URL or origin of the content
 	FileSize       int64     `gorm:"not null"`                          // Size of the file in bytes
 	FileType       string    `gorm:"type:varchar(100);not null"`        // MIME type of the content (e.g., "text/plain", "image/jpeg")
 	StorageType    string    `gorm:"type:varchar(50);not null"`         // "hot" or "cold" indicating storage tier

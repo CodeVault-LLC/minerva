@@ -53,6 +53,11 @@ func CreateScan(c *fiber.Ctx) error {
 
 	scanResponse, err := scanner.ScanWebsite(scan.Url, userAgent, license.ID)
 	if err != nil {
+		err, ok := err.(*responder.APIError)
+		if ok {
+			return err
+		}
+
 		return responder.CreateError(responder.ErrScannerFailed).Error
 	}
 
@@ -73,6 +78,10 @@ func GetScans(c *fiber.Ctx) error {
 	scans, err := service.GetScans()
 	if err != nil {
 		return responder.CreateError(responder.ErrDatabaseQueryFailed).Error
+	}
+
+	if len(scans) == 0 {
+		return responder.CreateError(responder.ErrResourceNotFound).Error
 	}
 
 	responder.WriteJSONResponse(c, responder.CreateSuccessResponse(scans, "Scans retrieved successfully"))
