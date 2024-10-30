@@ -71,7 +71,11 @@ func FetchWebsite(url, userAgent string) (*WebsiteResponse, error) {
 				if err := rod.Try(func() {
 					c.MustLoadResponse()
 				}); err != nil {
-					logger.Log.Error("Failed to load script response", zap.Error(err), zap.String("url", requestURL))
+					if err == context.Canceled {
+						logger.Log.Error("Request canceled", zap.String("url", requestURL))
+					} else {
+						logger.Log.Error("Failed to load script response", zap.Error(err), zap.String("url", requestURL))
+					}
 				}
 
 				networkFiles = append(networkFiles, types.FileRequest{
@@ -79,7 +83,7 @@ func FetchWebsite(url, userAgent string) (*WebsiteResponse, error) {
 					Content:    c.Response.Body(),
 					HashedBody: utils.SHA256(c.Response.Body()),
 					FileSize:   uint(len(c.Response.Body())),
-					FileType:   "application/javascript",
+					FileType:   string(utils.ApplicationJavascript),
 				})
 			case proto.NetworkResourceTypeDocument:
 				redirects = append(redirects, requestURL)
@@ -87,7 +91,11 @@ func FetchWebsite(url, userAgent string) (*WebsiteResponse, error) {
 				if err := rod.Try(func() {
 					c.MustLoadResponse()
 				}); err != nil {
-					logger.Log.Error("Failed to load css response", zap.Error(err), zap.String("url", requestURL))
+					if err == context.Canceled {
+						logger.Log.Error("Request canceled", zap.String("url", requestURL))
+					} else {
+						logger.Log.Error("Failed to load css response", zap.Error(err), zap.String("url", requestURL))
+					}
 				}
 
 				networkFiles = append(networkFiles, types.FileRequest{
@@ -95,13 +103,17 @@ func FetchWebsite(url, userAgent string) (*WebsiteResponse, error) {
 					Content:    c.Response.Body(),
 					HashedBody: utils.SHA256(c.Response.Body()),
 					FileSize:   uint(len(c.Response.Body())),
-					FileType:   "text/css",
+					FileType:   string(utils.TextCSS),
 				})
 			case proto.NetworkResourceTypeFont:
 				if err := rod.Try(func() {
 					c.MustLoadResponse()
 				}); err != nil {
-					logger.Log.Error("Failed to load font response", zap.Error(err), zap.String("url", requestURL))
+					if err == context.Canceled {
+						logger.Log.Error("Request canceled", zap.String("url", requestURL))
+					} else {
+						logger.Log.Error("Failed to load font response", zap.Error(err), zap.String("url", requestURL))
+					}
 				}
 
 				networkFiles = append(networkFiles, types.FileRequest{
@@ -109,7 +121,25 @@ func FetchWebsite(url, userAgent string) (*WebsiteResponse, error) {
 					Content:    c.Response.Body(),
 					HashedBody: utils.SHA256(c.Response.Body()),
 					FileSize:   uint(len(c.Response.Body())),
-					FileType:   "font",
+					FileType:   string(utils.Font),
+				})
+			case proto.NetworkResourceTypeXHR:
+				if err := rod.Try(func() {
+					c.MustLoadResponse()
+				}); err != nil {
+					if err == context.Canceled {
+						logger.Log.Error("Request canceled", zap.String("url", requestURL))
+					} else {
+						logger.Log.Error("Failed to load xhr response", zap.Error(err), zap.String("url", requestURL))
+					}
+				}
+
+				networkFiles = append(networkFiles, types.FileRequest{
+					Src:        requestURL,
+					Content:    c.Response.Body(),
+					HashedBody: utils.SHA256(c.Response.Body()),
+					FileSize:   uint(len(c.Response.Body())),
+					FileType:   string(utils.XHR),
 				})
 			}
 		}

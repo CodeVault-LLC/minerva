@@ -27,7 +27,6 @@ type APIResponse struct {
 type APIError struct {
 	Code        string `json:"code"`        // Error code string (e.g., "auth_invalid_token").
 	Description string `json:"description"` // User-friendly description of the error.
-	Hint        string `json:"hint"`        // Optional hint for the user on how to resolve the issue.
 	StatusCode  int    `json:"status_code"` // HTTP status code.
 }
 
@@ -47,7 +46,7 @@ func CreateSuccessResponse(data interface{}, message string) APIResponse {
 }
 
 // createErrorResponse generates an error response with a specified status code.
-func createErrorResponse(code string, description string, hint string, statusCode int) APIResponse {
+func createErrorResponse(code string, description string, statusCode int) APIResponse {
 	return APIResponse{
 		Type:       ResponseTypeError,
 		StatusCode: statusCode,
@@ -55,7 +54,6 @@ func createErrorResponse(code string, description string, hint string, statusCod
 		Error: &APIError{
 			Code:        code,
 			Description: description,
-			Hint:        hint,
 		},
 	}
 }
@@ -80,20 +78,20 @@ func ErrorHandler(c *fiber.Ctx, err error) error {
 		apiError, ok := err.(*fiber.Error)
 		if !ok {
 			logger.Log.Error("An internal server error occurred", zap.Error(err))
-			WriteJSONResponse(c, createErrorResponse("internal_server_error", "An internal server error occurred.", "Try again later or contact support.", http.StatusInternalServerError))
+			WriteJSONResponse(c, createErrorResponse("internal_server_error", "An internal server error occurred.", http.StatusInternalServerError))
 			return err
 		}
 
 		if apiError.Code == fiber.ErrNotFound.Code {
-			WriteJSONResponse(c, createErrorResponse("not_found", "The requested resource was not found.", "Ensure the resource exists and the ID is correct.", http.StatusNotFound))
+			WriteJSONResponse(c, createErrorResponse("not_found", "The requested resource was not found.", http.StatusNotFound))
 			return nil
 		}
 
-		WriteJSONResponse(c, createErrorResponse("internal_server_error", "An internal server error occurred.", "Try again later or contact support.", http.StatusInternalServerError))
+		WriteJSONResponse(c, createErrorResponse("internal_server_error", "An internal server error occurred.", http.StatusInternalServerError))
 		return nil
 	}
 
-	apiResponse := createErrorResponse(apiError.Code, apiError.Description, apiError.Hint, apiError.StatusCode)
+	apiResponse := createErrorResponse(apiError.Code, apiError.Description, apiError.StatusCode)
 	WriteJSONResponse(c, apiResponse)
 	return nil
 }

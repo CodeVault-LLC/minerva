@@ -10,6 +10,7 @@ import (
 func RegisterModulesRoutes(router fiber.Router) error {
 	router.Get("/scans/:scanID/findings", getScanFindings)
 	router.Get("/scans/:scanID/contents", getScanContents)
+	router.Get("/scans/:scanID/contents/:contentID", getScanContent)
 	router.Get("/scans/:scanID/network", getScanNetwork)
 	router.Get("/scans/:scanID/metadata", getScanMetadata)
 
@@ -65,7 +66,7 @@ func getScanContents(c *fiber.Ctx) error {
 		return responder.CreateError(responder.ErrInvalidRequest).Error
 	}
 
-	contents, err := service.GetScanContent(uint(scanUint))
+	contents, err := service.GetScanContents(uint(scanUint))
 	if err != nil {
 		return responder.CreateError(responder.ErrDatabaseQueryFailed).Error
 	}
@@ -75,6 +76,43 @@ func getScanContents(c *fiber.Ctx) error {
 	}
 
 	responder.WriteJSONResponse(c, responder.CreateSuccessResponse(contents, "Successfully retrieved scan contents"))
+	return nil
+}
+
+// @Summary Get scan content
+// @Description Get scan content
+// @Tags scans
+// @Accept json
+// @Produce json
+// @Param scanID path string true "Scan ID"
+// @Param contentID path string true "Content ID"
+// @Success 200 {object} responder.APIResponse{data=models.ContentResponse}
+// @Failure 400 {object} responder.APIResponse{error=responder.APIError}
+// @Failure 404 {object} responder.APIResponse{error=responder.APIError}
+func getScanContent(c *fiber.Ctx) error {
+	scanID := c.Params("scanID")
+	contentID := c.Params("contentID")
+
+	scanUint, err := utils.ParseUint(scanID)
+	if err != nil {
+		return responder.CreateError(responder.ErrInvalidRequest).Error
+	}
+
+	contentUint, err := utils.ParseUint(contentID)
+	if err != nil {
+		return responder.CreateError(responder.ErrInvalidRequest).Error
+	}
+
+	content, err := service.GetScanContent(uint(scanUint), uint(contentUint))
+	if err != nil {
+		return responder.CreateError(responder.ErrDatabaseQueryFailed).Error
+	}
+
+	if content.ID == 0 {
+		return responder.CreateError(responder.ErrResourceNotFound).Error
+	}
+
+	responder.WriteJSONResponse(c, responder.CreateSuccessResponse(content, "Successfully retrieved scan content"))
 	return nil
 }
 

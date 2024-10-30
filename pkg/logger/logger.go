@@ -2,6 +2,7 @@ package logger
 
 import (
 	"os"
+	"time"
 
 	"go.uber.org/zap"
 )
@@ -9,13 +10,29 @@ import (
 var Log *zap.Logger
 
 func InitLogger() (*zap.Logger, error) {
-	cfg := zap.NewDevelopmentConfig()
-
-	if os.Getenv("ENV") == "production" {
-		cfg = zap.NewProductionConfig()
+	if _, err := os.Stat("logs"); os.IsNotExist(err) {
+		os.Mkdir("logs", 0755)
 	}
 
-	cfg.Level.SetLevel(zap.DebugLevel)
+	logFile := "logs/" + time.Now().Format("2006-01-02") + ".log"
+	errorLogFile := "logs/" + time.Now().Format("2006-01-02") + "-error.log"
+
+	cfg := zap.Config{
+		Development:      true,
+		Encoding:         "json",
+		EncoderConfig:    zap.NewProductionEncoderConfig(),
+		OutputPaths:      []string{"stdout", logFile},
+		ErrorOutputPaths: []string{"stderr", errorLogFile, logFile},
+		Level:            zap.NewAtomicLevelAt(zap.InfoLevel),
+		Sampling: &zap.SamplingConfig{
+			Initial:    100,
+			Thereafter: 100,
+		},
+	}
+
+	if os.Getenv("ENV") == "production" {
+		cfg.Development = false
+	}
 
 	logger, err := cfg.Build()
 	if err != nil {

@@ -33,7 +33,7 @@ func CreateContentStorage(storage models.ContentStorageModel) error {
 }
 
 // CreateContents gets content from the database
-func GetScanContent(scanID uint) ([]models.ContentResponse, error) {
+func GetScanContents(scanID uint) ([]models.ContentResponse, error) {
 	var scan models.ScanModel
 
 	// Retrieve the scan by ID, preloading the associated contents.
@@ -76,6 +76,32 @@ func GetScanContent(scanID uint) ([]models.ContentResponse, error) {
 
 	// Convert the content models into the content responses with tags and storage details.
 	return models.ConvertContents(content, tagsMap, storageMap), nil
+}
+
+func GetScanContent(scanID uint, contentID uint) (models.ContentResponse, error) {
+	var content models.ContentModel
+
+	if err := database.DB.First(&content, contentID).Error; err != nil {
+		return models.ContentResponse{}, err
+	}
+
+	// Retrieve associated tags for the content.
+	var tags []models.ContentTagsModel
+	if err := database.DB.Where("content_id = ?", contentID).Find(&tags).Error; err != nil {
+		return models.ContentResponse{}, err
+	}
+
+	// Retrieve associated storage information for the content.
+	var storage models.ContentStorageModel
+	if err := database.DB.Where("content_id = ?", contentID).First(&storage).Error; err != nil {
+		return models.ContentResponse{}, err
+	}
+
+	var tagStrings []string
+	for _, tag := range tags {
+		tagStrings = append(tagStrings, tag.Tag)
+	}
+	return models.ConvertContent(content, tagStrings, storage), nil
 }
 
 func DeleteContents(scanID uint) error {
