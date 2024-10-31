@@ -3,8 +3,9 @@ package scan
 import (
 	"encoding/json"
 
-	"github.com/codevault-llc/humblebrag-api/internal/database/models"
-	"github.com/codevault-llc/humblebrag-api/internal/scanner"
+	"github.com/codevault-llc/humblebrag-api/internal/core"
+	"github.com/codevault-llc/humblebrag-api/internal/models/entities"
+	"github.com/codevault-llc/humblebrag-api/internal/models/viewmodels"
 	"github.com/codevault-llc/humblebrag-api/internal/service"
 	"github.com/codevault-llc/humblebrag-api/pkg/responder"
 	"github.com/codevault-llc/humblebrag-api/pkg/utils"
@@ -14,7 +15,7 @@ import (
 func RegisterScanRoutes(router fiber.Router) error {
 	router.Get("/scans", GetScans)
 	router.Get("/scans/:scanID", GetScan)
-	router.Post("/scans", CreateScan)
+	router.Post("/scans", CreateScanHandler(core.Scheduler))
 
 	return nil
 }
@@ -29,40 +30,44 @@ func RegisterScanRoutes(router fiber.Router) error {
 // @Failure 400 {object} responder.APIResponse{error=responder.APIError}
 // @Failure 404 {object} responder.APIResponse{error=responder.APIError}
 // @Router /scans [post]
-func CreateScan(c *fiber.Ctx) error {
-	license := c.Locals("license").(models.LicenseModel)
-	if license.ID == 0 {
-		return responder.CreateError(responder.ErrAuthInvalidToken).Error
-	}
-
-	var scan models.ScanRequest
-	err := json.Unmarshal(c.Body(), &scan)
-	if err != nil {
-		return responder.CreateError(responder.ErrInvalidRequest).Error
-	}
-
-	if !utils.ValidateURL(scan.Url) {
-		return responder.CreateError(responder.ErrInvalidRequest).Error
-	}
-
-	scan.Url = utils.NormalizeURL(scan.Url)
-	userAgent := scan.UserAgent
-	if userAgent == "" {
-		userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36"
-	}
-
-	scanResponse, err := scanner.ScanWebsite(scan.Url, userAgent, license.ID)
-	if err != nil {
-		err, ok := err.(*responder.APIError)
-		if ok {
-			return err
+func CreateScanHandler(taskScheduler *core.TaskScheduler) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		// Step 1: Authenticate and validate license
+		license, ok := c.Locals("license").(viewmodels.License)
+		if !ok || license.ID == 0 {
+			return responder.CreateError(responder.ErrAuthInvalidToken).Error
 		}
 
-		return responder.CreateError(responder.ErrScannerFailed).Error
-	}
+		// Step 2: Parse and validate request body
+		var scanRequest viewmodels.ScanRequest
+		if err := json.Unmarshal(c.Body(), &scanRequest); err != nil {
+			return responder.CreateError(responder.ErrInvalidRequest).Error
+		}
+		if !utils.ValidateURL(scanRequest.URL) {
+			return responder.CreateError(responder.ErrInvalidRequest).Error
+		}
+		scanRequest.URL = utils.NormalizeURL(scanRequest.URL)
 
-	responder.WriteJSONResponse(c, responder.CreateSuccessResponse(models.ConvertScan(scanResponse), "Scan created successfully"))
-	return nil
+		// Set default User-Agent if not provided
+		userAgent := scanRequest.UserAgent
+		if userAgent == "" {
+			userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36"
+		}
+
+		// Step 3: Create Job and add to TaskScheduler
+		job := entities.Job{
+			Type:      "WebsiteScan",
+			URL:       scanRequest.URL,
+			UserAgent: userAgent,
+			LicenseID: int(license.ID),
+			Status:    entities.Queued,
+		}
+		taskScheduler.AddJob(&job)
+
+		// Step 4: Return response while job is queued for processing
+		responder.WriteJSONResponse(c, responder.CreateSuccessResponse(viewmodels.ConvertJob(job), "Scan queued for processing"))
+		return nil
+	}
 }
 
 // @Summary Get all scans

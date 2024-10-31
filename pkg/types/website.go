@@ -15,3 +15,8 @@ type FileRequest struct {
 	FileType   string `json:"file_type"`
 	Content    string `json:"content"`
 }
+
+type Screenshot struct {
+	Url     string `json:"url"`
+	Content string `json:"content"`
+}

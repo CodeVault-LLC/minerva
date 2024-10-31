@@ -1,4 +1,4 @@
-package models
+package entities
 
 import (
 	"time"
@@ -6,7 +6,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// ContentModel represents the core information about a piece of content.
 type ContentModel struct {
 	gorm.Model
 
@@ -49,41 +48,4 @@ type ContentAccessLogModel struct {
 	AccessedAt time.Time `gorm:"not null"`                  // Timestamp of the access event
 	AccessType string    `gorm:"type:varchar(50);not null"` // Type of access (e.g., "read", "download")
 	IPAddress  string    `gorm:"type:varchar(45)"`          // IP address of the accessing client
-}
-
-// ContentResponse represents the data returned in API responses.
-type ContentResponse struct {
-	ID           uint      `json:"id"`
-	FileSize     int64     `json:"file_size"`
-	FileType     string    `json:"file_type"`
-	StorageType  string    `json:"storage_type"`
-	LastAccessed time.Time `json:"last_accessed"`
-	AccessCount  int64     `json:"access_count"`
-	Tags         []string  `json:"tags"`
-	ObjectKey    string    `json:"object_key"`
-}
-
-// ConvertContents converts a list of ContentModel to ContentResponse.
-func ConvertContents(contents []ContentModel, tagsMap map[uint][]string, storageMap map[uint]ContentStorageModel) []ContentResponse {
-	var contentResponses []ContentResponse
-
-	for _, c := range contents {
-		contentResponses = append(contentResponses, ConvertContent(c, tagsMap[c.ID], storageMap[c.ID]))
-	}
-
-	return contentResponses
-}
-
-// ConvertContent converts a ContentModel to ContentResponse.
-func ConvertContent(content ContentModel, tags []string, storage ContentStorageModel) ContentResponse {
-	return ContentResponse{
-		ID:           content.ID,
-		FileSize:     content.FileSize,
-		FileType:     content.FileType,
-		StorageType:  content.StorageType,
-		LastAccessed: content.LastAccessedAt,
-		AccessCount:  content.AccessCount,
-		Tags:         tags,
-		ObjectKey:    storage.ObjectKey,
-	}
 }

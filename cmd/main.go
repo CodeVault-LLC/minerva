@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/codevault-llc/humblebrag-api/cmd/api"
+	"github.com/codevault-llc/humblebrag-api/internal/core"
 	"github.com/codevault-llc/humblebrag-api/internal/database"
 	"github.com/codevault-llc/humblebrag-api/internal/scanner/websites"
 	"github.com/codevault-llc/humblebrag-api/internal/updater"
@@ -51,6 +52,8 @@ func main() {
 	log.Info("Connected to AWS")
 
 	websites.InitializeBrowser()
+
+	core.Scheduler = core.NewTaskScheduler(10)
 
 	go updater.StartAutoUpdate(20 * time.Minute)
 	api.Start()

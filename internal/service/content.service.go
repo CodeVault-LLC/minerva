@@ -3,6 +3,7 @@ package service
 import (
 	"github.com/codevault-llc/humblebrag-api/internal/database"
 	"github.com/codevault-llc/humblebrag-api/internal/database/models"
+	"github.com/codevault-llc/humblebrag-api/internal/database/storage"
 	"github.com/codevault-llc/humblebrag-api/pkg/logger"
 	"go.uber.org/zap"
 )
@@ -33,7 +34,7 @@ func CreateContentStorage(storage models.ContentStorageModel) error {
 }
 
 // CreateContents gets content from the database
-func GetScanContents(scanID uint) ([]models.ContentResponse, error) {
+func GetScanContents(scanID uint) ([]models.ContentsResponse, error) {
 	var scan models.ScanModel
 
 	// Retrieve the scan by ID, preloading the associated contents.
@@ -85,23 +86,25 @@ func GetScanContent(scanID uint, contentID uint) (models.ContentResponse, error)
 		return models.ContentResponse{}, err
 	}
 
-	// Retrieve associated tags for the content.
-	var tags []models.ContentTagsModel
-	if err := database.DB.Where("content_id = ?", contentID).Find(&tags).Error; err != nil {
+	// Go inside the s3 bucket and get the contents.
+	contentBody, err := storage.DownloadFile("content-bucket", content.HashedBody)
+	if err != nil {
 		return models.ContentResponse{}, err
 	}
 
-	// Retrieve associated storage information for the content.
-	var storage models.ContentStorageModel
-	if err := database.DB.Where("content_id = ?", contentID).First(&storage).Error; err != nil {
+	if err := IncrementAccessCount(contentID); err != nil {
 		return models.ContentResponse{}, err
 	}
 
-	var tagStrings []string
-	for _, tag := range tags {
-		tagStrings = append(tagStrings, tag.Tag)
-	}
-	return models.ConvertContent(content, tagStrings, storage), nil
+	return models.ContentResponse{
+		ID:           content.ID,
+		FileSize:     content.FileSize,
+		FileType:     content.FileType,
+		StorageType:  content.StorageType,
+		LastAccessed: content.LastAccessedAt,
+		AccessCount:  content.AccessCount,
+		Body:         string(contentBody),
+	}, nil
 }
 
 func DeleteContents(scanID uint) error {

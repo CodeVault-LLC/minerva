@@ -38,6 +38,7 @@ type WebsiteResponse struct {
 	FinalHTML    string
 	ParsedHTML   *html.Node
 	WebsiteTitle string
+	Screenshots  []types.Screenshot
 }
 
 // FetchWebsite retrieves the website content and its network resources.
@@ -57,6 +58,7 @@ func FetchWebsite(url, userAgent string) (*WebsiteResponse, error) {
 
 	var redirects []string
 	var networkFiles []types.FileRequest
+	var screenshots []types.Screenshot
 
 	router := page.HijackRequests()
 
@@ -87,6 +89,11 @@ func FetchWebsite(url, userAgent string) (*WebsiteResponse, error) {
 				})
 			case proto.NetworkResourceTypeDocument:
 				redirects = append(redirects, requestURL)
+
+				screenshots = append(screenshots, types.Screenshot{
+					Url:     requestURL,
+					Content: string(page.MustWaitStable().MustScreenshotFullPage()),
+				})
 			case proto.NetworkResourceTypeStylesheet:
 				if err := rod.Try(func() {
 					c.MustLoadResponse()
@@ -172,6 +179,7 @@ func FetchWebsite(url, userAgent string) (*WebsiteResponse, error) {
 		Files:      networkFiles,
 		FinalHTML:  htmlContent,
 		ParsedHTML: parsedHTML,
+		Screenshots: screenshots,
 	}, nil
 }
 

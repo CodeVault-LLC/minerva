@@ -1,7 +1,7 @@
 package database
 
 import (
-	"github.com/codevault-llc/humblebrag-api/internal/database/models"
+	"github.com/codevault-llc/humblebrag-api/internal/models/entities"
 	"github.com/codevault-llc/humblebrag-api/pkg/logger"
 	"go.uber.org/zap"
 
@@ -19,12 +19,12 @@ func InitPostgres(dsn string) (*gorm.DB, error) {
 
 	registerGlobalCallbacks(db)
 
-	err = db.AutoMigrate(&models.LicenseModel{}, &models.ScanModel{}, &models.NetworkModel{},
-		&models.DNSModel{}, &models.MetadataModel{}, &models.WhoisModel{}, &models.FindingModel{},
-		&models.CertificateModel{}, &models.ContentModel{}, &models.ContentStorageModel{}, &models.ContentTagsModel{}, &models.ContentAccessLogModel{},
-		&models.FilterModel{})
+	err = db.AutoMigrate(&entities.LicenseModel{}, &entities.ScanModel{}, &entities.NetworkModel{},
+		&entities.DNSModel{}, &entities.MetadataModel{}, &entities.WhoisModel{}, &entities.FindingModel{},
+		&entities.CertificateModel{}, &entities.ContentModel{}, &entities.ContentStorageModel{}, &entities.ContentTagsModel{}, &entities.ContentAccessLogModel{},
+		&entities.FilterModel{})
 	if err != nil {
-		logger.Log.Error("Failed to auto migrate models: %v", zap.Error(err))
+		logger.Log.Error("Failed to auto migrate entities: %v", zap.Error(err))
 		return nil, err
 	}
 	DB = db

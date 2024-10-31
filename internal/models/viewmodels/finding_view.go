@@ -1,24 +1,8 @@
-package models
+package viewmodels
 
-import "gorm.io/gorm"
+import "github.com/codevault-llc/humblebrag-api/internal/models/entities"
 
-type FindingModel struct {
-	gorm.Model
-
-	ScanID uint
-	Scan   ScanModel
-
-	RegexName        string `gorm:"not null"`
-	RegexDescription string `gorm:"not null"`
-
-	Match  string `gorm:"not null"`
-	Source string `gorm:"not null"`
-	Line   int    `gorm:"not null"`
-}
-
-
-
-type FindingResponse struct {
+type Finding struct {
 	ID     uint `json:"id"`
 	ScanID uint `json:"scan_id"`
 
@@ -33,11 +17,11 @@ type FindingResponse struct {
 	UpdatedAt string `json:"updated_at"`
 }
 
-func ConvertFindings(findings []FindingModel) []FindingResponse {
-	var findingResponses []FindingResponse
+func ConvertFindings(findings []entities.FindingModel) []Finding {
+	var findingResponses []Finding
 
 	for _, finding := range findings {
-		findingResponses = append(findingResponses, FindingResponse{
+		findingResponses = append(findingResponses, Finding{
 			ID:     finding.ID,
 			ScanID: finding.ScanID,
 			Line:   finding.Line,
@@ -55,7 +39,7 @@ func ConvertFindings(findings []FindingModel) []FindingResponse {
 	return findingResponses
 }
 
-func FindFinding(findings []FindingModel, finding FindingModel) bool {
+func FindFinding(findings []entities.FindingModel, finding entities.FindingModel) bool {
 	for _, f := range findings {
 		if f.Line == finding.Line && f.Match == finding.Match && f.Source == finding.Source {
 			return true
