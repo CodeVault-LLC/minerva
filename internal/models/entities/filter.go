@@ -6,7 +6,7 @@ type FilterModel struct {
 	gorm.Model
 
 	ScanID uint
-	Scan ScanModel
+	Scan   ScanModel
 
-	FilterID string
+	FilterID string `gorm:"not null"`
 }

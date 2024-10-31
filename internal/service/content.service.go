@@ -2,14 +2,15 @@ package service
 
 import (
 	"github.com/codevault-llc/humblebrag-api/internal/database"
-	"github.com/codevault-llc/humblebrag-api/internal/database/models"
 	"github.com/codevault-llc/humblebrag-api/internal/database/storage"
+	"github.com/codevault-llc/humblebrag-api/internal/models/entities"
+	"github.com/codevault-llc/humblebrag-api/internal/models/viewmodels"
 	"github.com/codevault-llc/humblebrag-api/pkg/logger"
 	"go.uber.org/zap"
 )
 
 // CreateContent creates content in the database
-func CreateContent(content models.ContentModel) (models.ContentModel, error) {
+func CreateContent(content entities.ContentModel) (entities.ContentModel, error) {
 	if err := database.DB.Create(&content).Error; err != nil {
 		return content, err
 	}
@@ -17,7 +18,7 @@ func CreateContent(content models.ContentModel) (models.ContentModel, error) {
 	return content, nil
 }
 
-func CreateContentTags(tags []models.ContentTagsModel) error {
+func CreateContentTags(tags []entities.ContentTagsModel) error {
 	if err := database.DB.Create(&tags).Error; err != nil {
 		return err
 	}
@@ -25,7 +26,7 @@ func CreateContentTags(tags []models.ContentTagsModel) error {
 	return nil
 }
 
-func CreateContentStorage(storage models.ContentStorageModel) error {
+func CreateContentStorage(storage entities.ContentStorageModel) error {
 	if err := database.DB.Create(&storage).Error; err != nil {
 		return err
 	}
@@ -34,8 +35,8 @@ func CreateContentStorage(storage models.ContentStorageModel) error {
 }
 
 // CreateContents gets content from the database
-func GetScanContents(scanID uint) ([]models.ContentsResponse, error) {
-	var scan models.ScanModel
+func GetScanContents(scanID uint) ([]viewmodels.Contents, error) {
+	var scan entities.ScanModel
 
 	// Retrieve the scan by ID, preloading the associated contents.
 	if err := database.DB.Preload("Contents").First(&scan, scanID).Error; err != nil {
@@ -55,7 +56,7 @@ func GetScanContents(scanID uint) ([]models.ContentsResponse, error) {
 
 	// Retrieve associated tags for each content ID.
 	tagsMap := make(map[uint][]string)
-	var tags []models.ContentTagsModel
+	var tags []entities.ContentTagsModel
 	if err := database.DB.Where("content_id IN ?", contentIDs).Find(&tags).Error; err != nil {
 		return nil, err
 	}
@@ -65,8 +66,8 @@ func GetScanContents(scanID uint) ([]models.ContentsResponse, error) {
 	}
 
 	// Retrieve associated storage information for each content ID.
-	storageMap := make(map[uint]models.ContentStorageModel)
-	var storageRecords []models.ContentStorageModel
+	storageMap := make(map[uint]entities.ContentStorageModel)
+	var storageRecords []entities.ContentStorageModel
 	if err := database.DB.Where("content_id IN ?", contentIDs).Find(&storageRecords).Error; err != nil {
 		return nil, err
 	}
@@ -76,27 +77,27 @@ func GetScanContents(scanID uint) ([]models.ContentsResponse, error) {
 	}
 
 	// Convert the content models into the content responses with tags and storage details.
-	return models.ConvertContents(content, tagsMap, storageMap), nil
+	return viewmodels.ConvertContents(content, tagsMap, storageMap), nil
 }
 
-func GetScanContent(scanID uint, contentID uint) (models.ContentResponse, error) {
-	var content models.ContentModel
+func GetScanContent(scanID uint, contentID uint) (viewmodels.Content, error) {
+	var content entities.ContentModel
 
 	if err := database.DB.First(&content, contentID).Error; err != nil {
-		return models.ContentResponse{}, err
+		return viewmodels.Content{}, err
 	}
 
 	// Go inside the s3 bucket and get the contents.
 	contentBody, err := storage.DownloadFile("content-bucket", content.HashedBody)
 	if err != nil {
-		return models.ContentResponse{}, err
+		return viewmodels.Content{}, err
 	}
 
 	if err := IncrementAccessCount(contentID); err != nil {
-		return models.ContentResponse{}, err
+		return viewmodels.Content{}, err
 	}
 
-	return models.ContentResponse{
+	return viewmodels.Content{
 		ID:           content.ID,
 		FileSize:     content.FileSize,
 		FileType:     content.FileType,
@@ -108,15 +109,15 @@ func GetScanContent(scanID uint, contentID uint) (models.ContentResponse, error)
 }
 
 func DeleteContents(scanID uint) error {
-	if err := database.DB.Where("scan_id = ?", scanID).Delete(&models.ContentModel{}).Error; err != nil {
+	if err := database.DB.Where("scan_id = ?", scanID).Delete(&entities.ContentModel{}).Error; err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func FindContentByHash(hash string) (models.ContentModel, error) {
-	var content models.ContentModel
+func FindContentByHash(hash string) (entities.ContentModel, error) {
+	var content entities.ContentModel
 
 	if err := database.DB.Where("hashed_body = ?", hash).First(&content).Error; err != nil {
 		return content, err
@@ -126,7 +127,7 @@ func FindContentByHash(hash string) (models.ContentModel, error) {
 }
 
 func IncrementAccessCount(contentID uint) error {
-	var content models.ContentModel
+	var content entities.ContentModel
 
 	if err := database.DB.First(&content, contentID).Error; err != nil {
 		return err
@@ -142,7 +143,7 @@ func IncrementAccessCount(contentID uint) error {
 }
 
 func AddContentToScan(scanID uint, contentID uint) error {
-	var scan models.ScanModel
+	var scan entities.ScanModel
 
 	// Retrieve the scan by ID.
 	if err := database.DB.First(&scan, scanID).Error; err != nil {
@@ -150,5 +151,5 @@ func AddContentToScan(scanID uint, contentID uint) error {
 	}
 
 	// Add the content to the scan's Contents relationship.
-	return database.DB.Model(&scan).Association("Contents").Append(&models.ContentModel{ID: contentID})
+	return database.DB.Model(&scan).Association("Contents").Append(&entities.ContentModel{ID: contentID})
 }

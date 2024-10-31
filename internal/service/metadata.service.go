@@ -2,11 +2,12 @@ package service
 
 import (
 	"github.com/codevault-llc/humblebrag-api/internal/database"
-	"github.com/codevault-llc/humblebrag-api/internal/database/models"
+	"github.com/codevault-llc/humblebrag-api/internal/models/entities"
+	"github.com/codevault-llc/humblebrag-api/internal/models/viewmodels"
 )
 
 // CreateMetadata creates metadata in the database
-func CreateMetadata(metadata models.MetadataModel) (models.MetadataModel, error) {
+func CreateMetadata(metadata entities.MetadataModel) (entities.MetadataModel, error) {
 	tx := database.DB.Begin()
 	if err := tx.Create(&metadata).Error; err != nil {
 		tx.Rollback()
@@ -17,12 +18,12 @@ func CreateMetadata(metadata models.MetadataModel) (models.MetadataModel, error)
 	return metadata, nil
 }
 
-func GetScanMetadataByScanID(scanId uint) (models.MetadataResponse, error) {
-	var metadata models.MetadataModel
+func GetScanMetadataByScanID(scanId uint) (viewmodels.Metadata, error) {
+	var metadata entities.MetadataModel
 
 	if err := database.DB.Where("scan_id = ?", scanId).First(&metadata).Error; err != nil {
-		return models.MetadataResponse{}, err
+		return viewmodels.Metadata{}, err
 	}
 
-	return models.ConvertMetadata(metadata), nil
+	return viewmodels.ConvertMetadata(metadata), nil
 }

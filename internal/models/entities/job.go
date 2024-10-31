@@ -1,17 +1,25 @@
 package entities
 
-import "time"
+import (
+	"time"
 
-// Job represents a task to be processed by the TaskScheduler
-type Job struct {
-	ID        string
-	Type      string
-	URL       string
-	UserAgent string
-	LicenseID int
-	Status    JobStatus
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	"gorm.io/gorm"
+)
+
+// JobModel represents a task to be processed by the TaskScheduler
+type JobModel struct {
+	gorm.Model
+	Type string `gorm:"not null"`
+
+	URL       string `gorm:"not null"`
+	UserAgent string `gorm:"not null"`
+
+	LicenseID int  `gorm:"not null"`
+	ScanID    uint `gorm:"not null"`
+
+	Status    JobStatus `gorm:"not null"`
+	CreatedAt time.Time `gorm:"not null"`
+	UpdatedAt time.Time `gorm:"not null"`
 }
 
 // JobStatus indicates the current status of a Job

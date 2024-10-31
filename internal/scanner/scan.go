@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/codevault-llc/humblebrag-api/internal/database/models"
+	"github.com/codevault-llc/humblebrag-api/internal/models/entities"
 	"github.com/codevault-llc/humblebrag-api/internal/scanner/modules/content"
 	"github.com/codevault-llc/humblebrag-api/internal/scanner/modules/list"
 	"github.com/codevault-llc/humblebrag-api/internal/scanner/modules/metadata"
@@ -17,42 +17,36 @@ import (
 	"go.uber.org/zap"
 )
 
-func ScanWebsite(url string, userAgent string, licenseId uint) (models.ScanModel, error) {
-	logger.Log.Info("Starting website scan for URL: %s", zap.String("url", url))
+func ScanWebsite(job *entities.JobModel) (entities.ScanModel, error) {
+	logger.Log.Info("Starting website scan for URL: %s", zap.String("url", job.URL))
 
 	// Initial website scan
-	requestedWebsite, err := websites.FetchWebsite(url, userAgent)
+	requestedWebsite, err := websites.FetchWebsite(job.URL, job.UserAgent)
 	if err != nil {
-		return models.ScanModel{}, err
+		return entities.ScanModel{}, err
 	}
 
 	website, err := websites.AnalyzeHTML(requestedWebsite)
 	if err != nil {
 		logger.Log.Error("Failed to analyze website: %v", zap.Error(err))
-		return models.ScanModel{}, err
+		return entities.ScanModel{}, err
 	}
 
 	// Save initial scan result
-	scanModel := models.ScanModel{
-		Url:           url,
+	scanModel := entities.ScanModel{
+		Url:           job.URL,
 		Title:         website.Title,
 		RedirectChain: requestedWebsite.Redirects,
 		StatusCode:    website.StatusCode,
-		Status:        models.ScanStatusPending, // Set status to pending for further processing
-		LicenseID:     licenseId,
+		Status:        entities.ScanStatusPending, // Set status to pending for further processing
+		LicenseID:     uint(job.LicenseID),
 		Sha256:        utils.SHA256(website.Url),
 		SHA1:          utils.SHA1(website.Url),
 		MD5:           utils.MD5(website.Url),
 	}
 
-	scanModel, err = service.CreateScan(scanModel)
-	if err != nil {
-		logger.Log.Error("Failed to save initial scan result: %v", zap.Error(err))
-		return models.ScanModel{}, err
-	}
-
 	// Start background goroutines to handle further scans asynchronously
-	go runBackgroundModules(scanModel.ID, url, website)
+	go runBackgroundModules(scanModel.ID, job.URL, website)
 
 	// Return the response immediately, without waiting for the background tasks
 	return scanModel, nil
@@ -95,8 +89,8 @@ func runBackgroundModules(scanId uint, url string, website types.WebsiteAnalysis
 		fmt.Println("All modules are done")
 
 		// Once all modules are done, update the scan status to "Complete"
-		scanModel := models.ScanModel{
-			Status: models.ScanStatusComplete,
+		scanModel := entities.ScanModel{
+			Status: entities.ScanStatusComplete,
 		}
 		scanModel.ID = scanId
 

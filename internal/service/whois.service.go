@@ -2,10 +2,10 @@ package service
 
 import (
 	"github.com/codevault-llc/humblebrag-api/internal/database"
-	"github.com/codevault-llc/humblebrag-api/internal/database/models"
+	"github.com/codevault-llc/humblebrag-api/internal/models/entities"
 )
 
-func CreateWhois(whois models.WhoisModel) (models.WhoisModel, error) {
+func CreateWhois(whois entities.WhoisModel) (entities.WhoisModel, error) {
 	tx := database.DB.Begin()
 	if err := tx.Create(&whois).Error; err != nil {
 		tx.Rollback()

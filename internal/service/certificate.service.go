@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 
 	"github.com/codevault-llc/humblebrag-api/internal/database"
-	"github.com/codevault-llc/humblebrag-api/internal/database/models"
+	"github.com/codevault-llc/humblebrag-api/internal/models/entities"
 	"github.com/codevault-llc/humblebrag-api/pkg/utils"
 	"github.com/lib/pq"
 )
@@ -19,7 +19,7 @@ func CreateCertificate(networkId uint, cert x509.Certificate) error {
 
 	signatureBase64 := base64.StdEncoding.EncodeToString(cert.Signature)
 
-	certificate := models.CertificateModel{
+	certificate := entities.CertificateModel{
 		NetworkId:                   networkId,
 		Issuer:                      string(cert.Issuer.CommonName),
 		Subject:                     string(cert.Subject.CommonName),
@@ -54,7 +54,7 @@ func CreateCertificate(networkId uint, cert x509.Certificate) error {
 }
 
 func DeleteCertificates(networkId uint) error {
-	if err := database.DB.Where("network_id = ?", networkId).Delete(&models.CertificateModel{}).Error; err != nil {
+	if err := database.DB.Where("network_id = ?", networkId).Delete(&entities.CertificateModel{}).Error; err != nil {
 		return err
 	}
 

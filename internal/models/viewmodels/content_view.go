@@ -6,8 +6,8 @@ import (
 	"github.com/codevault-llc/humblebrag-api/internal/models/entities"
 )
 
-// ContentsResponse represents the data returned in API responses.
-type ContentsResponse struct {
+// Contents represents the data returned in API responses.
+type Contents struct {
 	ID           uint      `json:"id"`
 	FileSize     int64     `json:"file_size"`
 	FileType     string    `json:"file_type"`
@@ -18,7 +18,7 @@ type ContentsResponse struct {
 	ObjectKey    string    `json:"object_key"`
 }
 
-type ContentResponse struct {
+type Content struct {
 	ID           uint      `json:"id"`
 	FileSize     int64     `json:"file_size"`
 	FileType     string    `json:"file_type"`
@@ -29,8 +29,8 @@ type ContentResponse struct {
 }
 
 // ConvertContents converts a list of ContentModel to ContentResponse.
-func ConvertContents(contents []entities.ContentModel, tagsMap map[uint][]string, storageMap map[uint]entities.ContentStorageModel) []ContentsResponse {
-	var contentResponses []ContentsResponse
+func ConvertContents(contents []entities.ContentModel, tagsMap map[uint][]string, storageMap map[uint]entities.ContentStorageModel) []Contents {
+	var contentResponses []Contents
 
 	for _, c := range contents {
 		contentResponses = append(contentResponses, ConvertContent(c, tagsMap[c.ID], storageMap[c.ID]))
@@ -40,8 +40,8 @@ func ConvertContents(contents []entities.ContentModel, tagsMap map[uint][]string
 }
 
 // ConvertContent converts a ContentModel to ContentResponse.
-func ConvertContent(content entities.ContentModel, tags []string, storage entities.ContentStorageModel) ContentsResponse {
-	return ContentsResponse{
+func ConvertContent(content entities.ContentModel, tags []string, storage entities.ContentStorageModel) Contents {
+	return Contents{
 		ID:           content.ID,
 		FileSize:     content.FileSize,
 		FileType:     content.FileType,

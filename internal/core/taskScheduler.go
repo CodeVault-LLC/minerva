@@ -8,8 +8,8 @@ import (
 
 // TaskScheduler manages job queueing and dispatching
 type TaskScheduler struct {
-	queue      []*entities.Job // Task queue, can implement a priority queue
-	workerPool chan struct{}   // Manages number of concurrent workers
+	queue      []*entities.JobModel // Task queue, can implement a priority queue
+	workerPool chan struct{}        // Manages number of concurrent workers
 	mu         sync.Mutex
 }
 
@@ -18,13 +18,13 @@ var Scheduler *TaskScheduler
 // NewTaskScheduler initializes TaskScheduler
 func NewTaskScheduler(workerCount int) *TaskScheduler {
 	return &TaskScheduler{
-		queue:      []*entities.Job{},
+		queue:      []*entities.JobModel{},
 		workerPool: make(chan struct{}, workerCount),
 	}
 }
 
 // AddJob adds a new task to the queue
-func (s *TaskScheduler) AddJob(job *entities.Job) {
+func (s *TaskScheduler) AddJob(job *entities.JobModel) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.queue = append(s.queue, job)
@@ -34,7 +34,7 @@ func (s *TaskScheduler) AddJob(job *entities.Job) {
 func (s *TaskScheduler) DispatchTasks(inspector *Inspector) {
 	for _, job := range s.queue {
 		s.workerPool <- struct{}{}
-		go func(j *entities.Job) {
+		go func(j *entities.JobModel) {
 			defer func() { <-s.workerPool }()
 			if err := inspector.Execute(j); err != nil {
 				j.Status = entities.Failed
@@ -47,7 +47,7 @@ func (s *TaskScheduler) DispatchTasks(inspector *Inspector) {
 }
 
 // processJob processes individual tasks and updates DataStore
-func (s *TaskScheduler) processJob(job *entities.Job, inspector *Inspector) {
+func (s *TaskScheduler) processJob(job *entities.JobModel, inspector *Inspector) {
 	job.Status = entities.Processing
 	inspector.Execute(job) // Call relevant module based on Job.Type
 	job.Status = entities.Completed
@@ -55,7 +55,7 @@ func (s *TaskScheduler) processJob(job *entities.Job, inspector *Inspector) {
 }
 
 // updateJobStatus updates the status in DataStore
-func (s *TaskScheduler) updateJobStatus(job *entities.Job) {
+func (s *TaskScheduler) updateJobStatus(job *entities.JobModel) {
 	// Logic to update job status in database
 
 }

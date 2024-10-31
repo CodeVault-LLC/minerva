@@ -55,7 +55,7 @@ func CreateScanHandler(taskScheduler *core.TaskScheduler) fiber.Handler {
 		}
 
 		// Step 3: Create Job and add to TaskScheduler
-		job := entities.Job{
+		job := entities.JobModel{
 			Type:      "WebsiteScan",
 			URL:       scanRequest.URL,
 			UserAgent: userAgent,

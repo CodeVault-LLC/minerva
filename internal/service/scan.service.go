@@ -4,13 +4,14 @@ import (
 	"regexp"
 
 	"github.com/codevault-llc/humblebrag-api/internal/database"
-	"github.com/codevault-llc/humblebrag-api/internal/database/models"
+	"github.com/codevault-llc/humblebrag-api/internal/models/entities"
+	"github.com/codevault-llc/humblebrag-api/internal/models/viewmodels"
 	"github.com/codevault-llc/humblebrag-api/pkg/utils"
 	"gorm.io/gorm"
 )
 
-func CreateScan(scan models.ScanModel) (models.ScanModel, error) {
-	database.DB.Model(&models.ScanModel{}).Where("url = ?", scan.Url).Update("status", models.ScanStatusArchived)
+func CreateScan(scan entities.ScanModel) (entities.ScanModel, error) {
+	database.DB.Model(&entities.ScanModel{}).Where("url = ?", scan.Url).Update("status", entities.ScanStatusArchived)
 
 	if err := database.DB.Create(&scan).Error; err != nil {
 		return scan, err
@@ -20,36 +21,36 @@ func CreateScan(scan models.ScanModel) (models.ScanModel, error) {
 }
 
 // Make this function update the scan information. Now we are just updating some fields of the scan, meaning some can be empty.
-func UpdateScan(scan models.ScanModel) (models.ScanModel, error) {
-	if err := database.DB.Model(&models.ScanModel{}).Where("id = ?", scan.ID).Updates(scan).Error; err != nil {
+func UpdateScan(scan entities.ScanModel) (entities.ScanModel, error) {
+	if err := database.DB.Model(&entities.ScanModel{}).Where("id = ?", scan.ID).Updates(scan).Error; err != nil {
 		return scan, err
 	}
 
 	return scan, nil
 }
 
-func GetScans() ([]models.ScanAPIResponse, error) {
-	var scans []models.ScanModel
+func GetScans() ([]viewmodels.Scan, error) {
+	var scans []entities.ScanModel
 
-	if err := database.DB.Where("status IN (?, ?)", models.ScanStatusComplete, models.ScanStatusPending).Order("created_at desc").Find(&scans).Error; err != nil {
-		return models.ConvertScans(scans), err
+	if err := database.DB.Where("status IN (?, ?)", entities.ScanStatusComplete, entities.ScanStatusPending).Order("created_at desc").Find(&scans).Error; err != nil {
+		return viewmodels.ConvertScans(scans), err
 	}
 
-	return models.ConvertScans(scans), nil
+	return viewmodels.ConvertScans(scans), nil
 }
 
-func GetScan(scanID uint) (models.ScanAPIResponse, error) {
-	var scan models.ScanModel
+func GetScan(scanID uint) (viewmodels.Scan, error) {
+	var scan entities.ScanModel
 
-	if err := database.DB.Where("id = ?", scanID).Preload("Findings").Preload("Lists").Where("status IN (?, ?)", models.ScanStatusComplete, models.ScanStatusPending).First(&scan).Error; err != nil {
-		return models.ConvertScan(scan), err
+	if err := database.DB.Where("id = ?", scanID).Preload("Findings").Preload("Lists").Where("status IN (?, ?)", entities.ScanStatusComplete, entities.ScanStatusPending).First(&scan).Error; err != nil {
+		return viewmodels.ConvertScan(scan), err
 	}
 
-	return models.ConvertScan(scan), nil
+	return viewmodels.ConvertScan(scan), nil
 }
 
-func GetScansByUserID(userID uint) ([]models.ScanModel, error) {
-	var scans []models.ScanModel
+func GetScansByUserID(userID uint) ([]entities.ScanModel, error) {
+	var scans []entities.ScanModel
 
 	if err := database.DB.Where("user_id = ?", userID).
 		Order("created_at DESC").
@@ -64,7 +65,7 @@ func GetScansByUserID(userID uint) ([]models.ScanModel, error) {
 // GetTotalScans returns the total number of scans
 func GetTotalScans() (int64, error) {
 	var totalScans int64
-	if err := database.DB.Model(&models.ScanModel{}).Count(&totalScans).Error; err != nil {
+	if err := database.DB.Model(&entities.ScanModel{}).Count(&totalScans).Error; err != nil {
 		return 0, err
 	}
 
@@ -74,7 +75,7 @@ func GetTotalScans() (int64, error) {
 // GetTotalDomainsScanned returns the total number of unique domains scanned
 func GetTotalDomainsScanned() (int64, error) {
 	var totalDomainsScanned int64
-	if err := database.DB.Model(&models.ScanModel{}).Distinct("website_url").Count(&totalDomainsScanned).Error; err != nil {
+	if err := database.DB.Model(&entities.ScanModel{}).Distinct("website_url").Count(&totalDomainsScanned).Error; err != nil {
 		return 0, err
 	}
 
@@ -84,7 +85,7 @@ func GetTotalDomainsScanned() (int64, error) {
 // GetRecentScans returns the number of scans in the last 24 hours
 func GetRecentScans() (int64, error) {
 	var lastScansIn24Hours int64
-	if err := database.DB.Model(&models.ScanModel{}).Where("created_at >= ?", utils.Get24HoursAgo()).Count(&lastScansIn24Hours).Error; err != nil {
+	if err := database.DB.Model(&entities.ScanModel{}).Where("created_at >= ?", utils.Get24HoursAgo()).Count(&lastScansIn24Hours).Error; err != nil {
 		return 0, err
 	}
 
@@ -92,9 +93,9 @@ func GetRecentScans() (int64, error) {
 }
 
 // GetMostScannedDomains returns the top 10 most scanned domains
-func GetMostScannedDomains() ([]models.ScanModel, error) {
-	var scans []models.ScanModel
-	if err := database.DB.Model(&models.ScanModel{}).Select("*, count(website_url) as count").Group("website_url, id").Order("count desc").Limit(10).Find(&scans).Error; err != nil {
+func GetMostScannedDomains() ([]entities.ScanModel, error) {
+	var scans []entities.ScanModel
+	if err := database.DB.Model(&entities.ScanModel{}).Select("*, count(website_url) as count").Group("website_url, id").Order("count desc").Limit(10).Find(&scans).Error; err != nil {
 		return scans, err
 	}
 
@@ -102,7 +103,7 @@ func GetMostScannedDomains() ([]models.ScanModel, error) {
 }
 
 func ExecuteAdvancedQuery(parsedQuery map[string][]string) (interface{}, error) {
-	query := database.DB.Model(&models.ScanModel{})
+	query := database.DB.Model(&entities.ScanModel{})
 
 	for key, values := range parsedQuery {
 		switch key {
@@ -135,12 +136,12 @@ func ExecuteAdvancedQuery(parsedQuery map[string][]string) (interface{}, error) 
 		}
 	}
 
-	var results []models.ScanModel
+	var results []entities.ScanModel
 	if err := query.Preload("Lists").Preload("Findings").Find(&results).Error; err != nil {
 		return nil, err
 	}
 
-	return models.ConvertScans(results), nil
+	return viewmodels.ConvertScans(results), nil
 }
 
 func buildDefaultSearch(term string) *gorm.DB {

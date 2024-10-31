@@ -13,7 +13,7 @@ type ScanRequest struct {
 }
 
 // ConvertJob converts an entity job to a viewmodel job response
-func ConvertJob(job entities.Job) JobResponse {
+func ConvertJob(job entities.JobModel) JobResponse {
 	return JobResponse{
 		ID:        job.ID,
 		Type:      job.Type,
@@ -25,7 +25,7 @@ func ConvertJob(job entities.Job) JobResponse {
 
 // JobResponse represents the structure for outgoing job data in the API response
 type JobResponse struct {
-	ID        string             `json:"id"`
+	ID        uint               `json:"id"`
 	Type      string             `json:"type"`
 	URL       string             `json:"url"`
 	Status    entities.JobStatus `json:"status"`

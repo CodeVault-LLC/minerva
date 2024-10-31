@@ -2,10 +2,10 @@ package service
 
 import (
 	"github.com/codevault-llc/humblebrag-api/internal/database"
-	"github.com/codevault-llc/humblebrag-api/internal/database/models"
+	"github.com/codevault-llc/humblebrag-api/internal/models/entities"
 )
 
-func CreateFilter(list models.FilterModel) (models.FilterModel, error) {
+func CreateFilter(list entities.FilterModel) (entities.FilterModel, error) {
 	if err := database.DB.Create(&list).Error; err != nil {
 		return list, err
 	}
@@ -13,7 +13,7 @@ func CreateFilter(list models.FilterModel) (models.FilterModel, error) {
 	return list, nil
 }
 
-func CreateFilters(lists []models.FilterModel) ([]models.FilterModel, error) {
+func CreateFilters(lists []entities.FilterModel) ([]entities.FilterModel, error) {
 	if err := database.DB.Create(&lists).Error; err != nil {
 		return lists, err
 	}
