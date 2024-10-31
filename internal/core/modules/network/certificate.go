@@ -6,8 +6,26 @@ import (
 	"fmt"
 	"log"
 	"strings"
+
+	"github.com/codevault-llc/humblebrag-api/internal/models/entities"
 )
 
+type CertificateModule struct{}
+
+func (m *CertificateModule) Run(job entities.JobModel) (interface{}, error) {
+	certifiate, err := GetCertificateWebsite(job.URL, 443)
+	if err != nil {
+		return nil, err
+	} else {
+		return certifiate, nil
+	}
+}
+
+func (m *CertificateModule) Name() string {
+	return "Certificate"
+}
+
+// GetCertificateWebsite returns the certificate of a website
 func GetCertificateWebsite(url string, port int) ([]*x509.Certificate, error) {
 	conf := &tls.Config{
 		// file deepcode ignore TooPermissiveTrustManager: a scanning module to verify third party certificates
