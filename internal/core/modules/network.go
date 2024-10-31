@@ -7,6 +7,7 @@ import (
 
 	"github.com/codevault-llc/humblebrag-api/internal/core/modules/network"
 	"github.com/codevault-llc/humblebrag-api/internal/models/entities"
+	"github.com/codevault-llc/humblebrag-api/internal/models/repository"
 	"github.com/codevault-llc/humblebrag-api/internal/service"
 	"github.com/codevault-llc/humblebrag-api/pkg/logger"
 	"github.com/codevault-llc/humblebrag-api/pkg/utils"
@@ -73,7 +74,7 @@ func (m *NetworkModule) saveResults(scanID uint, results map[string]interface{})
 		HTTPHeaders: results["Headers"].([]string),
 	}
 
-	networkResponse, err := service.CreateNetwork(networkModel)
+	networkResponse, err := repository.
 	if err != nil {
 		logger.Log.Error("Failed to create network: %v", zap.Error(err))
 		return err
