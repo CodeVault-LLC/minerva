@@ -5,6 +5,8 @@ import (
 	"net/http"
 
 	"github.com/codevault-llc/humblebrag-api/internal/models/entities"
+	"github.com/codevault-llc/humblebrag-api/pkg/logger"
+	"go.uber.org/zap"
 )
 
 type HeaderModule struct{}
@@ -12,10 +14,16 @@ type HeaderModule struct{}
 func (m *HeaderModule) Run(job entities.JobModel) (interface{}, error) {
 	headers, err := getHeaders(job.URL)
 	if err != nil {
+		logger.Log.Error("Error getting headers", zap.Error(err))
 		return nil, err
-	} else {
-		return headers, nil
 	}
+
+	httpHeaders := make([]string, 0)
+	for key, value := range headers.Headers {
+		httpHeaders = append(httpHeaders, fmt.Sprintf("%s: %s", key, value))
+	}
+
+	return httpHeaders, nil
 }
 
 type HTTPResponse struct {

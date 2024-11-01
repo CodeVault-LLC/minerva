@@ -7,9 +7,11 @@ import (
 	"github.com/codevault-llc/humblebrag-api/internal/models/entities"
 	"github.com/codevault-llc/humblebrag-api/internal/models/viewmodels"
 	"github.com/codevault-llc/humblebrag-api/internal/service"
+	"github.com/codevault-llc/humblebrag-api/pkg/logger"
 	"github.com/codevault-llc/humblebrag-api/pkg/responder"
 	"github.com/codevault-llc/humblebrag-api/pkg/utils"
 	"github.com/gofiber/fiber/v2"
+	"go.uber.org/zap"
 )
 
 func RegisterScanRoutes(router fiber.Router) error {
@@ -32,9 +34,9 @@ func RegisterScanRoutes(router fiber.Router) error {
 // @Router /scans [post]
 func CreateScanHandler(taskScheduler *core.TaskScheduler) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		// Step 1: Authenticate and validate license
 		license, ok := c.Locals("license").(viewmodels.License)
 		if !ok || license.ID == 0 {
+			logger.Log.Error("Failed to get license from context", zap.String("license", license.License))
 			return responder.CreateError(responder.ErrAuthInvalidToken).Error
 		}
 

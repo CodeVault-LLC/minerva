@@ -1,7 +1,8 @@
 package middleware
 
 import (
-	"github.com/codevault-llc/humblebrag-api/internal/service"
+	"github.com/codevault-llc/humblebrag-api/internal/models/repository"
+	"github.com/codevault-llc/humblebrag-api/internal/models/viewmodels"
 	"github.com/codevault-llc/humblebrag-api/pkg/responder"
 	"github.com/gofiber/fiber/v2"
 )
@@ -12,7 +13,7 @@ func SubscriptionAuthMiddleware(c *fiber.Ctx) error {
 		return responder.CreateError(responder.ErrAuthInvalidToken).Error
 	}
 
-	license, err := service.GetLicenseByLicense(token)
+	license, err := repository.LicenseRepository.GetLicenseByLicense(token)
 	if err != nil {
 		return responder.CreateError(responder.ErrAuthInvalidToken).Error
 	}
@@ -22,6 +23,6 @@ func SubscriptionAuthMiddleware(c *fiber.Ctx) error {
 		return responder.CreateError(responder.ErrAuthInvalidToken).Error
 	}
 
-	c.Locals("license", license)
+	c.Locals("license", viewmodels.ConvertLicense(*license))
 	return c.Next()
 }

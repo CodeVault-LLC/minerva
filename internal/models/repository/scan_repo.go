@@ -5,19 +5,21 @@ import (
 	"gorm.io/gorm"
 )
 
-type ScanRepository struct {
+type ScanRepo struct {
 	db *gorm.DB
 }
 
 // NewScanRepository creates a new ScanRepository
-func NewScanRepository(db *gorm.DB) *ScanRepository {
-	return &ScanRepository{
+func NewScanRepository(db *gorm.DB) *ScanRepo {
+	return &ScanRepo{
 		db: db,
 	}
 }
 
+var ScanRepository *ScanRepo
+
 // SaveScanResult saves the scan result in the database
-func (repository *ScanRepository) SaveScanResult(job *entities.JobModel, scan entities.ScanModel) error {
+func (repository *ScanRepo) SaveScanResult(job *entities.JobModel, scan entities.ScanModel) error {
 	tx := repository.db.Begin()
 	if err := tx.Create(&scan).Error; err != nil {
 		tx.Rollback()

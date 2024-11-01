@@ -2,13 +2,16 @@ package core
 
 import (
 	"sync"
+	"time"
 
 	"github.com/codevault-llc/humblebrag-api/internal/models/entities"
+	"github.com/codevault-llc/humblebrag-api/pkg/logger"
+	"go.uber.org/zap"
 )
 
 // TaskScheduler manages job queueing and dispatching
 type TaskScheduler struct {
-	queue      []*entities.JobModel // Task queue, can implement a priority queue
+	queue      []*entities.JobModel // Task queue, can implement a priority queue if needed
 	workerPool chan struct{}        // Manages number of concurrent workers
 	mu         sync.Mutex
 }
@@ -27,35 +30,51 @@ func NewTaskScheduler(workerCount int) *TaskScheduler {
 func (s *TaskScheduler) AddJob(job *entities.JobModel) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	job.Status = entities.Queued
 	s.queue = append(s.queue, job)
 }
 
-// DispatchTasks processes queued tasks
-func (s *TaskScheduler) DispatchTasks(inspector *Inspector) {
-	for _, job := range s.queue {
-		s.workerPool <- struct{}{}
-		go func(j *entities.JobModel) {
-			defer func() { <-s.workerPool }()
-			if err := inspector.Execute(j); err != nil {
-				j.Status = entities.Failed
+// Start continuously processes tasks from the queue
+func (s *TaskScheduler) Start(inspector *Inspector) {
+	go func() {
+		for {
+			s.mu.Lock()
+			if len(s.queue) > 0 {
+				job := s.queue[0]
+				s.queue = s.queue[1:] // Remove the job from the queue
+				s.mu.Unlock()
+
+				s.workerPool <- struct{}{} // Block if max workers are busy
+				go func(j *entities.JobModel) {
+					defer func() { <-s.workerPool }()
+					s.processJob(j, inspector) // Process the job
+				}(job)
 			} else {
-				j.Status = entities.Completed
+				s.mu.Unlock()
+				time.Sleep(1 * time.Second) // Wait a second before checking the queue again
 			}
-			s.updateJobStatus(j)
-		}(job)
-	}
+		}
+	}()
 }
 
-// processJob processes individual tasks and updates DataStore
+// processJob processes individual tasks and updates job status
 func (s *TaskScheduler) processJob(job *entities.JobModel, inspector *Inspector) {
 	job.Status = entities.Processing
-	inspector.Execute(job) // Call relevant module based on Job.Type
-	job.Status = entities.Completed
-	// Save results to DataStore via repository
+	err := inspector.Execute(job) // Call the relevant module based on Job.Type
+
+	// Update job status based on execution result
+	if err != nil {
+		job.Status = entities.Failed
+		logger.Log.Error("Job execution failed", zap.Error(err))
+	} else {
+		job.Status = entities.Completed
+	}
+
+	s.updateJobStatus(job) // Update job status in the datastore
 }
 
 // updateJobStatus updates the status in DataStore
 func (s *TaskScheduler) updateJobStatus(job *entities.JobModel) {
-	// Logic to update job status in database
-
+	// TODO: Add code to update job status in your database
+	logger.Log.Info("Job status updated", zap.Uint("jobID", job.ID), zap.String("status", string(job.Status)))
 }

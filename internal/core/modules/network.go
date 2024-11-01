@@ -8,8 +8,8 @@ import (
 	"github.com/codevault-llc/humblebrag-api/internal/core/modules/network"
 	"github.com/codevault-llc/humblebrag-api/internal/models/entities"
 	"github.com/codevault-llc/humblebrag-api/internal/models/repository"
-	"github.com/codevault-llc/humblebrag-api/internal/service"
 	"github.com/codevault-llc/humblebrag-api/pkg/logger"
+	"github.com/codevault-llc/humblebrag-api/pkg/types"
 	"github.com/codevault-llc/humblebrag-api/pkg/utils"
 	whoisparser "github.com/likexian/whois-parser"
 	"go.uber.org/zap"
@@ -25,6 +25,7 @@ func NewNetworkModule() *NetworkModule {
 		modules: []MiniModule{
 			&network.IPLookupModule{},
 			&network.IPRangeLookupModule{},
+			&network.HeaderModule{},
 			&network.WhoisModule{},
 			&network.DNSModule{},
 			&network.CertificateModule{},
@@ -33,23 +34,26 @@ func NewNetworkModule() *NetworkModule {
 }
 
 // Execute runs the Network-specific scan logic
-func (m *NetworkModule) Execute(job entities.JobModel) error {
-	results := make(map[string]interface{})
-	errChan := make(chan error, len(m.modules))
+func (m *NetworkModule) Execute(job entities.JobModel, website types.WebsiteAnalysis) error {
 	var wg sync.WaitGroup
+    var mu sync.Mutex
+    results := make(map[string]interface{})
+    errChan := make(chan error, len(m.modules))
 
-	for _, mod := range m.modules {
-		wg.Add(1)
-		go func(mod MiniModule) {
-			defer wg.Done()
-			result, err := mod.Run(job)
-			if err != nil {
-				errChan <- fmt.Errorf("module %s failed: %w", mod.Name(), err)
-				return
-			}
-			results[mod.Name()] = result
-		}(mod)
-	}
+    for _, mod := range m.modules {
+        wg.Add(1)
+        go func(mod MiniModule) {
+            defer wg.Done()
+            result, err := mod.Run(job)
+            if err != nil {
+                errChan <- fmt.Errorf("module %s failed: %w", mod.Name(), err)
+                return
+            }
+            mu.Lock()
+            results[mod.Name()] = result
+            mu.Unlock()
+        }(mod)
+    }
 
 	// Wait for all modules to complete
 	wg.Wait()
@@ -71,10 +75,10 @@ func (m *NetworkModule) saveResults(scanID uint, results map[string]interface{})
 		ScanID:      scanID,
 		IPAddresses: results["IPLookup"].([]string),
 		IPRanges:    results["IPRangeLookup"].([]string),
-		HTTPHeaders: results["Headers"].([]string),
+		HTTPHeaders: results["Header"].([]string),
 	}
 
-	networkResponse, err := repository.
+	networkResponse, err := repository.NetworkRepository.Create(networkModel)
 	if err != nil {
 		logger.Log.Error("Failed to create network: %v", zap.Error(err))
 		return err
@@ -155,7 +159,7 @@ func (m *NetworkModule) saveResults(scanID uint, results map[string]interface{})
 			Expires: whoisRecord.Domain.ExpirationDate,
 		}
 
-		_, err = service.CreateWhois(whois)
+		err := repository.WhoisRepository.SaveWhoisResult(whois)
 		if err != nil {
 			logger.Log.Error("Failed to create whois: %v", zap.Error(err))
 			return err
@@ -163,7 +167,7 @@ func (m *NetworkModule) saveResults(scanID uint, results map[string]interface{})
 	}
 
 	for _, certificate := range results["Certificates"].([]*x509.Certificate) {
-		err := service.CreateCertificate(networkResponse.ID, *certificate)
+		_, err := repository.CertificateRepository.Create(networkResponse.ID, *certificate)
 		if err != nil {
 			logger.Log.Error("Failed to create certificate: %v", zap.Error(err))
 			return err
@@ -183,7 +187,7 @@ func (m *NetworkModule) saveResults(scanID uint, results map[string]interface{})
 		DNSSEC:      dnsResults.DNSSEC,
 	}
 
-	_, err = service.CreateDNS(dns)
+	err = repository.DnsRepository.SaveDnsResult(dns)
 	if err != nil {
 		logger.Log.Error("Failed to create DNS: %v", zap.Error(err))
 		return err

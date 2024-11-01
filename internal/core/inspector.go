@@ -13,20 +13,17 @@ import (
 )
 
 type Inspector struct {
-	scanRepository *repository.ScanRepository
-	modules        map[string]modules.ScanModule
+	modules map[string]modules.ScanModule
 }
+
+var InspectorCore *Inspector
 
 // NewInspector initializes the Inspector with necessary dependencies
-func NewInspector(scanRepository *repository.ScanRepository) *Inspector {
-	inspector := &Inspector{scanRepository: scanRepository, modules: make(map[string]modules.ScanModule)}
-	inspector.registerModule(&modules.NetworkModule{})
+func NewInspector() *Inspector {
+	inspector := &Inspector{modules: make(map[string]modules.ScanModule)}
+	inspector.modules["network"] = modules.NewNetworkModule()
+	inspector.modules["content"] = modules.NewContentModule()
 	return inspector
-}
-
-// registerModule registers a module with the Inspector
-func (i *Inspector) registerModule(module modules.ScanModule) {
-	i.modules[module.Name()] = module
 }
 
 // Execute performs the scan based on the job type
@@ -66,5 +63,20 @@ func (i *Inspector) performWebsiteScan(job *entities.JobModel) error {
 		MD5:           utils.MD5(website.Url),
 	}
 
-	return i.scanRepository.SaveScanResult(job, scanModel)
+	err = repository.ScanRepository.SaveScanResult(job, scanModel)
+	if err != nil {
+		logger.Log.Error("Failed to save scan result", zap.Error(err))
+		return err
+	}
+
+	go func() {
+		for _, module := range i.modules {
+			if err := module.Execute(*job, website); err != nil {
+				logger.Log.Error("Module failed", zap.Error(err), zap.String("module", module.Name()))
+				return
+			}
+		}
+	}()
+
+	return nil
 }

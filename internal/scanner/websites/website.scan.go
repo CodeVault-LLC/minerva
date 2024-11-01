@@ -137,7 +137,7 @@ func FetchWebsite(url, userAgent string) (*WebsiteResponse, error) {
 					if err == context.Canceled {
 						logger.Log.Error("Request canceled", zap.String("url", requestURL))
 					} else {
-						logger.Log.Error("Failed to load xhr response", zap.Error(err), zap.String("url", requestURL))
+
 					}
 				}
 
@@ -175,10 +175,10 @@ func FetchWebsite(url, userAgent string) (*WebsiteResponse, error) {
 	}
 
 	return &WebsiteResponse{
-		Redirects:  redirects,
-		Files:      networkFiles,
-		FinalHTML:  htmlContent,
-		ParsedHTML: parsedHTML,
+		Redirects:   redirects,
+		Files:       networkFiles,
+		FinalHTML:   htmlContent,
+		ParsedHTML:  parsedHTML,
 		Screenshots: screenshots,
 	}, nil
 }

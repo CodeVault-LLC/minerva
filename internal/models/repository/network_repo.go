@@ -1,14 +1,31 @@
 package repository
 
-import "gorm.io/gorm"
+import (
+	"github.com/codevault-llc/humblebrag-api/internal/models/entities"
+	"gorm.io/gorm"
+)
 
-type NetworkRepository struct {
+type NetworkRepo struct {
 	db *gorm.DB
 }
 
+var NetworkRepository *NetworkRepo
+
 // NewNetworkRepository creates a new NetworkRepository
-func NewNetworkRepository(db *gorm.DB) *NetworkRepository {
-	return &NetworkRepository{
+func NewNetworkRepository(db *gorm.DB) *NetworkRepo {
+	return &NetworkRepo{
 		db: db,
 	}
+}
+
+// NetworkRepositoryInterface is the interface for the NetworkRepository
+func (n *NetworkRepo) Create(network entities.NetworkModel) (entities.NetworkModel, error) {
+	tx := n.db.Begin()
+	if err := tx.Create(&network).Error; err != nil {
+		tx.Rollback()
+		return entities.NetworkModel{}, err
+	}
+
+	tx.Commit()
+	return network, nil
 }

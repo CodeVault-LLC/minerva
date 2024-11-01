@@ -9,6 +9,7 @@ import (
 	"go.uber.org/zap"
 )
 
+// IPLookupModule implements LookupModule
 type IPLookupModule struct{}
 
 func (m *IPLookupModule) Run(job entities.JobModel) (interface{}, error) {
@@ -20,13 +21,19 @@ func (m *IPLookupModule) Run(job entities.JobModel) (interface{}, error) {
 		return nil, err
 	}
 
-	return ipAddresses, nil
+	ips := make([]string, len(ipAddresses))
+	for i, ip := range ipAddresses {
+		ips[i] = ip.String()
+	}
+
+	return ips, nil
 }
 
 func (m *IPLookupModule) Name() string {
 	return "IPLookup"
 }
 
+// IPRangeLookupModule implements LookupModule
 type IPRangeLookupModule struct{}
 
 func (m *IPRangeLookupModule) Run(job entities.JobModel) (interface{}, error) {
