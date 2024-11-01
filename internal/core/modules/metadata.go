@@ -1,4 +1,4 @@
-package metadata
+package modules
 
 import (
 	"io"
@@ -7,13 +7,19 @@ import (
 	"sync"
 	"time"
 
-	"github.com/codevault-llc/humblebrag-api/internal/database/models"
-	"github.com/codevault-llc/humblebrag-api/internal/service"
+	"github.com/codevault-llc/humblebrag-api/internal/models/entities"
+	"github.com/codevault-llc/humblebrag-api/internal/models/repository"
+	"github.com/codevault-llc/humblebrag-api/pkg/types"
 	"golang.org/x/net/html"
 )
 
-// MetadataModule scans the metadata of a website, extracting relevant information.
-func MetadataModule(scanId uint, url string) (models.MetadataModel, error) {
+type MetadataModule struct{}
+
+func NewMetadataModule() *MetadataModule {
+	return &MetadataModule{}
+}
+
+func (m *MetadataModule) Execute(job entities.JobModel, website types.WebsiteAnalysis) error {
 	client := &http.Client{Timeout: 15 * time.Second}
 
 	robotsTxtChan := make(chan string)
@@ -30,17 +36,17 @@ func MetadataModule(scanId uint, url string) (models.MetadataModel, error) {
 
 	go func() {
 		defer wg.Done()
-		robotsTxtChan <- fetchFileContent(client, url+"/robots.txt")
+		robotsTxtChan <- fetchFileContent(client, job.URL+"/robots.txt")
 	}()
 
 	go func() {
 		defer wg.Done()
-		readmeChan <- fetchFileContent(client, url+"/readme.html")
+		readmeChan <- fetchFileContent(client, job.URL+"/readme.html")
 	}()
 
 	go func() {
 		defer wg.Done()
-		licenseChan <- fetchFileContent(client, url+"/license.txt")
+		licenseChan <- fetchFileContent(client, job.URL+"/license.txt")
 	}()
 
 	go func() {
@@ -51,17 +57,17 @@ func MetadataModule(scanId uint, url string) (models.MetadataModel, error) {
 
 	go func() {
 		defer wg.Done()
-		serverSoftwareChan <- getServerHeader(client, url)
+		serverSoftwareChan <- getServerHeader(client, job.URL)
 	}()
 
 	go func() {
 		defer wg.Done()
-		frameworksChan <- detectFrameworks(client, url)
+		frameworksChan <- detectFrameworks(client, job.URL)
 	}()
 
 	go func() {
 		defer wg.Done()
-		languageChan <- detectLanguage(client, url)
+		languageChan <- detectLanguage(client, job.URL)
 	}()
 
 	go func() {
@@ -75,9 +81,8 @@ func MetadataModule(scanId uint, url string) (models.MetadataModel, error) {
 		close(languageChan)
 		close(headersChan)
 	}()
-
-	resultModel := models.MetadataModel{
-		ScanID:         scanId,
+	resultModel := entities.MetadataModel{
+		ScanID:         job.ScanID,
 		Robots:         <-robotsTxtChan,
 		Readme:         <-readmeChan,
 		License:        <-licenseChan,
@@ -87,12 +92,16 @@ func MetadataModule(scanId uint, url string) (models.MetadataModel, error) {
 		ServerLanguage: <-languageChan,
 	}
 
-	_, err := service.CreateMetadata(resultModel)
+	_, err := repository.MetadataRepository.Create(resultModel)
 	if err != nil {
-		return models.MetadataModel{}, err
+		return err
 	}
 
-	return resultModel, nil
+	return nil
+}
+
+func (m *MetadataModule) Name() string {
+	return "Metadata"
 }
 
 // fetchFileContent retrieves the content of a file from the given URL.

@@ -24,6 +24,7 @@ func SetupRouter(app *fiber.App) *fiber.App {
 	// Scan routes
 	_ = scan.RegisterModulesRoutes(api)
 	_ = scan.RegisterScanRoutes(api)
+	_ = scan.RegisterJobRoutes(api)
 
 	return app
 }

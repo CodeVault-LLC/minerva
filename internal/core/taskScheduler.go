@@ -5,15 +5,17 @@ import (
 	"time"
 
 	"github.com/codevault-llc/humblebrag-api/internal/models/entities"
+	"github.com/codevault-llc/humblebrag-api/internal/models/repository"
 	"github.com/codevault-llc/humblebrag-api/pkg/logger"
 	"go.uber.org/zap"
 )
 
-// TaskScheduler manages job queueing and dispatching
+// TaskScheduler manages job queueing, dispatching, and archiving
 type TaskScheduler struct {
-	queue      []*entities.JobModel // Task queue, can implement a priority queue if needed
-	workerPool chan struct{}        // Manages number of concurrent workers
-	mu         sync.Mutex
+	queue        []*entities.JobModel // Task queue for pending jobs
+	archivedJobs []*entities.JobModel // Stores completed jobs for history
+	workerPool   chan struct{}        // Manages number of concurrent workers
+	mu           sync.Mutex
 }
 
 var Scheduler *TaskScheduler
@@ -21,8 +23,9 @@ var Scheduler *TaskScheduler
 // NewTaskScheduler initializes TaskScheduler
 func NewTaskScheduler(workerCount int) *TaskScheduler {
 	return &TaskScheduler{
-		queue:      []*entities.JobModel{},
-		workerPool: make(chan struct{}, workerCount),
+		queue:        []*entities.JobModel{},
+		archivedJobs: []*entities.JobModel{},
+		workerPool:   make(chan struct{}, workerCount),
 	}
 }
 
@@ -57,7 +60,7 @@ func (s *TaskScheduler) Start(inspector *Inspector) {
 	}()
 }
 
-// processJob processes individual tasks and updates job status
+// processJob processes individual tasks, updates job status, and archives the job
 func (s *TaskScheduler) processJob(job *entities.JobModel, inspector *Inspector) {
 	job.Status = entities.Processing
 	err := inspector.Execute(job) // Call the relevant module based on Job.Type
@@ -71,10 +74,46 @@ func (s *TaskScheduler) processJob(job *entities.JobModel, inspector *Inspector)
 	}
 
 	s.updateJobStatus(job) // Update job status in the datastore
+	s.archiveJob(job)      // Move job to the archivedJobs list
+}
+
+// archiveJob moves completed jobs to the archivedJobs list
+func (s *TaskScheduler) archiveJob(job *entities.JobModel) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	job.CompletedAt = time.Now()
+	s.archivedJobs = append(s.archivedJobs, job)
 }
 
 // updateJobStatus updates the status in DataStore
 func (s *TaskScheduler) updateJobStatus(job *entities.JobModel) {
-	// TODO: Add code to update job status in your database
-	logger.Log.Info("Job status updated", zap.Uint("jobID", job.ID), zap.String("status", string(job.Status)))
+	job.UpdatedAt = time.Now()
+	err := repository.ScanRepository.CompleteScan(job.ScanID)
+	if err != nil {
+		logger.Log.Error("Failed to update job status", zap.Error(err))
+	}
+}
+
+// GetJob retrieves a job from the queue by ID
+func (s *TaskScheduler) GetJob(jobID string) *entities.JobModel {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for _, job := range s.queue {
+		if job.ID == jobID {
+			return job
+		}
+	}
+	return nil
+}
+
+// GetArchivedJob retrieves a job from the archivedJobs list by ID
+func (s *TaskScheduler) GetArchivedJob(jobID string) *entities.JobModel {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for _, job := range s.archivedJobs {
+		if job.ID == jobID {
+			return job
+		}
+	}
+	return nil
 }

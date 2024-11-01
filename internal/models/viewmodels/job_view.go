@@ -16,6 +16,7 @@ type ScanRequest struct {
 func ConvertJob(job entities.JobModel) JobResponse {
 	return JobResponse{
 		ID:        job.ID,
+		ScanID:    job.ScanID,
 		Type:      job.Type,
 		URL:       job.URL,
 		Status:    job.Status,
@@ -25,8 +26,9 @@ func ConvertJob(job entities.JobModel) JobResponse {
 
 // JobResponse represents the structure for outgoing job data in the API response
 type JobResponse struct {
-	ID        uint               `json:"id"`
+	ID        string             `json:"id"`
 	Type      string             `json:"type"`
+	ScanID    uint               `json:"scan_id"`
 	URL       string             `json:"url"`
 	Status    entities.JobStatus `json:"status"`
 	CreatedAt time.Time          `json:"created_at"`

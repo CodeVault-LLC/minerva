@@ -4,10 +4,13 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 
 	"github.com/codevault-llc/humblebrag-api/internal/models/entities"
+	"github.com/codevault-llc/humblebrag-api/pkg/logger"
 	"github.com/codevault-llc/humblebrag-api/pkg/utils"
 	"github.com/lib/pq"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
@@ -61,12 +64,16 @@ func (repository *CertificateRepo) Create(networkId uint, cert x509.Certificate)
 		ExcludedURIDomains:          pq.StringArray(cert.ExcludedURIDomains),
 	}
 
+	fmt.Println("Certificate continue its path")
+
 	tx := repository.db.Begin()
 	if err := tx.Create(&certificate).Error; err != nil {
 		tx.Rollback()
+		logger.Log.Error("Failed to create certificate", zap.Error(err))
 		return entities.CertificateModel{}, err
 	}
 
+	logger.Log.Info("Created certificate")
 	tx.Commit()
 	return certificate, nil
 }

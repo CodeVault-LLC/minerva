@@ -5,8 +5,8 @@ import (
 
 	"github.com/codevault-llc/humblebrag-api/internal/core"
 	"github.com/codevault-llc/humblebrag-api/internal/models/entities"
+	"github.com/codevault-llc/humblebrag-api/internal/models/repository"
 	"github.com/codevault-llc/humblebrag-api/internal/models/viewmodels"
-	"github.com/codevault-llc/humblebrag-api/internal/service"
 	"github.com/codevault-llc/humblebrag-api/pkg/logger"
 	"github.com/codevault-llc/humblebrag-api/pkg/responder"
 	"github.com/codevault-llc/humblebrag-api/pkg/utils"
@@ -58,6 +58,7 @@ func CreateScanHandler(taskScheduler *core.TaskScheduler) fiber.Handler {
 
 		// Step 3: Create Job and add to TaskScheduler
 		job := entities.JobModel{
+			ID:        utils.GenerateID(),
 			Type:      "WebsiteScan",
 			URL:       scanRequest.URL,
 			UserAgent: userAgent,
@@ -82,7 +83,7 @@ func CreateScanHandler(taskScheduler *core.TaskScheduler) fiber.Handler {
 // @Failure 404 {object} responder.APIResponse{error=responder.APIError}
 // @Router /scans [get]
 func GetScans(c *fiber.Ctx) error {
-	scans, err := service.GetScans()
+	scans, err := repository.ScanRepository.GetScans()
 	if err != nil {
 		return responder.CreateError(responder.ErrDatabaseQueryFailed).Error
 	}
@@ -91,7 +92,7 @@ func GetScans(c *fiber.Ctx) error {
 		return responder.CreateError(responder.ErrResourceNotFound).Error
 	}
 
-	responder.WriteJSONResponse(c, responder.CreateSuccessResponse(scans, "Scans retrieved successfully"))
+	responder.WriteJSONResponse(c, responder.CreateSuccessResponse(viewmodels.ConvertScans(scans), "Scans retrieved successfully"))
 	return nil
 }
 
@@ -113,7 +114,7 @@ func GetScan(c *fiber.Ctx) error {
 		return responder.CreateError(responder.ErrInvalidRequest).Error
 	}
 
-	scan, err := service.GetScan(uint(scanUint))
+	scan, err := repository.ScanRepository.GetScanResult(uint(scanUint))
 	if err != nil {
 		return responder.CreateError(responder.ErrDatabaseQueryFailed).Error
 	}
@@ -122,6 +123,6 @@ func GetScan(c *fiber.Ctx) error {
 		return responder.CreateError(responder.ErrResourceNotFound).Error
 	}
 
-	responder.WriteJSONResponse(c, responder.CreateSuccessResponse(scan, "Scan retrieved successfully"))
+	responder.WriteJSONResponse(c, responder.CreateSuccessResponse(viewmodels.ConvertScan(scan), "Scan retrieved successfully"))
 	return nil
 }

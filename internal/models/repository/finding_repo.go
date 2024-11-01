@@ -41,3 +41,13 @@ func (repository *FindingRepo) SaveFindingResult(job entities.JobModel, findings
 
 	return nil
 }
+
+func (repository *FindingRepo) GetScanFindings(scanID uint) ([]entities.FindingModel, error) {
+	var findings []entities.FindingModel
+
+	if err := repository.db.Where("scan_id = ?", scanID).Find(&findings).Error; err != nil {
+		return nil, err
+	}
+
+	return findings, nil
+}

@@ -36,24 +36,24 @@ func NewNetworkModule() *NetworkModule {
 // Execute runs the Network-specific scan logic
 func (m *NetworkModule) Execute(job entities.JobModel, website types.WebsiteAnalysis) error {
 	var wg sync.WaitGroup
-    var mu sync.Mutex
-    results := make(map[string]interface{})
-    errChan := make(chan error, len(m.modules))
+	var mu sync.Mutex
+	results := make(map[string]interface{})
+	errChan := make(chan error, len(m.modules))
 
-    for _, mod := range m.modules {
-        wg.Add(1)
-        go func(mod MiniModule) {
-            defer wg.Done()
-            result, err := mod.Run(job)
-            if err != nil {
-                errChan <- fmt.Errorf("module %s failed: %w", mod.Name(), err)
-                return
-            }
-            mu.Lock()
-            results[mod.Name()] = result
-            mu.Unlock()
-        }(mod)
-    }
+	for _, mod := range m.modules {
+		wg.Add(1)
+		go func(mod MiniModule) {
+			defer wg.Done()
+			result, err := mod.Run(job)
+			if err != nil {
+				errChan <- fmt.Errorf("module %s failed: %w", mod.Name(), err)
+				return
+			}
+			mu.Lock()
+			results[mod.Name()] = result
+			mu.Unlock()
+		}(mod)
+	}
 
 	// Wait for all modules to complete
 	wg.Wait()
@@ -166,7 +166,7 @@ func (m *NetworkModule) saveResults(scanID uint, results map[string]interface{})
 		}
 	}
 
-	for _, certificate := range results["Certificates"].([]*x509.Certificate) {
+	for _, certificate := range results["Certificate"].([]*x509.Certificate) {
 		_, err := repository.CertificateRepository.Create(networkResponse.ID, *certificate)
 		if err != nil {
 			logger.Log.Error("Failed to create certificate: %v", zap.Error(err))

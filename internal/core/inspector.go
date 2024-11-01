@@ -6,7 +6,6 @@ import (
 	"github.com/codevault-llc/humblebrag-api/internal/core/modules"
 	"github.com/codevault-llc/humblebrag-api/internal/models/entities"
 	"github.com/codevault-llc/humblebrag-api/internal/models/repository"
-	"github.com/codevault-llc/humblebrag-api/internal/scanner/websites"
 	"github.com/codevault-llc/humblebrag-api/pkg/logger"
 	"github.com/codevault-llc/humblebrag-api/pkg/utils"
 	"go.uber.org/zap"
@@ -23,6 +22,7 @@ func NewInspector() *Inspector {
 	inspector := &Inspector{modules: make(map[string]modules.ScanModule)}
 	inspector.modules["network"] = modules.NewNetworkModule()
 	inspector.modules["content"] = modules.NewContentModule()
+	inspector.modules["metadata"] = modules.NewMetadataModule()
 	return inspector
 }
 
@@ -40,12 +40,12 @@ func (i *Inspector) Execute(job *entities.JobModel) error {
 func (i *Inspector) performWebsiteScan(job *entities.JobModel) error {
 	logger.Log.Info("Starting website scan for URL: %s", zap.String("url", job.URL))
 
-	requestedWebsite, err := websites.FetchWebsite(job.URL, job.UserAgent)
+	requestedWebsite, err := FetchWebsite(job.URL, job.UserAgent)
 	if err != nil {
 		return err
 	}
 
-	website, err := websites.AnalyzeHTML(requestedWebsite)
+	website, err := AnalyzeHTML(requestedWebsite)
 	if err != nil {
 		logger.Log.Error("Failed to analyze website: %v", zap.Error(err))
 		return err
@@ -63,11 +63,13 @@ func (i *Inspector) performWebsiteScan(job *entities.JobModel) error {
 		MD5:           utils.MD5(website.Url),
 	}
 
-	err = repository.ScanRepository.SaveScanResult(job, scanModel)
+	scan, err := repository.ScanRepository.SaveScanResult(job, scanModel)
 	if err != nil {
 		logger.Log.Error("Failed to save scan result", zap.Error(err))
 		return err
 	}
+
+	job.ScanID = scan.ID
 
 	go func() {
 		for _, module := range i.modules {

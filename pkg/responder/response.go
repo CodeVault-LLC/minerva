@@ -1,7 +1,10 @@
 package responder
 
 import (
+	"fmt"
 	"net/http"
+	"reflect"
+	"strings"
 
 	"github.com/codevault-llc/humblebrag-api/pkg/logger"
 	"github.com/gofiber/fiber/v2"
@@ -60,6 +63,16 @@ func createErrorResponse(code string, description string, statusCode int) APIRes
 
 // WriteJSONResponse writes the API response as JSON to the HTTP response writer.
 func WriteJSONResponse(c *fiber.Ctx, apiResponse APIResponse) {
+	if apiResponse.Data != nil {
+		dataType := reflect.TypeOf(apiResponse.Data)
+
+		if strings.Contains(dataType.String(), "entities") {
+			logger.Log.Error("Failed to write JSON response", zap.Error(fmt.Errorf("Data type is not supported")))
+			WriteJSONResponse(c, createErrorResponse("internal_server_error", "An internal server error occurred.", http.StatusInternalServerError))
+			return
+		}
+	}
+
 	c.Response().Header.Set("Content-Type", "application/json")
 	c.Response().Header.Set("X-Content-Type-Options", "nosniff")
 	c.Response().Header.Set("X-Frame-Options", "DENY")

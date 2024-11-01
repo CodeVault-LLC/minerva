@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	"golang.org/x/net/html"
 )
@@ -94,4 +95,8 @@ func IsFont(node *html.Node) bool {
 		}
 	}
 	return false
+}
+
+func GenerateID() string {
+	return strconv.FormatInt(time.Now().UnixNano(), 10)
 }

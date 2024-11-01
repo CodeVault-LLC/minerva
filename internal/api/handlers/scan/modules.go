@@ -1,6 +1,8 @@
 package scan
 
 import (
+	"github.com/codevault-llc/humblebrag-api/internal/models/repository"
+	"github.com/codevault-llc/humblebrag-api/internal/models/viewmodels"
 	"github.com/codevault-llc/humblebrag-api/internal/service"
 	"github.com/codevault-llc/humblebrag-api/pkg/responder"
 	"github.com/codevault-llc/humblebrag-api/pkg/utils"
@@ -35,7 +37,7 @@ func getScanFindings(c *fiber.Ctx) error {
 		return responder.CreateError(responder.ErrInvalidRequest).Error
 	}
 
-	findings, err := service.GetScanFindings(uint(scanUint))
+	findings, err := repository.FindingRepository.GetScanFindings(uint(scanUint))
 	if err != nil {
 		return responder.CreateError(responder.ErrDatabaseQueryFailed).Error
 	}
@@ -44,7 +46,7 @@ func getScanFindings(c *fiber.Ctx) error {
 		return responder.CreateError(responder.ErrResourceNotFound).Error
 	}
 
-	responder.WriteJSONResponse(c, responder.CreateSuccessResponse(findings, "Successfully retrieved scan findings"))
+	responder.WriteJSONResponse(c, responder.CreateSuccessResponse(viewmodels.ConvertFindings(findings), "Successfully retrieved scan findings"))
 	return nil
 }
 
@@ -66,7 +68,7 @@ func getScanContents(c *fiber.Ctx) error {
 		return responder.CreateError(responder.ErrInvalidRequest).Error
 	}
 
-	contents, err := service.GetScanContents(uint(scanUint))
+	contents, err := repository.ContentRepository.GetScanContents(uint(scanUint))
 	if err != nil {
 		return responder.CreateError(responder.ErrDatabaseQueryFailed).Error
 	}
@@ -165,7 +167,7 @@ func getScanMetadata(c *fiber.Ctx) error {
 		return responder.CreateError(responder.ErrInvalidRequest).Error
 	}
 
-	metadata, err := service.GetScanMetadataByScanID(uint(scanUint))
+	metadata, err := repository.MetadataRepository.GetMetadataByScanID(uint(scanUint))
 	if err != nil {
 		responder.WriteJSONResponse(c, responder.CreateError(responder.ErrDatabaseQueryFailed))
 		return responder.CreateError(responder.ErrDatabaseQueryFailed).Error
@@ -175,6 +177,6 @@ func getScanMetadata(c *fiber.Ctx) error {
 		return responder.CreateError(responder.ErrResourceNotFound).Error
 	}
 
-	responder.WriteJSONResponse(c, responder.CreateSuccessResponse(metadata, "Successfully retrieved scan metadata"))
+	responder.WriteJSONResponse(c, responder.CreateSuccessResponse(viewmodels.ConvertMetadata(metadata), "Successfully retrieved scan metadata"))
 	return nil
 }

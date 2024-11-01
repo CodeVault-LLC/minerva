@@ -9,7 +9,6 @@ import (
 	"github.com/codevault-llc/humblebrag-api/internal/core"
 	"github.com/codevault-llc/humblebrag-api/internal/database"
 	"github.com/codevault-llc/humblebrag-api/internal/models/repository"
-	"github.com/codevault-llc/humblebrag-api/internal/scanner/websites"
 	"github.com/codevault-llc/humblebrag-api/internal/updater"
 	"github.com/codevault-llc/humblebrag-api/pkg/logger"
 	"github.com/joho/godotenv"
@@ -56,8 +55,8 @@ func main() {
 	}
 	log.Info("Connected to AWS")
 
-	SetupScanning()
 	SetupDatabases(db)
+	SetupScanning()
 
 	go updater.StartAutoUpdate(20 * time.Minute)
 	api.Start()
@@ -71,15 +70,14 @@ func SetupDatabases(db *gorm.DB) {
 	repository.FindingRepository = repository.NewFindingRepo(db)
 	repository.DnsRepository = repository.NewDnsRepository(db)
 	repository.WhoisRepository = repository.NewWhoisRepository(db)
+	repository.CertificateRepository = repository.NewCertificateRepository(db)
+	repository.MetadataRepository = repository.NewMetadataRepository(db)
 }
 
 func SetupScanning() {
-	// Initialize other services
-	websites.InitializeBrowser()
+	core.InitializeBrowser()
 
 	core.Scheduler = core.NewTaskScheduler(10)
 	core.InspectorCore = core.NewInspector()
 	core.Scheduler.Start(core.InspectorCore)
-
-	// Register modules with the inspector
 }

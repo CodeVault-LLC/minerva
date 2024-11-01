@@ -1,4 +1,4 @@
-package websites
+package core
 
 import (
 	"context"
