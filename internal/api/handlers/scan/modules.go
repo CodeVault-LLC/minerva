@@ -3,7 +3,6 @@ package scan
 import (
 	"github.com/codevault-llc/humblebrag-api/internal/models/repository"
 	"github.com/codevault-llc/humblebrag-api/internal/models/viewmodels"
-	"github.com/codevault-llc/humblebrag-api/internal/service"
 	"github.com/codevault-llc/humblebrag-api/pkg/responder"
 	"github.com/codevault-llc/humblebrag-api/pkg/utils"
 	"github.com/gofiber/fiber/v2"
@@ -95,7 +94,7 @@ func getScanContent(c *fiber.Ctx) error {
 	scanID := c.Params("scanID")
 	contentID := c.Params("contentID")
 
-	scanUint, err := utils.ParseUint(scanID)
+	_, err := utils.ParseUint(scanID)
 	if err != nil {
 		return responder.CreateError(responder.ErrInvalidRequest).Error
 	}
@@ -105,7 +104,7 @@ func getScanContent(c *fiber.Ctx) error {
 		return responder.CreateError(responder.ErrInvalidRequest).Error
 	}
 
-	content, err := service.GetScanContent(uint(scanUint), uint(contentUint))
+	content, err := repository.ContentRepository.GetScanContent(uint(contentUint))
 	if err != nil {
 		return responder.CreateError(responder.ErrDatabaseQueryFailed).Error
 	}
@@ -136,7 +135,7 @@ func getScanNetwork(c *fiber.Ctx) error {
 		return responder.CreateError(responder.ErrInvalidRequest).Error
 	}
 
-	network, err := service.GetScanNetwork(uint(scanUint))
+	network, err := repository.NetworkRepository.GetScanNetwork(uint(scanUint))
 	if err != nil {
 		return responder.CreateError(responder.ErrDatabaseQueryFailed).Error
 	}

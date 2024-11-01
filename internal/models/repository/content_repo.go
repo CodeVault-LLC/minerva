@@ -122,3 +122,14 @@ func (repository *ContentRepo) GetScanContents(scanID uint) ([]viewmodels.Conten
 	// Convert the content models into the content responses with tags and storage details.
 	return viewmodels.ConvertContents(content, tagsMap, storageMap), nil
 }
+
+func (repository *ContentRepo) GetScanContent(contentID uint) (entities.ContentModel, error) {
+	var content entities.ContentModel
+
+	// Retrieve the content by ID, preloading the associated tags and storage information.
+	if err := database.DB.Preload("Tags").Preload("Storage").First(&content, contentID).Error; err != nil {
+		return content, err
+	}
+
+	return content, nil
+}

@@ -29,3 +29,12 @@ func (n *NetworkRepo) Create(network entities.NetworkModel) (entities.NetworkMod
 	tx.Commit()
 	return network, nil
 }
+
+func (n *NetworkRepo) GetScanNetwork(id uint) (entities.NetworkModel, error) {
+	var network entities.NetworkModel
+	if err := n.db.Where("scan_id = ?", id).First(&network).Error; err != nil {
+		return network, err
+	}
+
+	return network, nil
+}
