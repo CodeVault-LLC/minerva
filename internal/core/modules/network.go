@@ -42,12 +42,12 @@ func (m *NetworkModule) Execute(job entities.JobModel, website types.WebsiteAnal
 
 	for _, mod := range m.modules {
 		wg.Add(1)
+		logger.Log.Info("Running module", zap.String("module", mod.Name()))
 		go func(mod MiniModule) {
 			defer wg.Done()
 			result, err := mod.Run(job)
 			if err != nil {
 				errChan <- fmt.Errorf("module %s failed: %w", mod.Name(), err)
-				return
 			}
 			mu.Lock()
 			results[mod.Name()] = result
@@ -58,13 +58,6 @@ func (m *NetworkModule) Execute(job entities.JobModel, website types.WebsiteAnal
 	// Wait for all modules to complete
 	wg.Wait()
 	close(errChan)
-
-	// Check for errors
-	for err := range errChan {
-		if err != nil {
-			return err
-		}
-	}
 
 	// Process aggregated results and update the database
 	return m.saveResults(job.ScanID, results)

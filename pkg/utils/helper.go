@@ -100,3 +100,7 @@ func IsFont(node *html.Node) bool {
 func GenerateID() string {
 	return strconv.FormatInt(time.Now().UnixNano(), 10)
 }
+
+func GetCurrentTime() time.Time {
+	return time.Now().UTC()
+}

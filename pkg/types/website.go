@@ -5,7 +5,13 @@ type WebsiteAnalysis struct {
 	Title      string        `json:"name"`
 	StatusCode int           `json:"status_code"`
 	Assets     []FileRequest `json:"files"`
-	Redirects  []string      `json:"redirects"`
+	Redirects  []Redirect    `json:"redirects"`
+}
+
+type Redirect struct {
+	Url        string     `json:"url"`
+	StatusCode int        `json:"status_code"`
+	Screenshot Screenshot `json:"screenshot"`
 }
 
 type FileRequest struct {
@@ -17,6 +23,5 @@ type FileRequest struct {
 }
 
 type Screenshot struct {
-	Url     string `json:"url"`
 	Content string `json:"content"`
 }

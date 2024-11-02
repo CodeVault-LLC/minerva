@@ -72,6 +72,8 @@ func SetupDatabases(db *gorm.DB) {
 	repository.WhoisRepository = repository.NewWhoisRepository(db)
 	repository.CertificateRepository = repository.NewCertificateRepository(db)
 	repository.MetadataRepository = repository.NewMetadataRepository(db)
+	repository.ScreenshotRepository = repository.NewScreenshotRepo(db)
+	repository.RedirectRepository = repository.NewRedirectRepo(db)
 }
 
 func SetupScanning() {

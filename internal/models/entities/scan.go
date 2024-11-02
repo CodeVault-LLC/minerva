@@ -1,7 +1,6 @@
 package entities
 
 import (
-	"github.com/lib/pq"
 	"gorm.io/gorm"
 )
 
@@ -11,8 +10,6 @@ type ScanModel struct {
 	Url        string `gorm:"not null"`
 	Title      string `gorm:"not null"`
 	StatusCode int    `gorm:"not null"`
-
-	RedirectChain pq.StringArray `gorm:"type:text[]"`
 
 	Status ScanStatus `gorm:"not null;default:'complete'"`
 
@@ -26,8 +23,9 @@ type ScanModel struct {
 	Network  NetworkModel  `gorm:"foreignKey:ScanID"`
 	Metadata MetadataModel `gorm:"foreignKey:ScanID"`
 
-	Lists    []FilterModel  `gorm:"foreignKey:ScanID"`
-	Findings []FindingModel `gorm:"foreignKey:ScanID"`
+	Lists     []FilterModel   `gorm:"foreignKey:ScanID"`
+	Findings  []FindingModel  `gorm:"foreignKey:ScanID"`
+	Redirects []RedirectModel `gorm:"foreignKey:ScanID"`
 
 	// Define the many-to-many relationship through the join table.
 	Contents []ContentModel `gorm:"many2many:scan_contents"`

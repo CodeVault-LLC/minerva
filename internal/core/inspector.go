@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/codevault-llc/humblebrag-api/internal/core/modules"
+	"github.com/codevault-llc/humblebrag-api/internal/database/storage"
 	"github.com/codevault-llc/humblebrag-api/internal/models/entities"
 	"github.com/codevault-llc/humblebrag-api/internal/models/repository"
 	"github.com/codevault-llc/humblebrag-api/pkg/logger"
@@ -38,8 +39,6 @@ func (i *Inspector) Execute(job *entities.JobModel) error {
 
 // performWebsiteScan handles website scanning logic
 func (i *Inspector) performWebsiteScan(job *entities.JobModel) error {
-	logger.Log.Info("Starting website scan for URL: %s", zap.String("url", job.URL))
-
 	requestedWebsite, err := FetchWebsite(job.URL, job.UserAgent)
 	if err != nil {
 		return err
@@ -52,15 +51,14 @@ func (i *Inspector) performWebsiteScan(job *entities.JobModel) error {
 	}
 
 	scanModel := entities.ScanModel{
-		Url:           job.URL,
-		Title:         website.Title,
-		RedirectChain: requestedWebsite.Redirects,
-		StatusCode:    website.StatusCode,
-		Status:        entities.ScanStatusPending,
-		LicenseID:     uint(job.LicenseID),
-		Sha256:        utils.SHA256(website.Url),
-		SHA1:          utils.SHA1(website.Url),
-		MD5:           utils.MD5(website.Url),
+		Url:        job.URL,
+		Title:      website.Title,
+		StatusCode: website.StatusCode,
+		Status:     entities.ScanStatusPending,
+		LicenseID:  uint(job.LicenseID),
+		Sha256:     utils.SHA256(website.Url),
+		SHA1:       utils.SHA1(website.Url),
+		MD5:        utils.MD5(website.Url),
 	}
 
 	scan, err := repository.ScanRepository.SaveScanResult(job, scanModel)
@@ -71,11 +69,44 @@ func (i *Inspector) performWebsiteScan(job *entities.JobModel) error {
 
 	job.ScanID = scan.ID
 
+	for _, file := range website.Redirects {
+		redirectModel := entities.RedirectModel{
+			Url:        file.Url,
+			HttpStatus: file.StatusCode,
+			Timestamp:  utils.GetCurrentTime(),
+			ScanID:     scan.ID,
+		}
+
+		redirect, err := repository.RedirectRepository.Create(redirectModel)
+		if err != nil {
+			logger.Log.Error("Failed to save redirect", zap.Error(err))
+			return err
+		}
+
+		hashedBody := utils.SHA256(file.Screenshot.Content)
+		err = storage.UploadFile("screenshot-bucket", hashedBody, []byte(file.Screenshot.Content), true)
+		if err != nil {
+			logger.Log.Error("Failed to upload screenshot", zap.Error(err))
+			return err
+		}
+
+		_, err = repository.ScreenshotRepository.Create(entities.ScreenshotModel{
+			RedirectId:     redirect.ID,
+			ImageBucket:    "screenshot-bucket",
+			ImageObjectKey: hashedBody,
+			CompressedSize: len(file.Screenshot.Content),
+		})
+		if err != nil {
+			logger.Log.Error("Failed to save screenshot", zap.Error(err))
+			return err
+		}
+	}
+
 	go func() {
 		for _, module := range i.modules {
 			if err := module.Execute(*job, website); err != nil {
 				logger.Log.Error("Module failed", zap.Error(err), zap.String("module", module.Name()))
-				return
+				continue
 			}
 		}
 	}()

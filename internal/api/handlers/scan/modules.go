@@ -144,7 +144,7 @@ func getScanNetwork(c *fiber.Ctx) error {
 		return responder.CreateError(responder.ErrResourceNotFound).Error
 	}
 
-	responder.WriteJSONResponse(c, responder.CreateSuccessResponse(network, "Successfully retrieved scan network"))
+	responder.WriteJSONResponse(c, responder.CreateSuccessResponse(viewmodels.ConvertNetwork(network), "Successfully retrieved scan network"))
 	return nil
 }
 

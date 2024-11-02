@@ -50,6 +50,10 @@ func CreateScanHandler(taskScheduler *core.TaskScheduler) fiber.Handler {
 		}
 		scanRequest.URL = utils.NormalizeURL(scanRequest.URL)
 
+		if utils.IsLocalURL(scanRequest.URL) {
+			return responder.CreateError(responder.ErrInvalidRequest).Error
+		}
+
 		// Set default User-Agent if not provided
 		userAgent := scanRequest.UserAgent
 		if userAgent == "" {

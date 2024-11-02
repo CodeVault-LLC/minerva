@@ -22,7 +22,7 @@ func InitPostgres(dsn string) (*gorm.DB, error) {
 	err = db.AutoMigrate(&entities.LicenseModel{}, &entities.ScanModel{}, &entities.NetworkModel{},
 		&entities.DNSModel{}, &entities.MetadataModel{}, &entities.WhoisModel{}, &entities.FindingModel{},
 		&entities.CertificateModel{}, &entities.ContentModel{}, &entities.ContentStorageModel{}, &entities.ContentTagsModel{}, &entities.ContentAccessLogModel{},
-		&entities.FilterModel{})
+		&entities.FilterModel{}, &entities.RedirectModel{}, &entities.ScreenshotModel{})
 	if err != nil {
 		logger.Log.Error("Failed to auto migrate entities: %v", zap.Error(err))
 		return nil, err

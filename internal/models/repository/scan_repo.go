@@ -32,7 +32,7 @@ func (repository *ScanRepo) SaveScanResult(job *entities.JobModel, scan entities
 
 func (repository *ScanRepo) GetScanResult(scanId uint) (entities.ScanModel, error) {
 	var scan entities.ScanModel
-	if err := repository.db.First(&scan, scanId).Error; err != nil {
+	if err := repository.db.Preload("Redirects").First(&scan, scanId).Error; err != nil {
 		return scan, err
 	}
 

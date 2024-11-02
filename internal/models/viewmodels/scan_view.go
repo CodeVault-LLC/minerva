@@ -2,7 +2,6 @@ package viewmodels
 
 import (
 	"github.com/codevault-llc/humblebrag-api/internal/models/entities"
-	"github.com/lib/pq"
 )
 
 type Scan struct {
@@ -11,8 +10,6 @@ type Scan struct {
 	Url        string `json:"url"`
 	Title      string `json:"title"`
 	StatusCode int    `json:"status_code"`
-
-	RedirectChain pq.StringArray `json:"redirect_chain"`
 
 	Status string `json:"status"`
 
@@ -28,10 +25,9 @@ func ConvertScan(scan entities.ScanModel) Scan {
 	return Scan{
 		ID: scan.ID,
 
-		Url:           scan.Url,
-		Title:         scan.Title,
-		RedirectChain: scan.RedirectChain,
-		StatusCode:    scan.StatusCode,
+		Url:        scan.Url,
+		Title:      scan.Title,
+		StatusCode: scan.StatusCode,
 
 		Status: string(scan.Status),
 		Sha256: scan.Sha256,

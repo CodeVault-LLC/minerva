@@ -4,7 +4,6 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 
 	"github.com/codevault-llc/humblebrag-api/internal/models/entities"
 	"github.com/codevault-llc/humblebrag-api/pkg/logger"
@@ -63,8 +62,6 @@ func (repository *CertificateRepo) Create(networkId uint, cert x509.Certificate)
 		PermittedURIDomains:         pq.StringArray(cert.PermittedURIDomains),
 		ExcludedURIDomains:          pq.StringArray(cert.ExcludedURIDomains),
 	}
-
-	fmt.Println("Certificate continue its path")
 
 	tx := repository.db.Begin()
 	if err := tx.Create(&certificate).Error; err != nil {

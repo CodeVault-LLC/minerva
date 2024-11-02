@@ -33,12 +33,11 @@ func CloseBrowser() {
 }
 
 type WebsiteResponse struct {
-	Redirects    []string
+	Redirects    []types.Redirect
 	Files        []types.FileRequest
 	FinalHTML    string
 	ParsedHTML   *html.Node
 	WebsiteTitle string
-	Screenshots  []types.Screenshot
 }
 
 // FetchWebsite retrieves the website content and its network resources.
@@ -56,16 +55,15 @@ func FetchWebsite(url, userAgent string) (*WebsiteResponse, error) {
 		UserAgent: userAgent,
 	})
 
-	var redirects []string
+	var redirects []types.Redirect
 	var networkFiles []types.FileRequest
-	var screenshots []types.Screenshot
 
 	router := page.HijackRequests()
 
 	router.MustAdd("*.*", func(c *rod.Hijack) {
 		requestURL := c.Request.URL().String()
 
-		logger.Log.Info("Request intercepted", zap.String("url", requestURL))
+		//logger.Log.Info("Request intercepted", zap.String("url", requestURL))
 
 		handleRequest := func() {
 			switch c.Request.Type() {
@@ -88,11 +86,24 @@ func FetchWebsite(url, userAgent string) (*WebsiteResponse, error) {
 					FileType:   string(utils.ApplicationJavascript),
 				})
 			case proto.NetworkResourceTypeDocument:
-				redirects = append(redirects, requestURL)
+				if err := rod.Try(func() {
+					c.MustLoadResponse()
+				}); err != nil {
+					if err == context.Canceled {
+						logger.Log.Error("Request canceled", zap.String("url", requestURL))
+					} else {
+						logger.Log.Error("Failed to load css response", zap.Error(err), zap.String("url", requestURL))
+					}
+				}
 
-				screenshots = append(screenshots, types.Screenshot{
-					Url:     requestURL,
-					Content: string(page.MustWaitStable().MustScreenshotFullPage()),
+				logger.Log.Info("Document request intercepted", zap.String("url", requestURL))
+
+				redirects = append(redirects, types.Redirect{
+					Url: requestURL,
+					Screenshot: types.Screenshot{
+						Content: string(page.MustWaitStable().MustScreenshotFullPage()),
+					},
+					StatusCode: c.Response.RawResponse.StatusCode,
 				})
 			case proto.NetworkResourceTypeStylesheet:
 				if err := rod.Try(func() {
@@ -175,11 +186,10 @@ func FetchWebsite(url, userAgent string) (*WebsiteResponse, error) {
 	}
 
 	return &WebsiteResponse{
-		Redirects:   redirects,
-		Files:       networkFiles,
-		FinalHTML:   htmlContent,
-		ParsedHTML:  parsedHTML,
-		Screenshots: screenshots,
+		Redirects:  redirects,
+		Files:      networkFiles,
+		FinalHTML:  htmlContent,
+		ParsedHTML: parsedHTML,
 	}, nil
 }
 

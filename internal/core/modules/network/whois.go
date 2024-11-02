@@ -13,7 +13,7 @@ func (m *WhoisModule) Run(job entities.JobModel) (interface{}, error) {
 	whoisRecord, err := ScanWhois(utils.ConvertURLToDomain(job.URL))
 
 	if err != nil || whoisRecord.Domain.Name == "" {
-		return nil, err
+		return whoisparser.WhoisInfo{}, err
 	} else {
 		return whoisRecord, nil
 	}
