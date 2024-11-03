@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"github.com/codevault-llc/humblebrag-api/internal/models/entities"
+	"github.com/codevault-llc/humblebrag-api/internal/network/models/entities"
 	"gorm.io/gorm"
 )
 

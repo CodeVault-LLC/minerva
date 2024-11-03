@@ -20,8 +20,8 @@ type ScanModel struct {
 	LicenseID uint          `gorm:"not null"`
 	License   *LicenseModel `gorm:"foreignKey:LicenseID"`
 
-	Network  NetworkModel  `gorm:"foreignKey:ScanID"`
-	Metadata MetadataModel `gorm:"foreignKey:ScanID"`
+	Network  networkEntities.NetworkModel `gorm:"foreignKey:ScanID"`
+	Metadata MetadataModel                `gorm:"foreignKey:ScanID"`
 
 	Lists     []FilterModel   `gorm:"foreignKey:ScanID"`
 	Findings  []FindingModel  `gorm:"foreignKey:ScanID"`

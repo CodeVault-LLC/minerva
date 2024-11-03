@@ -1,6 +1,7 @@
 package entities
 
 import (
+	"github.com/codevault-llc/humblebrag-api/internal/models/entities"
 	"github.com/lib/pq"
 	"gorm.io/gorm"
 )
@@ -9,7 +10,7 @@ type NetworkModel struct {
 	gorm.Model
 
 	ScanID uint
-	Scan   *ScanModel
+	Scan   *entities.ScanModel
 
 	// Detail fields
 	IPAddresses pq.StringArray `gorm:"type:text[]"` // PostgreSQL array
@@ -23,4 +24,3 @@ type NetworkModel struct {
 	Certificates []CertificateModel `gorm:"foreignKey:NetworkId"` // Separate foreign key for certificates
 	DNS          DNSModel           `gorm:"foreignKey:NetworkId"`
 }
-

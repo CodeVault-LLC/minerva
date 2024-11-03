@@ -1,12 +1,15 @@
 package entities
 
-import "gorm.io/gorm"
+import (
+	"github.com/codevault-llc/humblebrag-api/internal/models/entities"
+	"gorm.io/gorm"
+)
 
 type FindingModel struct {
 	gorm.Model
 
 	ScanID uint
-	Scan   ScanModel
+	Scan   entities.ScanModel
 
 	RegexName        string `gorm:"not null"`
 	RegexDescription string `gorm:"not null"`

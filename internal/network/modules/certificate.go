@@ -1,4 +1,4 @@
-package network
+package modules
 
 import (
 	"crypto/tls"

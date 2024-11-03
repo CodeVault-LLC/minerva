@@ -3,7 +3,7 @@ package viewmodels
 import (
 	"time"
 
-	"github.com/codevault-llc/humblebrag-api/internal/models/entities"
+	"github.com/codevault-llc/humblebrag-api/internal/contents/models/entities"
 )
 
 // Contents represents the data returned in API responses.

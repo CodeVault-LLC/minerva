@@ -1,4 +1,4 @@
-package network
+package modules
 
 import (
 	"github.com/codevault-llc/humblebrag-api/internal/models/entities"

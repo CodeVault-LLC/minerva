@@ -1,6 +1,6 @@
 package viewmodels
 
-import "github.com/codevault-llc/humblebrag-api/internal/models/entities"
+import "github.com/codevault-llc/humblebrag-api/internal/network/models/entities"
 
 type Whois struct {
 	ID uint `json:"id"`

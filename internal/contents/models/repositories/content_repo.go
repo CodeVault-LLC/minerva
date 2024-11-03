@@ -1,9 +1,10 @@
 package repository
 
 import (
+	"github.com/codevault-llc/humblebrag-api/internal/contents/models/entities"
+	"github.com/codevault-llc/humblebrag-api/internal/contents/models/viewmodels"
 	"github.com/codevault-llc/humblebrag-api/internal/database"
-	"github.com/codevault-llc/humblebrag-api/internal/models/entities"
-	"github.com/codevault-llc/humblebrag-api/internal/models/viewmodels"
+	generalEntities "github.com/codevault-llc/humblebrag-api/internal/models/entities"
 	"github.com/codevault-llc/humblebrag-api/pkg/logger"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -52,7 +53,7 @@ func (repository *ContentRepo) IncrementAccessCount(contentID uint) error {
 
 func (repository *ContentRepo) AddContentToScan(scanID uint, contentID uint) error {
 	tx := repository.db.Begin()
-	var scan entities.ScanModel
+	var scan generalEntities.ScanModel
 	if err := tx.First(&scan, scanID).Error; err != nil {
 		tx.Rollback()
 		return err
@@ -79,7 +80,7 @@ func (repository *ContentRepo) CreateContentStorage(storage entities.ContentStor
 }
 
 func (repository *ContentRepo) GetScanContents(scanID uint) ([]viewmodels.Contents, error) {
-	var scan entities.ScanModel
+	var scan generalEntities.ScanModel
 
 	// Retrieve the scan by ID, preloading the associated contents.
 	if err := database.DB.Preload("Contents").First(&scan, scanID).Error; err != nil {

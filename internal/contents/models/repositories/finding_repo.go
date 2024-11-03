@@ -1,7 +1,8 @@
 package repository
 
 import (
-	"github.com/codevault-llc/humblebrag-api/internal/models/entities"
+	"github.com/codevault-llc/humblebrag-api/internal/contents/models/entities"
+	generalEntities "github.com/codevault-llc/humblebrag-api/internal/models/entities"
 	"github.com/codevault-llc/humblebrag-api/pkg/utils"
 	"gorm.io/gorm"
 )
@@ -16,7 +17,7 @@ func NewFindingRepo(db *gorm.DB) *FindingRepo {
 
 var FindingRepository *FindingRepo
 
-func (repository *FindingRepo) SaveFindingResult(job entities.JobModel, findings []utils.RegexReturn) error {
+func (repository *FindingRepo) SaveFindingResult(job generalEntities.JobModel, findings []utils.RegexReturn) error {
 	for _, finding := range findings {
 		for _, match := range finding.Matches {
 			finding := entities.FindingModel{

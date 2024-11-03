@@ -1,6 +1,6 @@
 package viewmodels
 
-import "github.com/codevault-llc/humblebrag-api/internal/models/entities"
+import "github.com/codevault-llc/humblebrag-api/internal/contents/models/entities"
 
 type Finding struct {
 	ID     uint `json:"id"`
