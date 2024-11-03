@@ -1,7 +1,9 @@
-# Humblebrag-api
+# Humblebrag
 
-The server for the humblebrag tool. Scans websites for important information and sends it to database.
+Humblebrag is a website scanning service that provides a comprehensive report on the security of a website. It is designed to be a simple and easy-to-use tool for anyone who wants to know more about the security of a website.
 
-## Prerequisites
+## Features
 
-- **Nmap** - Required for scanning websites with Nmap Module.
+- **Secret finding** - Find secrets in the source code of a website.
+- **Network Scanner** - Scan the network for its certificates, headers, and more.
+
