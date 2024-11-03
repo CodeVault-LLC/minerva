@@ -3,10 +3,12 @@ package core
 import (
 	"fmt"
 
+	"github.com/codevault-llc/humblebrag-api/internal/contents"
 	"github.com/codevault-llc/humblebrag-api/internal/core/modules"
 	"github.com/codevault-llc/humblebrag-api/internal/database/storage"
 	"github.com/codevault-llc/humblebrag-api/internal/models/entities"
 	"github.com/codevault-llc/humblebrag-api/internal/models/repository"
+	"github.com/codevault-llc/humblebrag-api/internal/network"
 	"github.com/codevault-llc/humblebrag-api/pkg/logger"
 	"github.com/codevault-llc/humblebrag-api/pkg/utils"
 	"go.uber.org/zap"
@@ -21,8 +23,8 @@ var InspectorCore *Inspector
 // NewInspector initializes the Inspector with necessary dependencies
 func NewInspector() *Inspector {
 	inspector := &Inspector{modules: make(map[string]modules.ScanModule)}
-	inspector.modules["network"] = modules.NewNetworkModule()
-	inspector.modules["content"] = modules.NewContentModule()
+	inspector.modules["network"] = network.NewNetworkModule()
+	inspector.modules["content"] = contents.NewContentModule()
 	inspector.modules["metadata"] = modules.NewMetadataModule()
 	return inspector
 }

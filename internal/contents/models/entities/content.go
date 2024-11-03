@@ -3,6 +3,7 @@ package entities
 import (
 	"time"
 
+	"github.com/codevault-llc/humblebrag-api/internal/models/entities"
 	"gorm.io/gorm"
 )
 
@@ -10,6 +11,9 @@ type ContentModel struct {
 	gorm.Model
 
 	ID uint `gorm:"primaryKey"` // Unique identifier for the content
+
+	ScanID uint `gorm:"not null;index"` // Reference to the scan that discovered the content
+	Scan   entities.ScanModel
 
 	HashedBody     string    `gorm:"type:varchar(255);not null;unique"` // Hash of the content body for deduplication
 	Source         string    `gorm:"type:text;not null"`                // Source URL or origin of the content

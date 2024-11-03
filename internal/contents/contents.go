@@ -5,9 +5,10 @@ import (
 	"time"
 
 	"github.com/codevault-llc/humblebrag-api/config"
+	"github.com/codevault-llc/humblebrag-api/internal/contents/models/entities"
+	repository "github.com/codevault-llc/humblebrag-api/internal/contents/models/repository"
 	"github.com/codevault-llc/humblebrag-api/internal/database/storage"
-	"github.com/codevault-llc/humblebrag-api/internal/models/entities"
-	"github.com/codevault-llc/humblebrag-api/internal/models/repository"
+	generalEntities "github.com/codevault-llc/humblebrag-api/internal/models/entities"
 	"github.com/codevault-llc/humblebrag-api/pkg/logger"
 	"github.com/codevault-llc/humblebrag-api/pkg/types"
 	"github.com/codevault-llc/humblebrag-api/pkg/utils"
@@ -20,7 +21,7 @@ func NewContentModule() *ContentModule {
 	return &ContentModule{}
 }
 
-func (m *ContentModule) Execute(job entities.JobModel, website types.WebsiteAnalysis) error {
+func (m *ContentModule) Execute(job generalEntities.JobModel, website types.WebsiteAnalysis) error {
 	for _, script := range website.Assets {
 		hashedBody := utils.SHA256(script.Content)
 
@@ -57,6 +58,7 @@ func (m *ContentModule) Execute(job entities.JobModel, website types.WebsiteAnal
 			}
 
 			content := entities.ContentModel{
+				ScanID:         job.ScanID,
 				FileSize:       int64(script.FileSize),
 				FileType:       script.FileType,
 				Source:         script.Src,

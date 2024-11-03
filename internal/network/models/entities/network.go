@@ -10,7 +10,7 @@ type NetworkModel struct {
 	gorm.Model
 
 	ScanID uint
-	Scan   *entities.ScanModel
+	Scan   *entities.ScanModel `gorm:"foreignKey:ScanID"`
 
 	// Detail fields
 	IPAddresses pq.StringArray `gorm:"type:text[]"` // PostgreSQL array

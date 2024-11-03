@@ -9,7 +9,7 @@ type FindingModel struct {
 	gorm.Model
 
 	ScanID uint
-	Scan   entities.ScanModel
+	Scan   entities.ScanModel `gorm:"foreignKey:ScanID"`
 
 	RegexName        string `gorm:"not null"`
 	RegexDescription string `gorm:"not null"`

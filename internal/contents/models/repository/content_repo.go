@@ -80,15 +80,12 @@ func (repository *ContentRepo) CreateContentStorage(storage entities.ContentStor
 }
 
 func (repository *ContentRepo) GetScanContents(scanID uint) ([]viewmodels.Contents, error) {
-	var scan generalEntities.ScanModel
+	var content []entities.ContentModel
 
-	// Retrieve the scan by ID, preloading the associated contents.
-	if err := database.DB.Preload("Contents").First(&scan, scanID).Error; err != nil {
+	// Retrieve the contents for the scan ID.
+	if err := database.DB.Where("scan_id = ?", scanID).Find(&content).Error; err != nil {
 		return nil, err
 	}
-
-	// Extract the associated contents.
-	content := scan.Contents
 
 	logger.Log.Info("Retrieved contents for scan", zap.Uint("scanID", scanID), zap.Int("contentCount", len(content)))
 

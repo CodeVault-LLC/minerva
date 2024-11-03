@@ -21,9 +21,10 @@ func ConvertFindings(findings []entities.FindingModel) []Finding {
 	var findingResponses []Finding
 
 	for _, finding := range findings {
+		
+
 		findingResponses = append(findingResponses, Finding{
 			ID:     finding.ID,
-			ScanID: finding.ScanID,
 			Line:   finding.Line,
 			Match:  finding.Match,
 			Source: finding.Source,

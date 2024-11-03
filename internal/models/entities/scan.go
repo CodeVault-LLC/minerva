@@ -20,15 +20,10 @@ type ScanModel struct {
 	LicenseID uint          `gorm:"not null"`
 	License   *LicenseModel `gorm:"foreignKey:LicenseID"`
 
-	Network  networkEntities.NetworkModel `gorm:"foreignKey:ScanID"`
-	Metadata MetadataModel                `gorm:"foreignKey:ScanID"`
+	Metadata MetadataModel `gorm:"foreignKey:ScanID"`
 
 	Lists     []FilterModel   `gorm:"foreignKey:ScanID"`
-	Findings  []FindingModel  `gorm:"foreignKey:ScanID"`
 	Redirects []RedirectModel `gorm:"foreignKey:ScanID"`
-
-	// Define the many-to-many relationship through the join table.
-	Contents []ContentModel `gorm:"many2many:scan_contents"`
 }
 
 type ScanStatus string

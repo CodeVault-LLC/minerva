@@ -6,9 +6,11 @@ import (
 	"time"
 
 	"github.com/codevault-llc/humblebrag-api/cmd/api"
+	contentRepository "github.com/codevault-llc/humblebrag-api/internal/contents/models/repository"
 	"github.com/codevault-llc/humblebrag-api/internal/core"
 	"github.com/codevault-llc/humblebrag-api/internal/database"
 	"github.com/codevault-llc/humblebrag-api/internal/models/repository"
+	networkRepository "github.com/codevault-llc/humblebrag-api/internal/network/models/repository"
 	"github.com/codevault-llc/humblebrag-api/internal/updater"
 	"github.com/codevault-llc/humblebrag-api/pkg/logger"
 	"github.com/joho/godotenv"
@@ -64,13 +66,13 @@ func main() {
 
 func SetupDatabases(db *gorm.DB) {
 	repository.ScanRepository = repository.NewScanRepository(db)
-	repository.NetworkRepository = repository.NewNetworkRepository(db)
+	networkRepository.NetworkRepository = networkRepository.NewNetworkRepository(db)
 	repository.LicenseRepository = repository.NewLicenseRepository(db)
-	repository.ContentRepository = repository.NewContentRepo(db)
-	repository.FindingRepository = repository.NewFindingRepo(db)
-	repository.DnsRepository = repository.NewDnsRepository(db)
-	repository.WhoisRepository = repository.NewWhoisRepository(db)
-	repository.CertificateRepository = repository.NewCertificateRepository(db)
+	contentRepository.ContentRepository = contentRepository.NewContentRepo(db)
+	contentRepository.FindingRepository = contentRepository.NewFindingRepo(db)
+	networkRepository.DnsRepository = networkRepository.NewDnsRepository(db)
+	networkRepository.WhoisRepository = networkRepository.NewWhoisRepository(db)
+	networkRepository.CertificateRepository = networkRepository.NewCertificateRepository(db)
 	repository.MetadataRepository = repository.NewMetadataRepository(db)
 	repository.ScreenshotRepository = repository.NewScreenshotRepo(db)
 	repository.RedirectRepository = repository.NewRedirectRepo(db)

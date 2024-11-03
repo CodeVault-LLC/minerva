@@ -1,6 +1,8 @@
 package scan
 
 import (
+	contentRepository "github.com/codevault-llc/humblebrag-api/internal/contents/models/repository"
+	contentViewmodels "github.com/codevault-llc/humblebrag-api/internal/contents/models/viewmodels"
 	"github.com/codevault-llc/humblebrag-api/internal/models/repository"
 	"github.com/codevault-llc/humblebrag-api/internal/models/viewmodels"
 	"github.com/codevault-llc/humblebrag-api/pkg/responder"
@@ -35,7 +37,7 @@ func getScanFindings(c *fiber.Ctx) error {
 		return responder.CreateError(responder.ErrInvalidRequest).Error
 	}
 
-	findings, err := repository.FindingRepository.GetScanFindings(uint(scanUint))
+	findings, err := contentRepository.FindingRepository.GetScanFindings(uint(scanUint))
 	if err != nil {
 		return responder.CreateError(responder.ErrDatabaseQueryFailed).Error
 	}
@@ -44,7 +46,7 @@ func getScanFindings(c *fiber.Ctx) error {
 		return responder.CreateError(responder.ErrResourceNotFound).Error
 	}
 
-	responder.WriteJSONResponse(c, responder.CreateSuccessResponse(viewmodels.ConvertFindings(findings), "Successfully retrieved scan findings"))
+	responder.WriteJSONResponse(c, responder.CreateSuccessResponse(contentViewmodels.ConvertFindings(findings), "Successfully retrieved scan findings"))
 	return nil
 }
 
@@ -66,7 +68,7 @@ func getScanContents(c *fiber.Ctx) error {
 		return responder.CreateError(responder.ErrInvalidRequest).Error
 	}
 
-	contents, err := repository.ContentRepository.GetScanContents(uint(scanUint))
+	contents, err := contentRepository.ContentRepository.GetScanContents(uint(scanUint))
 	if err != nil {
 		return responder.CreateError(responder.ErrDatabaseQueryFailed).Error
 	}
@@ -103,7 +105,7 @@ func getScanContent(c *fiber.Ctx) error {
 		return responder.CreateError(responder.ErrInvalidRequest).Error
 	}
 
-	content, err := repository.ContentRepository.GetScanContent(uint(contentUint))
+	content, err := contentRepository.ContentRepository.GetScanContent(uint(contentUint))
 	if err != nil {
 		return responder.CreateError(responder.ErrDatabaseQueryFailed).Error
 	}

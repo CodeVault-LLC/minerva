@@ -22,6 +22,7 @@ func (repository *FindingRepo) SaveFindingResult(job generalEntities.JobModel, f
 		for _, match := range finding.Matches {
 			finding := entities.FindingModel{
 				ScanID: job.ScanID,
+
 				Line:   match.Line,
 				Match:  match.Match,
 				Source: match.Source,
