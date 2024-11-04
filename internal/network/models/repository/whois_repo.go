@@ -1,15 +1,16 @@
 package repository
 
 import (
+	"github.com/codevault-llc/humblebrag-api/internal/database"
 	"github.com/codevault-llc/humblebrag-api/internal/network/models/entities"
-	"gorm.io/gorm"
+	"github.com/jmoiron/sqlx"
 )
 
 type WhoisRepo struct {
-	db *gorm.DB
+	db *sqlx.DB
 }
 
-func NewWhoisRepository(db *gorm.DB) *WhoisRepo {
+func NewWhoisRepository(db *sqlx.DB) *WhoisRepo {
 	return &WhoisRepo{
 		db: db,
 	}
@@ -18,12 +19,25 @@ func NewWhoisRepository(db *gorm.DB) *WhoisRepo {
 var WhoisRepository *WhoisRepo
 
 func (repository *WhoisRepo) SaveWhoisResult(whois entities.WhoisModel) error {
-	tx := repository.db.Begin()
-	if err := tx.Create(&whois).Error; err != nil {
-		tx.Rollback()
+	tx, err := repository.db.Beginx()
+	if err != nil {
 		return err
 	}
 
-	tx.Commit()
+	query, err := database.StructToQuery(whois, "whois")
+	if err != nil {
+		return err
+	}
+
+	_, err = database.InsertStruct(tx, query, whois)
+	if err != nil {
+		return err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

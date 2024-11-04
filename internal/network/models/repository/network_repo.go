@@ -1,18 +1,19 @@
 package repository
 
 import (
+	"github.com/codevault-llc/humblebrag-api/internal/database"
 	"github.com/codevault-llc/humblebrag-api/internal/network/models/entities"
-	"gorm.io/gorm"
+	"github.com/jmoiron/sqlx"
 )
 
 type NetworkRepo struct {
-	db *gorm.DB
+	db *sqlx.DB
 }
 
 var NetworkRepository *NetworkRepo
 
 // NewNetworkRepository creates a new NetworkRepository
-func NewNetworkRepository(db *gorm.DB) *NetworkRepo {
+func NewNetworkRepository(db *sqlx.DB) *NetworkRepo {
 	return &NetworkRepo{
 		db: db,
 	}
@@ -20,20 +21,33 @@ func NewNetworkRepository(db *gorm.DB) *NetworkRepo {
 
 // NetworkRepositoryInterface is the interface for the NetworkRepository
 func (n *NetworkRepo) Create(network entities.NetworkModel) (entities.NetworkModel, error) {
-	tx := n.db.Begin()
-	if err := tx.Create(&network).Error; err != nil {
-		tx.Rollback()
+	tx, err := n.db.Beginx()
+	if err != nil {
 		return entities.NetworkModel{}, err
 	}
 
-	tx.Commit()
+	query, err := database.StructToQuery(network, "network")
+	if err != nil {
+		return entities.NetworkModel{}, err
+	}
+
+	_, err = database.InsertStruct(tx, query, network)
+	if err != nil {
+		return entities.NetworkModel{}, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return entities.NetworkModel{}, err
+	}
+
 	return network, nil
 }
 
 func (n *NetworkRepo) GetScanNetwork(id uint) (entities.NetworkModel, error) {
 	var network entities.NetworkModel
-	if err := n.db.Where("scan_id = ?", id).First(&network).Error; err != nil {
-		return network, err
+	if err := n.db.Get(&network, "SELECT * FROM network WHERE scan_id = $1", id); err != nil {
+		return entities.NetworkModel{}, err
 	}
 
 	return network, nil

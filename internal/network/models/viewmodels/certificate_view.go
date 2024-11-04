@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/codevault-llc/humblebrag-api/internal/network/models/entities"
-	"gorm.io/gorm"
+	"github.com/jmoiron/sqlx"
 )
 
 // Local type embedding entities.CertificateModel
@@ -14,7 +14,7 @@ type CertificateModel struct {
 }
 
 // Custom methods to handle PublicKey marshaling/unmarshaling
-func (c *CertificateModel) BeforeSave(tx *gorm.DB) (err error) {
+func (c *CertificateModel) BeforeSave(tx *sqlx.DB) (err error) {
 	if c.PublicKey != "" {
 		encodedPublicKey, err := json.Marshal(c.PublicKey)
 		if err != nil {
@@ -25,7 +25,7 @@ func (c *CertificateModel) BeforeSave(tx *gorm.DB) (err error) {
 	return nil
 }
 
-func (c *CertificateModel) AfterFind(tx *gorm.DB) (err error) {
+func (c *CertificateModel) AfterFind(tx *sqlx.DB) (err error) {
 	if len(c.PublicKey) > 0 {
 		err = json.Unmarshal([]byte(c.PublicKey), &c.PublicKey)
 		if err != nil {
@@ -50,7 +50,7 @@ type Certificate struct {
 
 func ConvertCertificate(certificate entities.CertificateModel) Certificate {
 	return Certificate{
-		ID:                 certificate.ID,
+		ID:                 certificate.Id,
 		Issuer:             certificate.Issuer,
 		Subject:            certificate.Subject,
 		NotBefore:          certificate.NotBefore,
@@ -65,7 +65,7 @@ func ConvertCertificates(certificates []entities.CertificateModel) []Certificate
 
 	for _, certificate := range certificates {
 		certificateResponses = append(certificateResponses, Certificate{
-			ID:                 certificate.ID,
+			ID:                 certificate.Id,
 			Issuer:             certificate.Issuer,
 			Subject:            certificate.Subject,
 			NotBefore:          certificate.NotBefore,

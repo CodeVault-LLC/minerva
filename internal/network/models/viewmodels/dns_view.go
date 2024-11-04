@@ -15,17 +15,17 @@ type DNS struct {
 	DNSSEC      bool     `json:"dnssec"`
 }
 
-func ConvertDNS(dns entities.DNSModel) DNS {
+func ConvertDNS(dns entities.DnsModel) DNS {
 	return DNS{
-		ID: dns.ID,
+		ID: dns.Id,
 
-		CNAME:       dns.CNAME,
+		CNAME:       dns.Cname,
 		ARecords:    dns.ARecords,
 		AAAARecords: dns.AAAARecords,
-		MXRecords:   dns.MXRecords,
-		NSRecords:   dns.NSRecords,
-		TXTRecords:  dns.TXTRecords,
-		PTRRecord:   dns.PTRRecord,
-		DNSSEC:      dns.DNSSEC,
+		MXRecords:   dns.MxRecords,
+		NSRecords:   dns.NsRecords,
+		TXTRecords:  dns.TxtRecords,
+		PTRRecord:   dns.PtrRecord,
+		DNSSEC:      dns.Dnssec,
 	}
 }

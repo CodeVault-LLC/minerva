@@ -23,10 +23,10 @@ func ConvertNetwork(network entities.NetworkModel) Network {
 	}
 
 	return Network{
-		ID:          network.ID,
-		IPAddresses: network.IPAddresses,
-		IPRanges:    network.IPRanges,
-		HTTPHeaders: network.HTTPHeaders,
+		ID:          network.Id,
+		IPAddresses: network.IpAddresses,
+		IPRanges:    network.IpRanges,
+		HTTPHeaders: network.HttpHeaders,
 
 		Certificates: convertedCertificates,
 		Whois:        ConvertWhois(network.Whois),

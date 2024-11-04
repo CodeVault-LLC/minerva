@@ -5,19 +5,20 @@ import (
 	"encoding/base64"
 	"encoding/json"
 
+	"github.com/codevault-llc/humblebrag-api/internal/database"
 	"github.com/codevault-llc/humblebrag-api/internal/network/models/entities"
 	"github.com/codevault-llc/humblebrag-api/pkg/logger"
 	"github.com/codevault-llc/humblebrag-api/pkg/utils"
+	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 	"go.uber.org/zap"
-	"gorm.io/gorm"
 )
 
 type CertificateRepo struct {
-	db *gorm.DB
+	db *sqlx.DB
 }
 
-func NewCertificateRepository(db *gorm.DB) *CertificateRepo {
+func NewCertificateRepository(db *sqlx.DB) *CertificateRepo {
 	return &CertificateRepo{
 		db: db,
 	}
@@ -47,30 +48,46 @@ func (repository *CertificateRepo) Create(networkId uint, cert x509.Certificate)
 		Version:                     cert.Version,
 		KeyUsage:                    cert.KeyUsage,
 		BasicConstraintsValid:       cert.BasicConstraintsValid,
-		IsCA:                        cert.IsCA,
-		DNSNames:                    pq.StringArray(cert.DNSNames),
+		IsCa:                        cert.IsCA,
+		DnsNames:                    pq.StringArray(cert.DNSNames),
 		EmailAddresses:              pq.StringArray(cert.EmailAddresses),
-		IPAddresses:                 pq.StringArray(utils.IPsToStrings(cert.IPAddresses)),
-		URIs:                        pq.StringArray(utils.URIsToStrings(cert.URIs)),
-		PermittedDNSDomainsCritical: cert.PermittedDNSDomainsCritical,
-		PermittedDNSDomains:         pq.StringArray(cert.PermittedDNSDomains),
-		ExcludedDNSDomains:          pq.StringArray(cert.ExcludedDNSDomains),
-		PermittedIPRanges:           pq.StringArray(utils.IPNetsToStrings(cert.PermittedIPRanges)),
-		ExcludedIPRanges:            pq.StringArray(utils.IPNetsToStrings(cert.ExcludedIPRanges)),
+		IpAddresses:                 pq.StringArray(utils.IPsToStrings(cert.IPAddresses)),
+		Uris:                        pq.StringArray(utils.URIsToStrings(cert.URIs)),
+		PermittedDnsDomainsCritical: cert.PermittedDNSDomainsCritical,
+		PermittedDnsDomains:         pq.StringArray(cert.PermittedDNSDomains),
+		ExcludedDnsDomains:          pq.StringArray(cert.ExcludedDNSDomains),
+		PermittedIpRanges:           pq.StringArray(utils.IPNetsToStrings(cert.PermittedIPRanges)),
+		ExcludedIpRanges:            pq.StringArray(utils.IPNetsToStrings(cert.ExcludedIPRanges)),
 		PermittedEmailAddresses:     pq.StringArray(cert.PermittedEmailAddresses),
 		ExcludedEmailAddresses:      pq.StringArray(cert.ExcludedEmailAddresses),
-		PermittedURIDomains:         pq.StringArray(cert.PermittedURIDomains),
-		ExcludedURIDomains:          pq.StringArray(cert.ExcludedURIDomains),
+		PermittedUriDomains:         pq.StringArray(cert.PermittedURIDomains),
+		ExcludedUriDomains:          pq.StringArray(cert.ExcludedURIDomains),
 	}
 
-	tx := repository.db.Begin()
-	if err := tx.Create(&certificate).Error; err != nil {
-		tx.Rollback()
-		logger.Log.Error("Failed to create certificate", zap.Error(err))
+	query, err := database.StructToQuery(certificate, "certificates")
+	if err != nil {
+		logger.Log.Error("Failed to generate query", zap.Error(err))
 		return entities.CertificateModel{}, err
 	}
 
-	logger.Log.Info("Created certificate")
-	tx.Commit()
+	tx, err := repository.db.Beginx()
+	if err != nil {
+		logger.Log.Error("Failed to start transaction", zap.Error(err))
+		return entities.CertificateModel{}, err
+	}
+
+	_, err = database.InsertStruct(tx, query, certificate)
+	if err != nil {
+		logger.Log.Error("Failed to insert certificate", zap.Error(err))
+		tx.Rollback()
+		return entities.CertificateModel{}, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		logger.Log.Error("Failed to commit transaction", zap.Error(err))
+		return entities.CertificateModel{}, err
+	}
+
 	return certificate, nil
 }

@@ -39,7 +39,7 @@ type Whois struct {
 
 func ConvertWhois(whois entities.WhoisModel) Whois {
 	return Whois{
-		ID: whois.ID,
+		ID: whois.Id,
 
 		DomainName:  whois.DomainName,
 		Registrar:   whois.Registrar,
@@ -69,7 +69,7 @@ func ConvertWhois(whois entities.WhoisModel) Whois {
 		AdminCountry:    whois.AdminCountry,
 		AdminPostalCode: whois.AdminPostalCode,
 
-		CreatedAt: whois.CreatedAt.Format("2006-01-02 15:04:05"),
-		UpdatedAt: whois.UpdatedAt.Format("2006-01-02 15:04:05"),
+		CreatedAt: whois.Created,
+		UpdatedAt: whois.Updated,
 	}
 }

@@ -1,15 +1,16 @@
 package repository
 
 import (
+	"github.com/codevault-llc/humblebrag-api/internal/database"
 	"github.com/codevault-llc/humblebrag-api/internal/network/models/entities"
-	"gorm.io/gorm"
+	"github.com/jmoiron/sqlx"
 )
 
 type DnsRepo struct {
-	db *gorm.DB
+	db *sqlx.DB
 }
 
-func NewDnsRepository(db *gorm.DB) *DnsRepo {
+func NewDnsRepository(db *sqlx.DB) *DnsRepo {
 	return &DnsRepo{
 		db: db,
 	}
@@ -17,13 +18,26 @@ func NewDnsRepository(db *gorm.DB) *DnsRepo {
 
 var DnsRepository *DnsRepo
 
-func (repository *DnsRepo) SaveDnsResult(dns entities.DNSModel) error {
-	tx := repository.db.Begin()
-	if err := tx.Create(&dns).Error; err != nil {
-		tx.Rollback()
+func (repository *DnsRepo) SaveDnsResult(dns entities.DnsModel) error {
+	tx, err := repository.db.Beginx()
+	if err != nil {
 		return err
 	}
 
-	tx.Commit()
+	query, err := database.StructToQuery(dns, "dns")
+	if err != nil {
+		return err
+	}
+
+	_, err = database.InsertStruct(tx, query, dns)
+	if err != nil {
+		return err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
