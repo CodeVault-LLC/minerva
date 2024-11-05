@@ -4,8 +4,10 @@ import (
 	"github.com/codevault-llc/humblebrag-api/internal/contents/models/entities"
 	generalEntities "github.com/codevault-llc/humblebrag-api/internal/core/models/entities"
 	"github.com/codevault-llc/humblebrag-api/internal/database"
+	"github.com/codevault-llc/humblebrag-api/pkg/logger"
 	"github.com/codevault-llc/humblebrag-api/pkg/utils"
 	"github.com/jmoiron/sqlx"
+	"go.uber.org/zap"
 )
 
 type FindingRepo struct {
@@ -57,7 +59,11 @@ func (repository *FindingRepo) SaveFindingResult(job generalEntities.JobModel, f
 func (repository *FindingRepo) GetScanFindings(scanID uint) ([]entities.FindingModel, error) {
 	var findings []entities.FindingModel
 
-	repository.db.Get(&findings, "SELECT * FROM finding WHERE scan_id = $1", scanID)
+	err := repository.db.Select(&findings, "SELECT * FROM finding WHERE scan_id = $1", scanID)
+	if err != nil {
+		logger.Log.Error("Failed to get scan findings", zap.Error(err))
+		return nil, err
+	}
 
 	return findings, nil
 }

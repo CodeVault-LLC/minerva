@@ -19,28 +19,28 @@ func NewContentRepo(db *sqlx.DB) *ContentRepo {
 
 var ContentRepository *ContentRepo
 
-func (repository *ContentRepo) SaveContentResult(content entities.ContentModel) (entities.ContentModel, error) {
+func (repository *ContentRepo) SaveContentResult(content entities.ContentModel) (uint, error) {
 	tx, err := repository.db.Beginx()
 	if err != nil {
-		return entities.ContentModel{}, err
+		return 0, err
 	}
 
 	query, values, err := database.StructToQuery(content, "content")
 	if err != nil {
-		return entities.ContentModel{}, err
+		return 0, err
 	}
 
-	_, err = database.InsertStruct(tx, query, values)
+	contentResponse, err := database.InsertStruct(tx, query, values)
 	if err != nil {
-		return entities.ContentModel{}, err
+		return 0, err
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		return entities.ContentModel{}, err
+		return 0, err
 	}
 
-	return content, nil
+	return contentResponse, nil
 }
 
 func (repository *ContentRepo) FindContentByHash(hashedBody string) (entities.ContentModel, error) {
@@ -57,26 +57,6 @@ func (repository *ContentRepo) IncrementAccessCount(contentID uint) error {
 	}
 
 	_, err = tx.Exec("UPDATE content SET access_count = access_count + 1 WHERE id = $1", contentID)
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (repository *ContentRepo) AddContentToScan(scanID uint, contentID uint) error {
-	tx, err := repository.db.Beginx()
-	if err != nil {
-		return err
-	}
-
-	_, err = tx.Exec("INSERT INTO scan_content (scan_id, content_id) VALUES ($1, $2)", scanID, contentID)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -114,17 +94,23 @@ func (repository *ContentRepo) CreateContentStorage(storage entities.ContentStor
 	return nil
 }
 
-func (repository *ContentRepo) GetScanContents(scanID uint) ([]viewmodels.Contents, error) {
-	var content []entities.ContentModel
+func (repository *ContentRepo) GetScanContents(scanId uint) ([]viewmodels.Contents, error) {
+	var contents []entities.ContentModel
+	type CombinedContent struct {
+		entities.ContentModel
+		entities.ContentStorageModel
+	}
+	var combinedContents []CombinedContent
 
-	// Retrieve the contents for the scan ID.
-	repository.db.Get(&content, "SELECT * FROM content WHERE id IN (SELECT content_id FROM scan_content WHERE scan_id = $1)", scanID)
-
-	logger.Log.Info("Retrieved contents for scan", zap.Uint("scanID", scanID), zap.Int("contentCount", len(content)))
+	err := repository.db.Select(&combinedContents, "SELECT * FROM content LEFT JOIN content_storage ON content.id = content_storage.content_id WHERE scan_id = $1", scanId)
+	if err != nil {
+		logger.Log.Error("Failed to retrieve content", zap.Error(err))
+		return nil, err
+	}
 
 	// Create maps to hold associated tags and storage information.
-	contentIDs := make([]uint, len(content))
-	for i, c := range content {
+	contentIDs := make([]uint, len(contents))
+	for i, c := range contents {
 		contentIDs[i] = c.Id
 	}
 
@@ -137,24 +123,24 @@ func (repository *ContentRepo) GetScanContents(scanID uint) ([]viewmodels.Conten
 		tagsMap[tag.ContentId] = append(tagsMap[tag.ContentId], tag.Tag)
 	}
 
-	// Retrieve associated storage information for each content ID.
 	storageMap := make(map[uint]entities.ContentStorageModel)
-	var storageRecords []entities.ContentStorageModel
-	repository.db.Get(&storageRecords, "SELECT * FROM content_storage WHERE content_id IN $1", contentIDs)
+	for _, c := range combinedContents {
+		storageMap[c.ContentModel.Id] = c.ContentStorageModel
+	}
 
-	for _, storageRecord := range storageRecords {
-		storageMap[storageRecord.ContentId] = storageRecord
+	contents = make([]entities.ContentModel, len(combinedContents))
+	for i, c := range combinedContents {
+		contents[i] = c.ContentModel
 	}
 
 	// Convert the content models into the content responses with tags and storage details.
-	return viewmodels.ConvertContents(content, tagsMap, storageMap), nil
+	return viewmodels.ConvertContents(contents, tagsMap, storageMap), nil
 }
 
-func (repository *ContentRepo) GetScanContent(contentID uint) (entities.ContentModel, error) {
+func (repository *ContentRepo) GetScanContent(contentId uint) (entities.ContentModel, error) {
 	var content entities.ContentModel
 
-	// Retrieve the content by ID, preloading the associated tags and storage information.
-	repository.db.Get(&content, "SELECT * FROM content WHERE id = $1", contentID)
+	repository.db.Get(&content, "SELECT * FROM content WHERE id = $1", contentId)
 
 	return content, nil
 }

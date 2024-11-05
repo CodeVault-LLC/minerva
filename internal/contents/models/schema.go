@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS content (
 	FOREIGN KEY (scan_id) REFERENCES scans(id) ON DELETE CASCADE,
 
 	-- Content details
-	hashed_body VARCHAR(255) NOT NULL UNIQUE, -- Unique hash of the content body
+	hashed_body VARCHAR(255) NOT NULL, -- Unique hash of the content body
 	source TEXT NOT NULL,                     -- Source URL or origin
 	file_size BIGINT NOT NULL,                -- File size in bytes
 	file_type VARCHAR(100) NOT NULL,          -- MIME type of the content

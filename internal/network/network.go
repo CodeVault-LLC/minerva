@@ -88,7 +88,7 @@ func (m *NetworkModule) saveResults(scanID uint, results map[string]interface{})
 		logger.Log.Info("Whois record:", zap.Any("whois", whoisRecord.Administrative))
 
 		whois := entities.WhoisModel{
-			NetworkId: networkResponse.Id,
+			NetworkId: networkResponse,
 			Status: func() string {
 				if len(whoisRecord.Domain.Status) > 0 {
 					return whoisRecord.Domain.Status[0]
@@ -166,7 +166,7 @@ func (m *NetworkModule) saveResults(scanID uint, results map[string]interface{})
 	}
 
 	for _, certificate := range results["Certificate"].([]*x509.Certificate) {
-		_, err := repository.CertificateRepository.Create(networkResponse.Id, *certificate)
+		_, err := repository.CertificateRepository.Create(networkResponse, *certificate)
 		if err != nil {
 			logger.Log.Error("Failed to create certificate: %v", zap.Error(err))
 			return err
@@ -175,7 +175,7 @@ func (m *NetworkModule) saveResults(scanID uint, results map[string]interface{})
 
 	dnsResults := results["DNS"].(modules.DNSResults)
 	dns := entities.DnsModel{
-		NetworkId:   networkResponse.Id,
+		NetworkId:   networkResponse,
 		Cname:       dnsResults.CNAME,
 		ARecords:    dnsResults.ARecords,
 		AAAARecords: dnsResults.AAAARecords,

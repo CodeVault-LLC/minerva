@@ -15,14 +15,15 @@ type ContentModel struct {
 	LastAccessedAt time.Time `db:"last_accessed_at"`
 	AccessCount    int64     `db:"access_count"`
 
-	// Relations
+	// Relationships
 	Tags     []ContentTagsModel  `db:"-"`
 	Storage  ContentStorageModel `db:"-"`
 	Access   []ContentAccessLog  `db:"-"`
 	Findings []FindingModel      `db:"-"`
 
-	CreatedAt time.Time `db:"created_at"`
-	UpdatedAt time.Time `db:"updated_at"`
+	CreatedAt time.Time  `db:"created_at"`
+	UpdatedAt time.Time  `db:"updated_at"`
+	DeletedAt *time.Time `db:"deleted_at"`
 }
 
 type ContentTagsModel struct {
@@ -61,10 +62,12 @@ type FindingModel struct {
 
 	RegexName        string `db:"regex_name"`
 	RegexDescription string `db:"regex_description"`
-	Match            string `db:"match"`
-	Source           string `db:"source"`
-	Line             int    `db:"line"`
 
-	CreatedAt time.Time `db:"created_at"`
-	UpdatedAt time.Time `db:"updated_at"`
+	Match  string `db:"match"`
+	Source string `db:"source"`
+	Line   int    `db:"line"`
+
+	CreatedAt time.Time  `db:"created_at"`
+	UpdatedAt time.Time  `db:"updated_at"`
+	DeletedAt *time.Time `db:"deleted_at"`
 }

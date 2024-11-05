@@ -7,8 +7,8 @@ import (
 	"github.com/codevault-llc/humblebrag-api/config"
 	"github.com/codevault-llc/humblebrag-api/internal/contents/models/entities"
 	repository "github.com/codevault-llc/humblebrag-api/internal/contents/models/repository"
-	"github.com/codevault-llc/humblebrag-api/internal/database/storage"
 	generalEntities "github.com/codevault-llc/humblebrag-api/internal/core/models/entities"
+	"github.com/codevault-llc/humblebrag-api/internal/database/storage"
 	"github.com/codevault-llc/humblebrag-api/pkg/logger"
 	"github.com/codevault-llc/humblebrag-api/pkg/types"
 	"github.com/codevault-llc/humblebrag-api/pkg/utils"
@@ -41,14 +41,11 @@ func (m *ContentModule) Execute(job generalEntities.JobModel, website types.Webs
 			continue
 		}
 
-		var contentID uint
-
 		if existingContent.Id != 0 {
 			err := repository.ContentRepository.IncrementAccessCount(existingContent.Id)
 			if err != nil {
 				logger.Log.Error("Failed to increment access count: %v", zap.Error(err))
 			}
-			contentID = existingContent.Id
 		} else {
 			storageType := storage.DetermineStorageType(script.Content)
 			err = storage.UploadFile("content-bucket", hashedBody, []byte(script.Content), true)
@@ -75,7 +72,7 @@ func (m *ContentModule) Execute(job generalEntities.JobModel, website types.Webs
 			}
 
 			storageRecord := entities.ContentStorageModel{
-				ContentId:       newContent.Id,
+				ContentId:       newContent,
 				BucketName:      "content-bucket",
 				ObjectKey:       hashedBody,
 				Location:        storage.GetLocation("content-bucket", hashedBody),
@@ -88,13 +85,6 @@ func (m *ContentModule) Execute(job generalEntities.JobModel, website types.Webs
 				logger.Log.Error("Failed to save storage record: %v", zap.Error(err))
 				continue
 			}
-
-			contentID = newContent.Id
-		}
-
-		err = repository.ContentRepository.AddContentToScan(job.ScanID, contentID)
-		if err != nil {
-			logger.Log.Error("Failed to associate content with scan: %v", zap.Error(err))
 		}
 	}
 

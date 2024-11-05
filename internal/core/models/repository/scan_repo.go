@@ -22,32 +22,32 @@ func NewScanRepository(db *sqlx.DB) *ScanRepo {
 var ScanRepository *ScanRepo
 
 // SaveScanResult saves the scan result in the database
-func (repository *ScanRepo) SaveScanResult(job *entities.JobModel, scan entities.ScanModel) (entities.ScanModel, error) {
+func (repository *ScanRepo) SaveScanResult(job *entities.JobModel, scan entities.ScanModel) (uint, error) {
 	tx, err := repository.db.Beginx()
 	if err != nil {
-		return entities.ScanModel{}, err
+		return 0, err
 	}
 
 	query, values, err := database.StructToQuery(scan, "scans")
 	if err != nil {
 		logger.Log.Error("Failed to generate query", zap.Error(err))
-		return entities.ScanModel{}, err
+		return 0, err
 	}
 
-	_, err = database.InsertStruct(tx, query, values)
+	returnId, err := database.InsertStruct(tx, query, values)
 	if err != nil {
 		logger.Log.Error("Failed to insert certificate", zap.Error(err))
 		tx.Rollback()
-		return entities.ScanModel{}, err
+		return 0, err
 	}
 
 	err = tx.Commit()
 	if err != nil {
 		logger.Log.Error("Failed to commit transaction", zap.Error(err))
-		return entities.ScanModel{}, err
+		return 0, err
 	}
 
-	return scan, nil
+	return returnId, nil
 }
 
 func (repository *ScanRepo) GetScanResult(scanId uint) (entities.ScanModel, error) {
@@ -64,6 +64,7 @@ func (repository *ScanRepo) GetScans() ([]entities.ScanModel, error) {
 	var scans []entities.ScanModel
 	err := repository.db.Select(&scans, "SELECT * FROM scans")
 	if err != nil {
+		logger.Log.Error("Failed to get scans", zap.Error(err))
 		return scans, err
 	}
 

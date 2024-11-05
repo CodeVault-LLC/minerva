@@ -52,3 +52,14 @@ func ConvertContent(content entities.ContentModel, tags []string, storage entiti
 		ObjectKey:    storage.ObjectKey,
 	}
 }
+
+func ConvertSingleContent(content entities.ContentModel) Contents {
+	return Contents{
+		ID:           content.Id,
+		FileSize:     content.FileSize,
+		FileType:     content.FileType,
+		StorageType:  content.StorageType,
+		LastAccessed: content.LastAccessedAt,
+		AccessCount:  content.AccessCount,
+	}
+}

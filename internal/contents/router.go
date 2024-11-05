@@ -3,14 +3,16 @@ package contents
 import (
 	"github.com/codevault-llc/humblebrag-api/internal/contents/models/repository"
 	"github.com/codevault-llc/humblebrag-api/internal/contents/models/viewmodels"
+	"github.com/codevault-llc/humblebrag-api/pkg/logger"
 	"github.com/codevault-llc/humblebrag-api/pkg/responder"
 	"github.com/codevault-llc/humblebrag-api/pkg/utils"
 	"github.com/gofiber/fiber/v2"
+	"go.uber.org/zap"
 )
 
 func RegisterContentRoutes(router fiber.Router) error {
 	router.Get("/contents/:scanID/", getScanContents)
-	router.Get("/contents/:scanID/findings", getScanFindings)
+	router.Get("/findings/:scanID/", getScanFindings)
 	router.Get("/contents/:scanID/:contentID", getScanContent)
 
 	return nil
@@ -80,7 +82,7 @@ func getScanContent(c *fiber.Ctx) error {
 		return responder.CreateError(responder.ErrResourceNotFound).Error
 	}
 
-	responder.WriteJSONResponse(c, responder.CreateSuccessResponse(content, "Successfully retrieved scan content"))
+	responder.WriteJSONResponse(c, responder.CreateSuccessResponse(viewmodels.ConvertSingleContent(content), "Successfully retrieved scan content"))
 	return nil
 }
 
@@ -108,6 +110,7 @@ func getScanFindings(c *fiber.Ctx) error {
 	}
 
 	if len(findings) == 0 {
+		logger.Log.Info("No findings found for scan", zap.Uint("scanID", uint(scanUint)))
 		return responder.CreateError(responder.ErrResourceNotFound).Error
 	}
 

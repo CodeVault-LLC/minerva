@@ -22,35 +22,35 @@ func NewNetworkRepository(db *sqlx.DB) *NetworkRepo {
 }
 
 // NetworkRepositoryInterface is the interface for the NetworkRepository
-func (n *NetworkRepo) Create(network entities.NetworkModel) (entities.NetworkModel, error) {
+func (n *NetworkRepo) Create(network entities.NetworkModel) (uint, error) {
 	tx, err := n.db.Beginx()
 	if err != nil {
-		return entities.NetworkModel{}, err
+		return 0, err
 	}
 
 	// Get query and values from StructToQuery
 	query, values, err := database.StructToQuery(network, "networks")
 	if err != nil {
 		tx.Rollback()
-		return entities.NetworkModel{}, err
+		return 0, err
 	}
 
 	logger.Log.Info("Query", zap.String("query", query), zap.Any("values", values))
 
 	// Insert using InsertStruct with query and values
-	_, err = database.InsertStruct(tx, query, values)
+	networkId, err := database.InsertStruct(tx, query, values)
 	if err != nil {
 		tx.Rollback()
-		return entities.NetworkModel{}, err
+		return 0, err
 	}
 
 	// Commit transaction
 	err = tx.Commit()
 	if err != nil {
-		return entities.NetworkModel{}, err
+		return 0, err
 	}
 
-	return network, nil
+	return networkId, nil
 }
 
 func (n *NetworkRepo) GetScanNetwork(id uint) (entities.NetworkModel, error) {

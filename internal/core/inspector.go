@@ -60,13 +60,13 @@ func (i *Inspector) performWebsiteScan(job *entities.JobModel) error {
 		Md5:        utils.MD5(website.Url),
 	}
 
-	scan, err := repository.ScanRepository.SaveScanResult(job, scanModel)
+	scanId, err := repository.ScanRepository.SaveScanResult(job, scanModel)
 	if err != nil {
 		logger.Log.Error("Failed to save scan result", zap.Error(err))
 		return err
 	}
 
-	job.ScanID = uint(scan.Id)
+	job.ScanID = scanId
 
 	go func() {
 		for _, module := range i.modules {

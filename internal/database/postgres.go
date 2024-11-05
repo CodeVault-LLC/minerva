@@ -93,7 +93,7 @@ func StructToQuery(data interface{}, tableName string) (string, []interface{}, e
 }
 
 // InsertStruct inserts a struct into the database and returns the ID
-func InsertStruct(tx *sqlx.Tx, query string, values []interface{}) (interface{}, error) {
+func InsertStruct(tx *sqlx.Tx, query string, values []interface{}) (uint, error) {
 	// Execute the query with a context
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -112,5 +112,5 @@ func InsertStruct(tx *sqlx.Tx, query string, values []interface{}) (interface{},
 	// Log successful insertion
 	logger.Log.Info("Inserted record", zap.Int64("id", id.Val))
 
-	return id, nil
+	return uint(id.Val), nil
 }

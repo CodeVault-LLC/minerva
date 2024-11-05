@@ -15,8 +15,9 @@ type ScanModel struct {
 	Sha1   string `db:"sha1"`
 	Md5    string `db:"md5"`
 
-	CreatedAt time.Time `db:"created_at"`
-	UpdatedAt time.Time `db:"updated_at"`
+	CreatedAt time.Time  `db:"created_at"`
+	UpdatedAt time.Time  `db:"updated_at"`
+	DeletedAt *time.Time `db:"deleted_at"`
 }
 
 type ScanStatus string

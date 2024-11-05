@@ -3,9 +3,11 @@ package network
 import (
 	"github.com/codevault-llc/humblebrag-api/internal/network/models/repository"
 	"github.com/codevault-llc/humblebrag-api/internal/network/models/viewmodels"
+	"github.com/codevault-llc/humblebrag-api/pkg/logger"
 	"github.com/codevault-llc/humblebrag-api/pkg/responder"
 	"github.com/codevault-llc/humblebrag-api/pkg/utils"
 	"github.com/gofiber/fiber/v2"
+	"go.uber.org/zap"
 )
 
 func RegisterNetworkRouter(router fiber.Router) error {
@@ -34,6 +36,7 @@ func getScanNetwork(c *fiber.Ctx) error {
 
 	network, err := repository.NetworkRepository.GetScanNetwork(uint(scanUint))
 	if err != nil {
+		logger.Log.Error("Failed to get scan network", zap.Error(err))
 		return responder.CreateError(responder.ErrDatabaseQueryFailed).Error
 	}
 
