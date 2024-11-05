@@ -14,6 +14,14 @@ type NetworkModel struct {
 	IpRanges    []string `db:"ip_ranges"`
 
 	HttpHeaders []string `db:"http_headers"`
+
+	// Relations
+	Certificates []CertificateModel `db:"-"`
+	Whois        WhoisModel         `db:"-"`
+	DNS          DnsModel           `db:"-"`
+
+	CreatedAt time.Time `db:"created_at"`
+	UpdatedAt time.Time `db:"updated_at"`
 }
 
 type WhoisModel struct {

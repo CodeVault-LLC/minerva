@@ -8,7 +8,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func RegisterModulesRoutes(router fiber.Router) error {
+func RegisterNetworkRouter(router fiber.Router) error {
 	router.Get("/network/:scanID/", getScanNetwork)
 
 	return nil
@@ -37,7 +37,7 @@ func getScanNetwork(c *fiber.Ctx) error {
 		return responder.CreateError(responder.ErrDatabaseQueryFailed).Error
 	}
 
-	if network.ID == 0 {
+	if network.Id == 0 {
 		return responder.CreateError(responder.ErrResourceNotFound).Error
 	}
 

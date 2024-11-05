@@ -43,12 +43,12 @@ func (m *ContentModule) Execute(job generalEntities.JobModel, website types.Webs
 
 		var contentID uint
 
-		if existingContent.ID != 0 {
-			err := repository.ContentRepository.IncrementAccessCount(existingContent.ID)
+		if existingContent.Id != 0 {
+			err := repository.ContentRepository.IncrementAccessCount(existingContent.Id)
 			if err != nil {
 				logger.Log.Error("Failed to increment access count: %v", zap.Error(err))
 			}
-			contentID = existingContent.ID
+			contentID = existingContent.Id
 		} else {
 			storageType := storage.DetermineStorageType(script.Content)
 			err = storage.UploadFile("content-bucket", hashedBody, []byte(script.Content), true)
@@ -58,7 +58,7 @@ func (m *ContentModule) Execute(job generalEntities.JobModel, website types.Webs
 			}
 
 			content := entities.ContentModel{
-				ScanID:         job.ScanID,
+				ScanId:         job.ScanID,
 				FileSize:       int64(script.FileSize),
 				FileType:       script.FileType,
 				Source:         script.Src,
@@ -75,7 +75,7 @@ func (m *ContentModule) Execute(job generalEntities.JobModel, website types.Webs
 			}
 
 			storageRecord := entities.ContentStorageModel{
-				ContentID:       newContent.ID,
+				ContentId:       newContent.Id,
 				BucketName:      "content-bucket",
 				ObjectKey:       hashedBody,
 				Location:        storage.GetLocation("content-bucket", hashedBody),
@@ -89,7 +89,7 @@ func (m *ContentModule) Execute(job generalEntities.JobModel, website types.Webs
 				continue
 			}
 
-			contentID = newContent.ID
+			contentID = newContent.Id
 		}
 
 		err = repository.ContentRepository.AddContentToScan(job.ScanID, contentID)

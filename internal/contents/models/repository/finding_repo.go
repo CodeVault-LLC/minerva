@@ -2,16 +2,17 @@ package repository
 
 import (
 	"github.com/codevault-llc/humblebrag-api/internal/contents/models/entities"
+	"github.com/codevault-llc/humblebrag-api/internal/database"
 	generalEntities "github.com/codevault-llc/humblebrag-api/internal/models/entities"
 	"github.com/codevault-llc/humblebrag-api/pkg/utils"
-	"gorm.io/gorm"
+	"github.com/jmoiron/sqlx"
 )
 
 type FindingRepo struct {
-	db *gorm.DB
+	db *sqlx.DB
 }
 
-func NewFindingRepo(db *gorm.DB) *FindingRepo {
+func NewFindingRepo(db *sqlx.DB) *FindingRepo {
 	return &FindingRepo{db: db}
 }
 
@@ -21,7 +22,7 @@ func (repository *FindingRepo) SaveFindingResult(job generalEntities.JobModel, f
 	for _, finding := range findings {
 		for _, match := range finding.Matches {
 			finding := entities.FindingModel{
-				ScanID: job.ScanID,
+				ScanId: job.ScanID,
 
 				Line:   match.Line,
 				Match:  match.Match,
@@ -31,9 +32,18 @@ func (repository *FindingRepo) SaveFindingResult(job generalEntities.JobModel, f
 				RegexDescription: finding.Description,
 			}
 
-			tx := repository.db.Begin()
-			if err := tx.Create(&finding).Error; err != nil {
-				tx.Rollback()
+			tx, err := repository.db.Beginx()
+			if err != nil {
+				return err
+			}
+
+			query, err := database.StructToQuery(finding, "finding")
+			if err != nil {
+				return err
+			}
+
+			_, err = database.InsertStruct(tx, query, finding)
+			if err != nil {
 				return err
 			}
 
@@ -47,9 +57,7 @@ func (repository *FindingRepo) SaveFindingResult(job generalEntities.JobModel, f
 func (repository *FindingRepo) GetScanFindings(scanID uint) ([]entities.FindingModel, error) {
 	var findings []entities.FindingModel
 
-	if err := repository.db.Where("scan_id = ?", scanID).Find(&findings).Error; err != nil {
-		return nil, err
-	}
+	repository.db.Get(&findings, "SELECT * FROM finding WHERE scan_id = $1", scanID)
 
 	return findings, nil
 }

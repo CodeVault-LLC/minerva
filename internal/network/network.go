@@ -18,7 +18,7 @@ import (
 
 type MiniModule interface {
 	Run(job generalEntities.JobModel) (interface{}, error) // Executes the mini-module logic
-	Name() string                                   // Returns the mini-module name
+	Name() string                                          // Returns the mini-module name
 }
 
 // NetworkModule orchestrates network-related scans through sub-modules
@@ -71,10 +71,10 @@ func (m *NetworkModule) Execute(job generalEntities.JobModel, website types.Webs
 
 func (m *NetworkModule) saveResults(scanID uint, results map[string]interface{}) error {
 	networkModel := entities.NetworkModel{
-		ScanID:      scanID,
-		IPAddresses: results["IPLookup"].([]string),
-		IPRanges:    results["IPRangeLookup"].([]string),
-		HTTPHeaders: results["Header"].([]string),
+		ScanId:      scanID,
+		IpAddresses: results["IPLookup"].([]string),
+		IpRanges:    results["IPRangeLookup"].([]string),
+		HttpHeaders: results["Header"].([]string),
 	}
 
 	networkResponse, err := repository.NetworkRepository.Create(networkModel)
@@ -88,7 +88,7 @@ func (m *NetworkModule) saveResults(scanID uint, results map[string]interface{})
 		logger.Log.Info("Whois record:", zap.Any("whois", whoisRecord.Administrative))
 
 		whois := entities.WhoisModel{
-			NetworkId: networkResponse.ID,
+			NetworkId: networkResponse.Id,
 			Status: func() string {
 				if len(whoisRecord.Domain.Status) > 0 {
 					return whoisRecord.Domain.Status[0]
@@ -166,7 +166,7 @@ func (m *NetworkModule) saveResults(scanID uint, results map[string]interface{})
 	}
 
 	for _, certificate := range results["Certificate"].([]*x509.Certificate) {
-		_, err := repository.CertificateRepository.Create(networkResponse.ID, *certificate)
+		_, err := repository.CertificateRepository.Create(networkResponse.Id, *certificate)
 		if err != nil {
 			logger.Log.Error("Failed to create certificate: %v", zap.Error(err))
 			return err
@@ -174,16 +174,16 @@ func (m *NetworkModule) saveResults(scanID uint, results map[string]interface{})
 	}
 
 	dnsResults := results["DNS"].(modules.DNSResults)
-	dns := entities.DNSModel{
-		NetworkId:   networkResponse.ID,
-		CNAME:       dnsResults.CNAME,
+	dns := entities.DnsModel{
+		NetworkId:   networkResponse.Id,
+		Cname:       dnsResults.CNAME,
 		ARecords:    dnsResults.ARecords,
 		AAAARecords: dnsResults.AAAARecords,
-		MXRecords:   dnsResults.MXRecords,
-		NSRecords:   dnsResults.NSRecords,
-		TXTRecords:  dnsResults.TXTRecords,
-		PTRRecord:   dnsResults.PTRRecord,
-		DNSSEC:      dnsResults.DNSSEC,
+		MxRecords:   dnsResults.MXRecords,
+		NsRecords:   dnsResults.NSRecords,
+		TxtRecords:  dnsResults.TXTRecords,
+		PtrRecord:   dnsResults.PTRRecord,
+		Dnssec:      dnsResults.DNSSEC,
 	}
 
 	err = repository.DnsRepository.SaveDnsResult(dns)

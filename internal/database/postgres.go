@@ -68,7 +68,7 @@ func StructToQuery(data interface{}, tableName string) (string, error) {
 
 		// Get the db tag value; skip fields without a db tag
 		dbTag := field.Tag.Get("db")
-		if dbTag == "" || dbTag == "-" {
+		if dbTag == "" || dbTag == "-" || dbTag == "id" || dbTag == "created_at" || dbTag == "updated_at" || dbTag == "deleted_at" {
 			continue
 		}
 

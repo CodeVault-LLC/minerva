@@ -33,7 +33,7 @@ func ConvertContents(contents []entities.ContentModel, tagsMap map[uint][]string
 	var contentResponses []Contents
 
 	for _, c := range contents {
-		contentResponses = append(contentResponses, ConvertContent(c, tagsMap[c.ID], storageMap[c.ID]))
+		contentResponses = append(contentResponses, ConvertContent(c, tagsMap[c.Id], storageMap[c.Id]))
 	}
 
 	return contentResponses
@@ -42,7 +42,7 @@ func ConvertContents(contents []entities.ContentModel, tagsMap map[uint][]string
 // ConvertContent converts a ContentModel to ContentResponse.
 func ConvertContent(content entities.ContentModel, tags []string, storage entities.ContentStorageModel) Contents {
 	return Contents{
-		ID:           content.ID,
+		ID:           content.Id,
 		FileSize:     content.FileSize,
 		FileType:     content.FileType,
 		StorageType:  content.StorageType,

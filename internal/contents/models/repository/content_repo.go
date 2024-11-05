@@ -4,78 +4,113 @@ import (
 	"github.com/codevault-llc/humblebrag-api/internal/contents/models/entities"
 	"github.com/codevault-llc/humblebrag-api/internal/contents/models/viewmodels"
 	"github.com/codevault-llc/humblebrag-api/internal/database"
-	generalEntities "github.com/codevault-llc/humblebrag-api/internal/models/entities"
 	"github.com/codevault-llc/humblebrag-api/pkg/logger"
+	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
-	"gorm.io/gorm"
 )
 
 type ContentRepo struct {
-	db *gorm.DB
+	db *sqlx.DB
 }
 
-func NewContentRepo(db *gorm.DB) *ContentRepo {
+func NewContentRepo(db *sqlx.DB) *ContentRepo {
 	return &ContentRepo{db: db}
 }
 
 var ContentRepository *ContentRepo
 
 func (repository *ContentRepo) SaveContentResult(content entities.ContentModel) (entities.ContentModel, error) {
-	tx := repository.db.Begin()
-	if err := tx.Create(&content).Error; err != nil {
-		tx.Rollback()
+	tx, err := repository.db.Beginx()
+	if err != nil {
 		return entities.ContentModel{}, err
 	}
 
-	tx.Commit()
+	query, err := database.StructToQuery(content, "content")
+	if err != nil {
+		return entities.ContentModel{}, err
+	}
+
+	_, err = database.InsertStruct(tx, query, content)
+	if err != nil {
+		return entities.ContentModel{}, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return entities.ContentModel{}, err
+	}
+
 	return content, nil
 }
 
 func (repository *ContentRepo) FindContentByHash(hashedBody string) (entities.ContentModel, error) {
 	var content entities.ContentModel
-	if err := repository.db.Where("hashed_body = ?", hashedBody).First(&content).Error; err != nil {
-		return content, err
-	}
+	repository.db.Get(&content, "SELECT * FROM content WHERE hashed_body = $1", hashedBody)
 
 	return content, nil
 }
 
 func (repository *ContentRepo) IncrementAccessCount(contentID uint) error {
-	tx := repository.db.Begin()
-	if err := tx.Model(&entities.ContentModel{}).Where("id = ?", contentID).Update("access_count", gorm.Expr("access_count + ?", 1)).Error; err != nil {
+	tx, err := repository.db.Beginx()
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec("UPDATE content SET access_count = access_count + 1 WHERE id = $1", contentID)
+	if err != nil {
 		tx.Rollback()
 		return err
 	}
 
-	tx.Commit()
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func (repository *ContentRepo) AddContentToScan(scanID uint, contentID uint) error {
-	tx := repository.db.Begin()
-	var scan generalEntities.ScanModel
-	if err := tx.First(&scan, scanID).Error; err != nil {
+	tx, err := repository.db.Beginx()
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec("INSERT INTO scan_content (scan_id, content_id) VALUES ($1, $2)", scanID, contentID)
+	if err != nil {
 		tx.Rollback()
 		return err
 	}
 
-	if err := tx.Model(&scan).Association("Contents").Append(&entities.ContentModel{ID: contentID}); err != nil {
-		tx.Rollback()
+	err = tx.Commit()
+	if err != nil {
 		return err
 	}
 
-	tx.Commit()
 	return nil
 }
 
 func (repository *ContentRepo) CreateContentStorage(storage entities.ContentStorageModel) error {
-	tx := repository.db.Begin()
-	if err := tx.Create(&storage).Error; err != nil {
-		tx.Rollback()
+	tx, err := repository.db.Beginx()
+	if err != nil {
 		return err
 	}
 
-	tx.Commit()
+	query, err := database.StructToQuery(storage, "content_storage")
+	if err != nil {
+		return err
+	}
+
+	_, err = database.InsertStruct(tx, query, storage)
+	if err != nil {
+		return err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -83,38 +118,32 @@ func (repository *ContentRepo) GetScanContents(scanID uint) ([]viewmodels.Conten
 	var content []entities.ContentModel
 
 	// Retrieve the contents for the scan ID.
-	if err := database.DB.Where("scan_id = ?", scanID).Find(&content).Error; err != nil {
-		return nil, err
-	}
+	repository.db.Get(&content, "SELECT * FROM content WHERE id IN (SELECT content_id FROM scan_content WHERE scan_id = $1)", scanID)
 
 	logger.Log.Info("Retrieved contents for scan", zap.Uint("scanID", scanID), zap.Int("contentCount", len(content)))
 
 	// Create maps to hold associated tags and storage information.
 	contentIDs := make([]uint, len(content))
 	for i, c := range content {
-		contentIDs[i] = c.ID
+		contentIDs[i] = c.Id
 	}
 
 	// Retrieve associated tags for each content ID.
 	tagsMap := make(map[uint][]string)
 	var tags []entities.ContentTagsModel
-	if err := database.DB.Where("content_id IN ?", contentIDs).Find(&tags).Error; err != nil {
-		return nil, err
-	}
+	repository.db.Get(&tags, "SELECT * FROM content_tags WHERE content_id IN $1", contentIDs)
 
 	for _, tag := range tags {
-		tagsMap[tag.ContentID] = append(tagsMap[tag.ContentID], tag.Tag)
+		tagsMap[tag.ContentId] = append(tagsMap[tag.ContentId], tag.Tag)
 	}
 
 	// Retrieve associated storage information for each content ID.
 	storageMap := make(map[uint]entities.ContentStorageModel)
 	var storageRecords []entities.ContentStorageModel
-	if err := database.DB.Where("content_id IN ?", contentIDs).Find(&storageRecords).Error; err != nil {
-		return nil, err
-	}
+	repository.db.Get(&storageRecords, "SELECT * FROM content_storage WHERE content_id IN $1", contentIDs)
 
 	for _, storageRecord := range storageRecords {
-		storageMap[storageRecord.ContentID] = storageRecord
+		storageMap[storageRecord.ContentId] = storageRecord
 	}
 
 	// Convert the content models into the content responses with tags and storage details.
@@ -125,9 +154,7 @@ func (repository *ContentRepo) GetScanContent(contentID uint) (entities.ContentM
 	var content entities.ContentModel
 
 	// Retrieve the content by ID, preloading the associated tags and storage information.
-	if err := database.DB.Preload("Tags").Preload("Storage").First(&content, contentID).Error; err != nil {
-		return content, err
-	}
+	repository.db.Get(&content, "SELECT * FROM content WHERE id = $1", contentID)
 
 	return content, nil
 }
