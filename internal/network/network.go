@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sync"
 
-	generalEntities "github.com/codevault-llc/humblebrag-api/internal/models/entities"
+	generalEntities "github.com/codevault-llc/humblebrag-api/internal/core/models/entities"
 	"github.com/codevault-llc/humblebrag-api/internal/network/models/entities"
 	"github.com/codevault-llc/humblebrag-api/internal/network/models/repository"
 	"github.com/codevault-llc/humblebrag-api/internal/network/modules"

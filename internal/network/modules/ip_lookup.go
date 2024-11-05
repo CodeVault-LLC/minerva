@@ -3,7 +3,7 @@ package modules
 import (
 	"net"
 
-	"github.com/codevault-llc/humblebrag-api/internal/models/entities"
+	"github.com/codevault-llc/humblebrag-api/internal/core/models/entities"
 	"github.com/codevault-llc/humblebrag-api/pkg/logger"
 	"github.com/codevault-llc/humblebrag-api/pkg/utils"
 	"go.uber.org/zap"

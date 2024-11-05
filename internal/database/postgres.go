@@ -1,14 +1,18 @@
 package database
 
 import (
-	"errors"
+	"context"
 	"fmt"
 	"reflect"
 	"strings"
+	"time"
 
+	contentSchema "github.com/codevault-llc/humblebrag-api/internal/contents/models"
+	coreSchema "github.com/codevault-llc/humblebrag-api/internal/core/models"
 	networkSchema "github.com/codevault-llc/humblebrag-api/internal/network/models"
 	"github.com/codevault-llc/humblebrag-api/pkg/logger"
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 	"go.uber.org/zap"
 )
 
@@ -25,29 +29,18 @@ func InitPostgres(dsn string) (*sqlx.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer db.Close()
 
-	_, err = db.Exec(turnStringTogether(networkSchema.NetworkSchema))
+	_, err = db.Exec(turnStringTogether(coreSchema.CoreSchema, networkSchema.NetworkSchema, contentSchema.ContentSchema))
 	if err != nil {
 		logger.Log.Error("Failed to create network schema: %v", zap.Error(err))
 		return nil, err
 	}
 
-	/*err = db.AutoMigrate(&entities.LicenseModel{}, &entities.ScanModel{}, &networkEntities.NetworkModel{},
-		&networkEntities.DNSModel{}, &entities.MetadataModel{}, &networkEntities.WhoisModel{}, &contentEntities.FindingModel{},
-		&networkEntities.CertificateModel{}, &contentEntities.ContentModel{}, &contentEntities.ContentStorageModel{},
-		&contentEntities.ContentTagsModel{}, &contentEntities.ContentAccessLogModel{},
-		&entities.FilterModel{}, &entities.RedirectModel{}, &entities.ScreenshotModel{})
-	if err != nil {
-		logger.Log.Error("Failed to auto migrate entities: %v", zap.Error(err))
-		return nil, err
-	}*/
-
 	return db, nil
 }
 
 // StructToQuery generates an SQL INSERT query from a struct
-func StructToQuery(data interface{}, tableName string) (string, error) {
+func StructToQuery(data interface{}, tableName string) (string, []interface{}, error) {
 	v := reflect.ValueOf(data)
 	if v.Kind() == reflect.Ptr {
 		v = v.Elem()
@@ -55,16 +48,18 @@ func StructToQuery(data interface{}, tableName string) (string, error) {
 
 	// Check if the input is a struct
 	if v.Kind() != reflect.Struct {
-		return "", fmt.Errorf("input must be a struct")
+		return "", nil, fmt.Errorf("input must be a struct")
 	}
 
 	// Prepare slices for columns and placeholders
 	var columns []string
 	var placeholders []string
+	var values []interface{}
 
 	// Loop over struct fields to populate columns and placeholders
 	for i := 0; i < v.NumField(); i++ {
 		field := v.Type().Field(i)
+		fieldValue := v.Field(i)
 
 		// Get the db tag value; skip fields without a db tag
 		dbTag := field.Tag.Get("db")
@@ -72,36 +67,50 @@ func StructToQuery(data interface{}, tableName string) (string, error) {
 			continue
 		}
 
+		// Check if the field is a []string type and convert it for PostgreSQL
+		if fieldValue.Kind() == reflect.Slice && fieldValue.Type().Elem().Kind() == reflect.String {
+			// Use pq.Array to wrap the []string value
+			values = append(values, pq.Array(fieldValue.Interface()))
+		} else {
+			// For non-[]string types, add the value directly
+			values = append(values, fieldValue.Interface())
+		}
+
 		// Append the column name and placeholder
 		columns = append(columns, dbTag)
-		placeholders = append(placeholders, ":"+dbTag)
+		placeholders = append(placeholders, fmt.Sprintf("$%d", len(values)))
 	}
 
 	// Construct the SQL query string
 	query := fmt.Sprintf(
-		"INSERT INTO %s (%s) VALUES (%s)",
+		"INSERT INTO %s (%s) VALUES (%s) RETURNING id",
 		tableName,
 		strings.Join(columns, ", "),
 		strings.Join(placeholders, ", "),
 	)
 
-	return query, nil
+	return query, values, nil
 }
 
 // InsertStruct inserts a struct into the database and returns the ID
-func InsertStruct(tx *sqlx.Tx, query string, data interface{}) (interface{}, error) {
-	rows, err := tx.NamedQuery(query, data)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
+func InsertStruct(tx *sqlx.Tx, query string, values []interface{}) (interface{}, error) {
+	// Execute the query with a context
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
-	if rows.Next() {
-		var id int
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		return id, nil
+	// Structure to capture the returned ID
+	var id struct {
+		Val int64 `db:"id"`
 	}
-	return nil, errors.New("no rows returned")
+
+	// Execute the query with the provided values
+	err := tx.QueryRowxContext(ctx, query, values...).StructScan(&id)
+	if err != nil {
+		return 0, fmt.Errorf("cannot insert into %q: %w", query, err)
+	}
+
+	// Log successful insertion
+	logger.Log.Info("Inserted record", zap.Int64("id", id.Val))
+
+	return id, nil
 }

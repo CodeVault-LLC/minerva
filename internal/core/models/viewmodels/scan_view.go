@@ -1,8 +1,6 @@
 package viewmodels
 
-import (
-	"github.com/codevault-llc/humblebrag-api/internal/models/entities"
-)
+import "github.com/codevault-llc/humblebrag-api/internal/core/models/entities"
 
 type Scan struct {
 	ID uint `json:"id"`
@@ -23,7 +21,7 @@ type Scan struct {
 
 func ConvertScan(scan entities.ScanModel) Scan {
 	return Scan{
-		ID: scan.ID,
+		ID: uint(scan.Id),
 
 		Url:        scan.Url,
 		Title:      scan.Title,
@@ -31,8 +29,8 @@ func ConvertScan(scan entities.ScanModel) Scan {
 
 		Status: string(scan.Status),
 		Sha256: scan.Sha256,
-		SHA1:   scan.SHA1,
-		MD5:    scan.MD5,
+		SHA1:   scan.Sha1,
+		MD5:    scan.Md5,
 
 		CreatedAt: scan.CreatedAt.Format("2006-01-02 15:04:05"),
 		UpdatedAt: scan.UpdatedAt.Format("2006-01-02 15:04:05"),

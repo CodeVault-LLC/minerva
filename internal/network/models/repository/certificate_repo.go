@@ -64,7 +64,7 @@ func (repository *CertificateRepo) Create(networkId uint, cert x509.Certificate)
 		ExcludedUriDomains:          pq.StringArray(cert.ExcludedURIDomains),
 	}
 
-	query, err := database.StructToQuery(certificate, "certificates")
+	query, values, err := database.StructToQuery(certificate, "certificates")
 	if err != nil {
 		logger.Log.Error("Failed to generate query", zap.Error(err))
 		return entities.CertificateModel{}, err
@@ -76,7 +76,7 @@ func (repository *CertificateRepo) Create(networkId uint, cert x509.Certificate)
 		return entities.CertificateModel{}, err
 	}
 
-	_, err = database.InsertStruct(tx, query, certificate)
+	_, err = database.InsertStruct(tx, query, values)
 	if err != nil {
 		logger.Log.Error("Failed to insert certificate", zap.Error(err))
 		tx.Rollback()

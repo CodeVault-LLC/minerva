@@ -1,7 +1,7 @@
 package models
 
 var CoreSchema = `
-CREATE TABLE IF NOT EXISTS scan (
+CREATE TABLE IF NOT EXISTS scans (
 	id SERIAL PRIMARY KEY,
 
 	url TEXT NOT NULL,                     -- URL to scan
@@ -15,9 +15,7 @@ CREATE TABLE IF NOT EXISTS scan (
 	md5 VARCHAR(32) NOT NULL,               -- MD5 hash
 
 	created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-	updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+	updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
 	deleted_at TIMESTAMP
-)
-
-
+);
 `

@@ -8,15 +8,15 @@ import (
 	"github.com/codevault-llc/humblebrag-api/cmd/api"
 	contentRepository "github.com/codevault-llc/humblebrag-api/internal/contents/models/repository"
 	"github.com/codevault-llc/humblebrag-api/internal/core"
+	"github.com/codevault-llc/humblebrag-api/internal/core/models/repository"
 	"github.com/codevault-llc/humblebrag-api/internal/database"
-	"github.com/codevault-llc/humblebrag-api/internal/models/repository"
 	networkRepository "github.com/codevault-llc/humblebrag-api/internal/network/models/repository"
 	"github.com/codevault-llc/humblebrag-api/internal/updater"
 	"github.com/codevault-llc/humblebrag-api/pkg/logger"
+	"github.com/jmoiron/sqlx"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"go.uber.org/zap"
-	"gorm.io/gorm"
 )
 
 func main() {
@@ -37,9 +37,12 @@ func main() {
 	postgresPassword := os.Getenv("POSTGRES_PASSWORD")
 	postgresDb := os.Getenv("POSTGRES_DB")
 
-	db, err := database.InitPostgres(fmt.Sprintf("postgres://%s:%s@localhost:5434/%s?sslmode=disable", postgresUser, postgresPassword, postgresDb))
+	//user:password@(localhost:3306)/database_name
+	connStr := fmt.Sprintf("postgres://%s:%s@localhost:5434/%s?sslmode=disable", postgresUser, postgresPassword, postgresDb)
+	db, err := database.InitPostgres(connStr)
 	if err != nil {
-		log.Error("Error connecting to database %v", zap.Error(err))
+		log.Error("Error connecting to database", zap.Error(err))
+		return
 	}
 	log.Info("Connected to database")
 
@@ -64,18 +67,14 @@ func main() {
 	api.Start()
 }
 
-func SetupDatabases(db *gorm.DB) {
+func SetupDatabases(db *sqlx.DB) {
 	repository.ScanRepository = repository.NewScanRepository(db)
 	networkRepository.NetworkRepository = networkRepository.NewNetworkRepository(db)
-	repository.LicenseRepository = repository.NewLicenseRepository(db)
 	contentRepository.ContentRepository = contentRepository.NewContentRepo(db)
 	contentRepository.FindingRepository = contentRepository.NewFindingRepo(db)
 	networkRepository.DnsRepository = networkRepository.NewDnsRepository(db)
 	networkRepository.WhoisRepository = networkRepository.NewWhoisRepository(db)
 	networkRepository.CertificateRepository = networkRepository.NewCertificateRepository(db)
-	repository.MetadataRepository = repository.NewMetadataRepository(db)
-	repository.ScreenshotRepository = repository.NewScreenshotRepo(db)
-	repository.RedirectRepository = repository.NewRedirectRepo(db)
 }
 
 func SetupScanning() {

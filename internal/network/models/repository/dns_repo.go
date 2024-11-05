@@ -24,12 +24,12 @@ func (repository *DnsRepo) SaveDnsResult(dns entities.DnsModel) error {
 		return err
 	}
 
-	query, err := database.StructToQuery(dns, "dns")
+	query, values, err := database.StructToQuery(dns, "dns")
 	if err != nil {
 		return err
 	}
 
-	_, err = database.InsertStruct(tx, query, dns)
+	_, err = database.InsertStruct(tx, query, values)
 	if err != nil {
 		return err
 	}

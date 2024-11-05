@@ -2,8 +2,8 @@ package repository
 
 import (
 	"github.com/codevault-llc/humblebrag-api/internal/contents/models/entities"
+	generalEntities "github.com/codevault-llc/humblebrag-api/internal/core/models/entities"
 	"github.com/codevault-llc/humblebrag-api/internal/database"
-	generalEntities "github.com/codevault-llc/humblebrag-api/internal/models/entities"
 	"github.com/codevault-llc/humblebrag-api/pkg/utils"
 	"github.com/jmoiron/sqlx"
 )
@@ -37,12 +37,12 @@ func (repository *FindingRepo) SaveFindingResult(job generalEntities.JobModel, f
 				return err
 			}
 
-			query, err := database.StructToQuery(finding, "finding")
+			query, values, err := database.StructToQuery(finding, "finding")
 			if err != nil {
 				return err
 			}
 
-			_, err = database.InsertStruct(tx, query, finding)
+			_, err = database.InsertStruct(tx, query, values)
 			if err != nil {
 				return err
 			}

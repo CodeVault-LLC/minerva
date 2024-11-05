@@ -3,20 +3,20 @@ package core
 import (
 	"encoding/json"
 
-	"github.com/codevault-llc/humblebrag-api/internal/models/entities"
-	"github.com/codevault-llc/humblebrag-api/internal/models/repository"
-	"github.com/codevault-llc/humblebrag-api/internal/models/viewmodels"
-	"github.com/codevault-llc/humblebrag-api/pkg/logger"
+	"github.com/codevault-llc/humblebrag-api/internal/core/models/entities"
+	"github.com/codevault-llc/humblebrag-api/internal/core/models/repository"
+	"github.com/codevault-llc/humblebrag-api/internal/core/models/viewmodels"
 	"github.com/codevault-llc/humblebrag-api/pkg/responder"
 	"github.com/codevault-llc/humblebrag-api/pkg/utils"
 	"github.com/gofiber/fiber/v2"
-	"go.uber.org/zap"
 )
 
 func RegisterCoreRouter(router fiber.Router) error {
 	router.Get("/scans", GetScans)
 	router.Get("/scans/:scanID", GetScan)
 	router.Post("/scans", CreateScanHandler(Scheduler))
+
+	router.Get("/jobs/:jobID", GetJob)
 
 	return nil
 }
@@ -33,13 +33,6 @@ func RegisterCoreRouter(router fiber.Router) error {
 // @Router /scans [post]
 func CreateScanHandler(taskScheduler *TaskScheduler) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		license, ok := c.Locals("license").(viewmodels.License)
-		if !ok || license.ID == 0 {
-			logger.Log.Error("Failed to get license from context", zap.String("license", license.License))
-			return responder.CreateError(responder.ErrAuthInvalidToken).Error
-		}
-
-		// Step 2: Parse and validate request body
 		var scanRequest viewmodels.ScanRequest
 		if err := json.Unmarshal(c.Body(), &scanRequest); err != nil {
 			return responder.CreateError(responder.ErrInvalidRequest).Error
@@ -65,7 +58,6 @@ func CreateScanHandler(taskScheduler *TaskScheduler) fiber.Handler {
 			Type:      "WebsiteScan",
 			URL:       scanRequest.URL,
 			UserAgent: userAgent,
-			LicenseID: int(license.ID),
 			Status:    entities.Queued,
 		}
 		taskScheduler.AddJob(&job)
@@ -127,5 +119,27 @@ func GetScan(c *fiber.Ctx) error {
 	}
 
 	responder.WriteJSONResponse(c, responder.CreateSuccessResponse(viewmodels.ConvertScan(scan), "Scan retrieved successfully"))
+	return nil
+}
+
+// @Summary Get a job
+// @Description Get a job
+// @Tags jobs
+// @Accept json
+// @Produce json
+// @Param jobID path string true "Job ID"
+// @Success 200 {object} responder.APIResponse{data=models.JobAPIResponse}
+// @Failure 400 {object} responder.APIResponse{error=responder.APIError}
+// @Failure 404 {object} responder.APIResponse{error=responder.APIError}
+// @Router /jobs/{jobID} [get]
+func GetJob(c *fiber.Ctx) error {
+	jobID := c.Params("jobID")
+
+	job := Scheduler.GetArchivedJob(jobID)
+	if job == nil {
+		return responder.CreateError(responder.ErrResourceNotFound).Error
+	}
+
+	responder.WriteJSONResponse(c, responder.CreateSuccessResponse(viewmodels.ConvertJob(*job), "Job retrieved successfully"))
 	return nil
 }

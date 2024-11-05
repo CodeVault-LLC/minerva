@@ -24,12 +24,12 @@ func (repository *WhoisRepo) SaveWhoisResult(whois entities.WhoisModel) error {
 		return err
 	}
 
-	query, err := database.StructToQuery(whois, "whois")
+	query, values, err := database.StructToQuery(whois, "whois")
 	if err != nil {
 		return err
 	}
 
-	_, err = database.InsertStruct(tx, query, whois)
+	_, err = database.InsertStruct(tx, query, values)
 	if err != nil {
 		return err
 	}

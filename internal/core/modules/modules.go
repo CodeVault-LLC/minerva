@@ -1,7 +1,7 @@
 package modules
 
 import (
-	"github.com/codevault-llc/humblebrag-api/internal/models/entities"
+	"github.com/codevault-llc/humblebrag-api/internal/core/models/entities"
 	"github.com/codevault-llc/humblebrag-api/pkg/types"
 )
 

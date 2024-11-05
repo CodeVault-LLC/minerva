@@ -8,7 +8,7 @@ import (
 	"github.com/codevault-llc/humblebrag-api/internal/contents/models/entities"
 	repository "github.com/codevault-llc/humblebrag-api/internal/contents/models/repository"
 	"github.com/codevault-llc/humblebrag-api/internal/database/storage"
-	generalEntities "github.com/codevault-llc/humblebrag-api/internal/models/entities"
+	generalEntities "github.com/codevault-llc/humblebrag-api/internal/core/models/entities"
 	"github.com/codevault-llc/humblebrag-api/pkg/logger"
 	"github.com/codevault-llc/humblebrag-api/pkg/types"
 	"github.com/codevault-llc/humblebrag-api/pkg/utils"

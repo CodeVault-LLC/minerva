@@ -25,12 +25,12 @@ func (repository *ContentRepo) SaveContentResult(content entities.ContentModel) 
 		return entities.ContentModel{}, err
 	}
 
-	query, err := database.StructToQuery(content, "content")
+	query, values, err := database.StructToQuery(content, "content")
 	if err != nil {
 		return entities.ContentModel{}, err
 	}
 
-	_, err = database.InsertStruct(tx, query, content)
+	_, err = database.InsertStruct(tx, query, values)
 	if err != nil {
 		return entities.ContentModel{}, err
 	}
@@ -96,12 +96,12 @@ func (repository *ContentRepo) CreateContentStorage(storage entities.ContentStor
 		return err
 	}
 
-	query, err := database.StructToQuery(storage, "content_storage")
+	query, values, err := database.StructToQuery(storage, "content_storage")
 	if err != nil {
 		return err
 	}
 
-	_, err = database.InsertStruct(tx, query, storage)
+	_, err = database.InsertStruct(tx, query, values)
 	if err != nil {
 		return err
 	}
