@@ -1,11 +1,13 @@
 package utils
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"net/url"
 	"strconv"
 	"strings"
+	"unsafe"
 
 	regexp "github.com/wasilibs/go-re2"
 )
@@ -77,8 +79,19 @@ func ValidateURL(input string) bool {
 	return true
 }
 
-func ParseUint(input string) (uint64, error) {
-	return strconv.ParseUint(input, 10, 64)
+// ParseUint safely parses a string to uint, with an upper bound check for 32-bit systems.
+func ParseUint(input string) (uint, error) {
+	parsed, err := strconv.ParseUint(input, 10, 64)
+	if err != nil {
+		return 0, err
+	}
+
+	// Check for overflow if `uint` is 32 bits (4 bytes)
+	if unsafe.Sizeof(uint(0)) == 4 && parsed > uint64(^uint32(0)) {
+		return 0, errors.New("value exceeds the maximum size of uint on a 32-bit system")
+	}
+
+	return uint(parsed), nil
 }
 
 // Check if the URL is local or remote. If local then return true, otherwise false.
