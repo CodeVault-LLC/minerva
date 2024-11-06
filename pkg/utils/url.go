@@ -86,11 +86,15 @@ func ParseUint(input string) (uint, error) {
 		return 0, err
 	}
 
-	// Check for overflow if `uint` is 32 bits (4 bytes)
-	if unsafe.Sizeof(uint(0)) == 4 && parsed > uint64(^uint32(0)) {
-		return 0, errors.New("value exceeds the maximum size of uint on a 32-bit system")
+	// Check if the system's `uint` size is 32 bits
+	if unsafe.Sizeof(uint(0)) == 4 {
+		// On 32-bit systems, check if parsed exceeds max value for uint32
+		if parsed > uint64(^uint32(0)) {
+			return 0, errors.New("value exceeds the maximum size of uint on a 32-bit system")
+		}
 	}
 
+	// No overflow check is needed on 64-bit systems as uint is large enough
 	return uint(parsed), nil
 }
 
