@@ -44,8 +44,17 @@ func (repository *ContentRepo) SaveContentResult(content entities.ContentModel) 
 }
 
 func (repository *ContentRepo) FindContentByHash(hashedBody string) (entities.ContentModel, error) {
+	query := "SELECT * FROM content WHERE hashed_body = $1"
+	stmt, err := repository.db.Preparex(query)
+	if err != nil {
+		return entities.ContentModel{}, err
+	}
+
 	var content entities.ContentModel
-	repository.db.Get(&content, "SELECT * FROM content WHERE hashed_body = $1", hashedBody)
+	err = stmt.Get(&content, hashedBody)
+	if err != nil {
+		return entities.ContentModel{}, err
+	}
 
 	return content, nil
 }

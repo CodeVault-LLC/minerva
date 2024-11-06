@@ -61,9 +61,15 @@ type combinedNetwork struct {
 }
 
 func (n *NetworkRepo) GetScanNetwork(id uint) (combinedNetwork, error) {
-	var combinedNetworks combinedNetwork
+	query := "SELECT * FROM networks LEFT JOIN dns ON networks.id = dns.network_id LEFT JOIN whois ON networks.id = whois.network_id LEFT JOIN certificates ON networks.id = certificates.network_id WHERE scan_id = $1"
+	stmt, err := n.db.Preparex(query)
+	if err != nil {
+		return combinedNetwork{}, err
+	}
 
-	if err := n.db.Get(&combinedNetworks, "SELECT * FROM networks LEFT JOIN dns ON networks.id = dns.network_id LEFT JOIN whois ON networks.id = whois.network_id LEFT JOIN certificates ON networks.id = certificates.network_id WHERE scan_id = $1", id); err != nil {
+	var combinedNetworks combinedNetwork
+	err = stmt.Get(&combinedNetworks, id)
+	if err != nil {
 		return combinedNetwork{}, err
 	}
 

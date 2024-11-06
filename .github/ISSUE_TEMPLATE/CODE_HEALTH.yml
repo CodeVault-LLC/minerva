@@ -1,0 +1,28 @@
+name: Code Health
+description: Create a new ticket for code health improvements
+title: ""
+labels: ["type: code health"]
+body:
+  - type: input
+    id: ch-title
+    attributes:
+      label: "Code Health Title"
+      description: "A clear and concise title for the code health improvement"
+      placeholder: "e.g. Refactor the codebase"
+      required: true
+  - type: input
+    id: ch-description
+    attributes:
+      label: "Code Health Description"
+      description: "A clear and concise description of what the code health improvement is."
+      placeholder: "e.g. Refactor the codebase to improve readability"
+      required: true
+  - type: markdown
+      id: ch-template
+      attributes:
+        value: |
+          **Describe the code health improvement**
+          A clear and concise description of what the code health improvement is.
+
+          **Additional context**
+          Add any other context about the code health improvement here.

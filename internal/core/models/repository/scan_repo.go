@@ -51,21 +51,34 @@ func (repository *ScanRepo) SaveScanResult(job *entities.JobModel, scan entities
 }
 
 func (repository *ScanRepo) GetScanResult(scanId uint) (entities.ScanModel, error) {
-	var scan entities.ScanModel
-	err := repository.db.Get(&scan, "SELECT * FROM scans WHERE id = $1", scanId)
+	query := "SELECT * FROM scans WHERE id = $1"
+	stmt, err := repository.db.Preparex(query)
 	if err != nil {
-		return scan, err
+		return entities.ScanModel{}, err
+	}
+
+	var scan entities.ScanModel
+	err = stmt.Get(&scan, scanId)
+	if err != nil {
+		logger.Log.Error("Failed to get scan", zap.Error(err))
+		return entities.ScanModel{}, err
 	}
 
 	return scan, nil
 }
 
 func (repository *ScanRepo) GetScans() ([]entities.ScanModel, error) {
-	var scans []entities.ScanModel
-	err := repository.db.Select(&scans, "SELECT * FROM scans")
+	query := "SELECT * FROM scans"
+	stmt, err := repository.db.Preparex(query)
 	if err != nil {
-		logger.Log.Error("Failed to get scans", zap.Error(err))
-		return scans, err
+		return nil, err
+	}
+
+	var scans []entities.ScanModel
+	err = stmt.Select(&scans)
+	if err != nil {
+		logger.Log.Error("Failed to get scan", zap.Error(err))
+		return nil, err
 	}
 
 	return scans, nil

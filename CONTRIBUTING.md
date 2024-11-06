@@ -44,3 +44,24 @@
 
   return returnId, nil
   ```
+
+- **Use Prepared Statements for Performance**
+  When performing multiple queries with the same structure, use prepared statements to improve performance.
+
+  ```go
+  query := `SELECT * FROM scans WHERE id = ?`
+  stmt, err := repository.db.Preparex(query)
+  if err != nil {
+  	logger.Log.Error("Failed to prepare statement", zap.Error(err))
+  	return nil, err
+  }
+
+  var scan Scan
+  err = stmt.Get(&scan, id)
+  if err != nil {
+  	logger.Log.Error("Failed to get scan", zap.Error(err))
+  	return nil, err
+  }
+
+  return &scan, nil
+  ```
