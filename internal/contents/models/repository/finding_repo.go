@@ -49,7 +49,10 @@ func (repository *FindingRepo) SaveFindingResult(job generalEntities.JobModel, f
 				return err
 			}
 
-			tx.Commit()
+			err = tx.Commit()
+			if err != nil {
+				return err
+			}
 		}
 	}
 

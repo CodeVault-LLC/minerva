@@ -37,7 +37,11 @@ func (m *ContentModule) Execute(job generalEntities.JobModel, website types.Webs
 			}
 
 			findings := scanSecrets(jsFiles)
-			repository.FindingRepository.SaveFindingResult(job, findings)
+			err := repository.FindingRepository.SaveFindingResult(job, findings)
+			if err != nil {
+				logger.Log.Error("Failed to save finding result: %v", zap.Error(err))
+			}
+
 			continue
 		}
 
@@ -96,7 +100,11 @@ func (m *ContentModule) Execute(job generalEntities.JobModel, website types.Webs
 	}
 
 	findings := scanSecrets(jsFiles)
-	repository.FindingRepository.SaveFindingResult(job, findings)
+	err := repository.FindingRepository.SaveFindingResult(job, findings)
+	if err != nil {
+		logger.Log.Error("Failed to save finding result: %v", zap.Error(err))
+	}
+
 	return nil
 }
 

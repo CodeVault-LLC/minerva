@@ -37,7 +37,11 @@ func (repository *ScanRepo) SaveScanResult(job *entities.JobModel, scan entities
 	returnId, err := database.InsertStruct(tx, query, values)
 	if err != nil {
 		logger.Log.Error("Failed to insert certificate", zap.Error(err))
-		tx.Rollback()
+		err := tx.Rollback()
+
+		if err != nil {
+			logger.Log.Error("Failed to rollback transaction", zap.Error(err))
+		}
 		return 0, err
 	}
 

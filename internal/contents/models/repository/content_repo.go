@@ -67,7 +67,12 @@ func (repository *ContentRepo) IncrementAccessCount(contentID uint) error {
 
 	_, err = tx.Exec("UPDATE content SET access_count = access_count + 1 WHERE id = $1", contentID)
 	if err != nil {
-		tx.Rollback()
+		logger.Log.Error("Failed to increment access count", zap.Error(err))
+
+		err := tx.Rollback()
+		if err != nil {
+			logger.Log.Error("Failed to rollback transaction", zap.Error(err))
+		}
 		return err
 	}
 
@@ -149,7 +154,11 @@ func (repository *ContentRepo) GetScanContents(scanId uint) ([]viewmodels.Conten
 func (repository *ContentRepo) GetScanContent(contentId uint) (entities.ContentModel, error) {
 	var content entities.ContentModel
 
-	repository.db.Get(&content, "SELECT * FROM content WHERE id = $1", contentId)
+	err := repository.db.Get(&content, "SELECT * FROM content WHERE id = $1", contentId)
+	if err != nil {
+		logger.Log.Error("Failed to retrieve content", zap.Error(err))
+		return entities.ContentModel{}, err
+	}
 
 	return content, nil
 }

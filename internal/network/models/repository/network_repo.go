@@ -40,7 +40,12 @@ func (n *NetworkRepo) Create(network entities.NetworkModel) (uint, error) {
 	// Insert using InsertStruct with query and values
 	networkId, err := database.InsertStruct(tx, query, values)
 	if err != nil {
-		tx.Rollback()
+		logger.Log.Error("Failed to insert network", zap.Error(err))
+
+		err := tx.Rollback()
+		if err != nil {
+			logger.Log.Error("Failed to rollback transaction", zap.Error(err))
+		}
 		return 0, err
 	}
 

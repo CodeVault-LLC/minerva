@@ -11,7 +11,10 @@ var Log *zap.Logger
 
 func InitLogger() (*zap.Logger, error) {
 	if _, err := os.Stat("logs"); os.IsNotExist(err) {
-		os.Mkdir("logs", 0755)
+		err := os.Mkdir("logs", 0755)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	logFile := "logs/" + time.Now().Format("2006-01-02") + ".log"

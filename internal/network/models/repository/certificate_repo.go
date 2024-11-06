@@ -79,7 +79,11 @@ func (repository *CertificateRepo) Create(networkId uint, cert x509.Certificate)
 	_, err = database.InsertStruct(tx, query, values)
 	if err != nil {
 		logger.Log.Error("Failed to insert certificate", zap.Error(err))
-		tx.Rollback()
+		err := tx.Rollback()
+
+		if err != nil {
+			logger.Log.Error("Failed to rollback transaction", zap.Error(err))
+		}
 		return entities.CertificateModel{}, err
 	}
 
