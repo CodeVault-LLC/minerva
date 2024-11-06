@@ -1,5 +1,8 @@
 # Minerva
 
+[![Go Report Card](https://goreportcard.com/badge/codevault-llc/minerva)](https://goreportcard.com/report/codevault-llc/minerva)
+[![License](https://img.shields.io/badge/license-GPL--3.0-blue)](https://github.com/codevault-llc/minerva/blob/master/LICENSE.md)
+
 Minerva is an open-source scanning tool designed to help developers identify security vulnerabilities, potential immprovements, and valuable insights within their code and applications. Named after the Roman goddess of wisdom, Minerva is designed to help developers quickly identify and address security vulnerabilities and other issues within their codebase.
 
 ## Key Features
