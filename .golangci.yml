@@ -6,6 +6,6 @@ issues:
 
   # Ignore issue SA1029
   exclude-rules:
-    - path: helper/response.go
+    - path: pkg/responder/response.go
       linters:
         - staticcheck

@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"net"
 	"net/url"
 	"strconv"
 	"strings"
@@ -78,4 +79,68 @@ func ValidateURL(input string) bool {
 
 func ParseUint(input string) (uint64, error) {
 	return strconv.ParseUint(input, 10, 64)
+}
+
+// Check if the URL is local or remote. If local then return true, otherwise false.
+func IsLocalURL(input string) bool {
+	parsedURL, err := url.ParseRequestURI(input)
+	if err != nil {
+		return false
+	}
+
+	if parsedURL.Scheme == "file" || parsedURL.Scheme == "localhost" {
+		return true
+	}
+
+	if isPrivateIP(net.ParseIP(parsedURL.Host)) {
+		return true
+	}
+
+	if isLocalhost(parsedURL.Host) {
+		return true
+	}
+
+	return false
+}
+
+// isPrivateIP checks if an IP address is private
+func isPrivateIP(ip net.IP) bool {
+	privateIPBlocks := []*net.IPNet{
+		// IPv4 private addresses
+		{IP: net.IPv4(10, 0, 0, 0), Mask: net.CIDRMask(8, 32)},
+		{IP: net.IPv4(172, 16, 0, 0), Mask: net.CIDRMask(12, 32)},
+		{IP: net.IPv4(192, 168, 0, 0), Mask: net.CIDRMask(16, 32)},
+		// IPv6 private addresses
+		{IP: net.ParseIP("fc00::"), Mask: net.CIDRMask(7, 128)},
+	}
+
+	for _, block := range privateIPBlocks {
+		if block.Contains(ip) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// isLocalhost checks if a string is a localhost or reserved domain
+func isLocalhost(s string) bool {
+	s = strings.TrimPrefix(s, "http://")
+	s = strings.TrimPrefix(s, "https://")
+
+	if strings.Contains(s, ":") {
+		s = strings.Split(s, ":")[0]
+	}
+
+	if s == "localhost" || s == "localhost.localdomain" || s == "local" || s == "broadcasthost" {
+		return true
+	}
+
+	if ip := net.ParseIP(s); ip != nil {
+		if ip.IsLoopback() || ip.IsLinkLocalMulticast() || ip.IsLinkLocalUnicast() {
+			return true
+		}
+	}
+
+	return false
 }

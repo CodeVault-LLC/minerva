@@ -3,7 +3,7 @@ package utils
 import (
 	"testing"
 
-	"github.com/codevault-llc/humblebrag-api/pkg/types"
+	"github.com/codevault-llc/minerva/pkg/types"
 	regexp "github.com/wasilibs/go-re2"
 )
 

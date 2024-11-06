@@ -1,0 +1,46 @@
+name: "Bug Report"
+description: "Create a report to help us improve"
+title: ""
+labels: ["type: bug"]
+body:
+  - type: input
+    id: bug-title
+    attributes:
+      label: "Bug Title"
+      description: "A clear and concise title for the bug report"
+      placeholder: "e.g. App crashes when opening"
+      required: true
+  - type: input
+    id: bug-description
+    attributes:
+      label: "Bug Description"
+      description: "A clear and concise description of what the bug is."
+      placeholder: "e.g. When I open the app, it crashes"
+      required: true
+  - type: markdown
+      id: bug-template
+      attributes:
+        value: |
+          **Describe the bug**
+          A clear and concise description of what the bug is.
+
+          **To Reproduce**
+          Steps to reproduce the behavior:
+          1. Go to '...'
+          2. Click on '....'
+          3. Scroll down to '....'
+          4. See error
+
+          **Expected behavior**
+          A clear and concise description of what you expected to happen.
+
+          **Screenshots**
+          If applicable, add screenshots to help explain your problem.
+
+          **Desktop (please complete the following information):**
+          - OS: [e.g. iOS]
+          - Browser [e.g. chrome, safari]
+          - Version [e.g. 22]
+
+          **Additional context**
+          Add any other context about the problem here.

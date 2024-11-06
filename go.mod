@@ -1,4 +1,4 @@
-module github.com/codevault-llc/humblebrag-api
+module github.com/codevault-llc/minerva
 
 go 1.23
 
@@ -24,8 +24,6 @@ require (
 	github.com/wasilibs/go-re2 v1.6.0
 	go.uber.org/zap v1.27.0
 	golang.org/x/net v0.29.0
-	gorm.io/driver/postgres v1.5.9
-	gorm.io/gorm v1.25.11
 )
 
 require (
@@ -65,6 +63,7 @@ require (
 	github.com/jackc/puddle/v2 v2.2.1 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
+	github.com/jmoiron/sqlx v1.4.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/klauspost/compress v1.17.11 // indirect
 	github.com/likexian/gokit v0.25.15 // indirect

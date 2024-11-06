@@ -3,10 +3,10 @@ package config
 import (
 	_ "embed"
 
-	"github.com/codevault-llc/humblebrag-api/config/lists"
-	"github.com/codevault-llc/humblebrag-api/config/rules"
-	"github.com/codevault-llc/humblebrag-api/pkg/parsers"
-	"github.com/codevault-llc/humblebrag-api/pkg/types"
+	"github.com/codevault-llc/minerva/config/lists"
+	"github.com/codevault-llc/minerva/config/rules"
+	"github.com/codevault-llc/minerva/pkg/parsers"
+	"github.com/codevault-llc/minerva/pkg/types"
 	regexp "github.com/wasilibs/go-re2"
 )
 

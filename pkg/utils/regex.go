@@ -4,7 +4,7 @@ import (
 	"log"
 	"strings"
 
-	"github.com/codevault-llc/humblebrag-api/pkg/types"
+	"github.com/codevault-llc/minerva/pkg/types"
 	"github.com/lucasjones/reggen"
 	regexp "github.com/wasilibs/go-re2"
 )

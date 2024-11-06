@@ -6,7 +6,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
-	"github.com/codevault-llc/humblebrag-api/internal/database"
+	"github.com/codevault-llc/minerva/internal/database"
 )
 
 // DetermineStorageType decides whether content should be in hot or cold storage.
