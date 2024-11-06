@@ -83,18 +83,14 @@ func ValidateURL(input string) bool {
 func ParseUint(input string) (uint, error) {
 	parsed, err := strconv.ParseUint(input, 10, 64)
 	if err != nil {
-		return 0, err
+		return 0, err // Return the error if parsing fails
 	}
 
-	// Check if the system's `uint` size is 32 bits
-	if unsafe.Sizeof(uint(0)) == 4 {
-		// On 32-bit systems, check if parsed exceeds max value for uint32
-		if parsed > uint64(^uint32(0)) {
-			return 0, errors.New("value exceeds the maximum size of uint on a 32-bit system")
-		}
+	if unsafe.Sizeof(uint(0)) == 4 && parsed > uint64(^uint32(0)) {
+		return 0, errors.New("value exceeds the maximum size of uint on a 32-bit system")
 	}
 
-	// No overflow check is needed on 64-bit systems as uint is large enough
+	// Step 3: Return parsed value as `uint` (safe for both 32-bit and 64-bit systems)
 	return uint(parsed), nil
 }
 
