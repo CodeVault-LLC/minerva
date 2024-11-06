@@ -131,7 +131,11 @@ func (repository *ContentRepo) GetScanContents(scanId uint) ([]viewmodels.Conten
 	// Retrieve associated tags for each content ID.
 	tagsMap := make(map[uint][]string)
 	var tags []entities.ContentTagsModel
-	repository.db.Get(&tags, "SELECT * FROM content_tags WHERE content_id IN $1", contentIDs)
+	err = repository.db.Get(&tags, "SELECT * FROM content_tags WHERE content_id IN $1", contentIDs)
+	if err != nil {
+		logger.Log.Error("Failed to retrieve tags", zap.Error(err))
+		return nil, err
+	}
 
 	for _, tag := range tags {
 		tagsMap[tag.ContentId] = append(tagsMap[tag.ContentId], tag.Tag)

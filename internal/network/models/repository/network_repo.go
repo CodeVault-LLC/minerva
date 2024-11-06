@@ -31,7 +31,11 @@ func (n *NetworkRepo) Create(network entities.NetworkModel) (uint, error) {
 	// Get query and values from StructToQuery
 	query, values, err := database.StructToQuery(network, "networks")
 	if err != nil {
-		tx.Rollback()
+		err := tx.Rollback()
+		if err != nil {
+			logger.Log.Error("Failed to rollback transaction", zap.Error(err))
+		}
+
 		return 0, err
 	}
 
