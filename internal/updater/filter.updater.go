@@ -9,10 +9,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/codevault-llc/humblebrag-api/config"
-	"github.com/codevault-llc/humblebrag-api/internal/database"
-	"github.com/codevault-llc/humblebrag-api/pkg/parsers"
-	"github.com/codevault-llc/humblebrag-api/pkg/types"
+	"github.com/codevault-llc/minerva/config"
+	"github.com/codevault-llc/minerva/internal/database"
+	"github.com/codevault-llc/minerva/pkg/parsers"
+	"github.com/codevault-llc/minerva/pkg/types"
 	"github.com/go-redis/redis/v8"
 )
 

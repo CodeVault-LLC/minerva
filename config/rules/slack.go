@@ -5,8 +5,8 @@ import (
 
 	regexp "github.com/wasilibs/go-re2"
 
-	"github.com/codevault-llc/humblebrag-api/pkg/types"
-	"github.com/codevault-llc/humblebrag-api/pkg/utils"
+	"github.com/codevault-llc/minerva/pkg/types"
+	"github.com/codevault-llc/minerva/pkg/utils"
 )
 
 // https://api.slack.com/authentication/token-types#bot

@@ -4,9 +4,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/codevault-llc/humblebrag-api/internal/core/models/entities"
-	"github.com/codevault-llc/humblebrag-api/internal/core/models/repository"
-	"github.com/codevault-llc/humblebrag-api/pkg/logger"
+	"github.com/codevault-llc/minerva/internal/core/models/entities"
+	"github.com/codevault-llc/minerva/internal/core/models/repository"
+	"github.com/codevault-llc/minerva/pkg/logger"
 	"go.uber.org/zap"
 )
 

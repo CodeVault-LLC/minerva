@@ -1,8 +1,8 @@
 package modules
 
 import (
-	"github.com/codevault-llc/humblebrag-api/internal/core/models/entities"
-	"github.com/codevault-llc/humblebrag-api/pkg/types"
+	"github.com/codevault-llc/minerva/internal/core/models/entities"
+	"github.com/codevault-llc/minerva/pkg/types"
 )
 
 type MiniModule interface {

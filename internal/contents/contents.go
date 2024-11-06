@@ -4,14 +4,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/codevault-llc/humblebrag-api/config"
-	"github.com/codevault-llc/humblebrag-api/internal/contents/models/entities"
-	repository "github.com/codevault-llc/humblebrag-api/internal/contents/models/repository"
-	generalEntities "github.com/codevault-llc/humblebrag-api/internal/core/models/entities"
-	"github.com/codevault-llc/humblebrag-api/internal/database/storage"
-	"github.com/codevault-llc/humblebrag-api/pkg/logger"
-	"github.com/codevault-llc/humblebrag-api/pkg/types"
-	"github.com/codevault-llc/humblebrag-api/pkg/utils"
+	"github.com/codevault-llc/minerva/config"
+	"github.com/codevault-llc/minerva/internal/contents/models/entities"
+	repository "github.com/codevault-llc/minerva/internal/contents/models/repository"
+	generalEntities "github.com/codevault-llc/minerva/internal/core/models/entities"
+	"github.com/codevault-llc/minerva/internal/database/storage"
+	"github.com/codevault-llc/minerva/pkg/logger"
+	"github.com/codevault-llc/minerva/pkg/types"
+	"github.com/codevault-llc/minerva/pkg/utils"
 	"go.uber.org/zap"
 )
 

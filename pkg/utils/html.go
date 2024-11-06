@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"github.com/codevault-llc/humblebrag-api/pkg/types"
+	"github.com/codevault-llc/minerva/pkg/types"
 	"golang.org/x/net/html"
 )
 

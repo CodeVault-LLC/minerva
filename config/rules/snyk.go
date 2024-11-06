@@ -1,6 +1,6 @@
 package rules
 
-import "github.com/codevault-llc/humblebrag-api/pkg/types"
+import "github.com/codevault-llc/minerva/pkg/types"
 
 func Snyk() *types.Rule {
 

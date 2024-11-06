@@ -3,8 +3,8 @@ package rules
 import (
 	"fmt"
 
-	"github.com/codevault-llc/humblebrag-api/pkg/types"
-	"github.com/codevault-llc/humblebrag-api/pkg/utils"
+	"github.com/codevault-llc/minerva/pkg/types"
+	"github.com/codevault-llc/minerva/pkg/utils"
 )
 
 func JFrogAPIKey() *types.Rule {

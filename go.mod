@@ -1,4 +1,4 @@
-module github.com/codevault-llc/humblebrag-api
+module github.com/codevault-llc/minerva
 
 go 1.23
 

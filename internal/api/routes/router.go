@@ -3,9 +3,9 @@ package routes
 import (
 	"net/http"
 
-	"github.com/codevault-llc/humblebrag-api/internal/contents"
-	"github.com/codevault-llc/humblebrag-api/internal/core"
-	"github.com/codevault-llc/humblebrag-api/internal/network"
+	"github.com/codevault-llc/minerva/internal/contents"
+	"github.com/codevault-llc/minerva/internal/core"
+	"github.com/codevault-llc/minerva/internal/network"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/filesystem"
 )

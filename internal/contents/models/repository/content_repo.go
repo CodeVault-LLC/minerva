@@ -1,10 +1,10 @@
 package repository
 
 import (
-	"github.com/codevault-llc/humblebrag-api/internal/contents/models/entities"
-	"github.com/codevault-llc/humblebrag-api/internal/contents/models/viewmodels"
-	"github.com/codevault-llc/humblebrag-api/internal/database"
-	"github.com/codevault-llc/humblebrag-api/pkg/logger"
+	"github.com/codevault-llc/minerva/internal/contents/models/entities"
+	"github.com/codevault-llc/minerva/internal/contents/models/viewmodels"
+	"github.com/codevault-llc/minerva/internal/database"
+	"github.com/codevault-llc/minerva/pkg/logger"
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
 )

@@ -5,8 +5,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/codevault-llc/humblebrag-api/config"
-	"github.com/codevault-llc/humblebrag-api/pkg/types"
+	"github.com/codevault-llc/minerva/config"
+	"github.com/codevault-llc/minerva/pkg/types"
 )
 
 const (

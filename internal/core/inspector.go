@@ -3,13 +3,13 @@ package core
 import (
 	"fmt"
 
-	"github.com/codevault-llc/humblebrag-api/internal/contents"
-	"github.com/codevault-llc/humblebrag-api/internal/core/models/entities"
-	"github.com/codevault-llc/humblebrag-api/internal/core/models/repository"
-	"github.com/codevault-llc/humblebrag-api/internal/core/modules"
-	"github.com/codevault-llc/humblebrag-api/internal/network"
-	"github.com/codevault-llc/humblebrag-api/pkg/logger"
-	"github.com/codevault-llc/humblebrag-api/pkg/utils"
+	"github.com/codevault-llc/minerva/internal/contents"
+	"github.com/codevault-llc/minerva/internal/core/models/entities"
+	"github.com/codevault-llc/minerva/internal/core/models/repository"
+	"github.com/codevault-llc/minerva/internal/core/modules"
+	"github.com/codevault-llc/minerva/internal/network"
+	"github.com/codevault-llc/minerva/pkg/logger"
+	"github.com/codevault-llc/minerva/pkg/utils"
 	"go.uber.org/zap"
 )
 

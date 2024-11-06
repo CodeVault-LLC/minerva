@@ -1,11 +1,11 @@
 package contents
 
 import (
-	"github.com/codevault-llc/humblebrag-api/internal/contents/models/repository"
-	"github.com/codevault-llc/humblebrag-api/internal/contents/models/viewmodels"
-	"github.com/codevault-llc/humblebrag-api/pkg/logger"
-	"github.com/codevault-llc/humblebrag-api/pkg/responder"
-	"github.com/codevault-llc/humblebrag-api/pkg/utils"
+	"github.com/codevault-llc/minerva/internal/contents/models/repository"
+	"github.com/codevault-llc/minerva/internal/contents/models/viewmodels"
+	"github.com/codevault-llc/minerva/pkg/logger"
+	"github.com/codevault-llc/minerva/pkg/responder"
+	"github.com/codevault-llc/minerva/pkg/utils"
 	"github.com/gofiber/fiber/v2"
 	"go.uber.org/zap"
 )

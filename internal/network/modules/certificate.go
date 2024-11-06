@@ -7,7 +7,7 @@ import (
 	"log"
 	"strings"
 
-	"github.com/codevault-llc/humblebrag-api/internal/core/models/entities"
+	"github.com/codevault-llc/minerva/internal/core/models/entities"
 )
 
 type CertificateModule struct{}

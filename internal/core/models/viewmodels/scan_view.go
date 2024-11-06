@@ -1,6 +1,6 @@
 package viewmodels
 
-import "github.com/codevault-llc/humblebrag-api/internal/core/models/entities"
+import "github.com/codevault-llc/minerva/internal/core/models/entities"
 
 type Scan struct {
 	ID uint `json:"id"`

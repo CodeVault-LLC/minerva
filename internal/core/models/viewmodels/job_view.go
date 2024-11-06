@@ -3,7 +3,7 @@ package viewmodels
 import (
 	"time"
 
-	"github.com/codevault-llc/humblebrag-api/internal/core/models/entities"
+	"github.com/codevault-llc/minerva/internal/core/models/entities"
 )
 
 // ScanRequest represents the structure of the incoming scan request

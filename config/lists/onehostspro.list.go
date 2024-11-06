@@ -3,7 +3,7 @@ package lists
 import (
 	"strings"
 
-	"github.com/codevault-llc/humblebrag-api/pkg/parsers"
+	"github.com/codevault-llc/minerva/pkg/parsers"
 )
 
 var OneHostsProParser = &parsers.TextParser{

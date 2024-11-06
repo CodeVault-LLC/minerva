@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/codevault-llc/humblebrag-api/pkg/logger"
+	"github.com/codevault-llc/minerva/pkg/logger"
 	"github.com/gofiber/fiber/v2"
 	"go.uber.org/zap"
 )

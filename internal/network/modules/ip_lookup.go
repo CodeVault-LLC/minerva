@@ -3,9 +3,9 @@ package modules
 import (
 	"net"
 
-	"github.com/codevault-llc/humblebrag-api/internal/core/models/entities"
-	"github.com/codevault-llc/humblebrag-api/pkg/logger"
-	"github.com/codevault-llc/humblebrag-api/pkg/utils"
+	"github.com/codevault-llc/minerva/internal/core/models/entities"
+	"github.com/codevault-llc/minerva/pkg/logger"
+	"github.com/codevault-llc/minerva/pkg/utils"
 	"go.uber.org/zap"
 )
 

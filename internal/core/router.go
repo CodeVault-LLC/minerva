@@ -3,11 +3,11 @@ package core
 import (
 	"encoding/json"
 
-	"github.com/codevault-llc/humblebrag-api/internal/core/models/entities"
-	"github.com/codevault-llc/humblebrag-api/internal/core/models/repository"
-	"github.com/codevault-llc/humblebrag-api/internal/core/models/viewmodels"
-	"github.com/codevault-llc/humblebrag-api/pkg/responder"
-	"github.com/codevault-llc/humblebrag-api/pkg/utils"
+	"github.com/codevault-llc/minerva/internal/core/models/entities"
+	"github.com/codevault-llc/minerva/internal/core/models/repository"
+	"github.com/codevault-llc/minerva/internal/core/models/viewmodels"
+	"github.com/codevault-llc/minerva/pkg/responder"
+	"github.com/codevault-llc/minerva/pkg/utils"
 	"github.com/gofiber/fiber/v2"
 )
 

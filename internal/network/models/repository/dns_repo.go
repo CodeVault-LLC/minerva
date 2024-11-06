@@ -1,8 +1,8 @@
 package repository
 
 import (
-	"github.com/codevault-llc/humblebrag-api/internal/database"
-	"github.com/codevault-llc/humblebrag-api/internal/network/models/entities"
+	"github.com/codevault-llc/minerva/internal/database"
+	"github.com/codevault-llc/minerva/internal/network/models/entities"
 	"github.com/jmoiron/sqlx"
 )
 

@@ -1,8 +1,8 @@
 package api
 
 import (
-	"github.com/codevault-llc/humblebrag-api/internal/api/routes"
-	"github.com/codevault-llc/humblebrag-api/pkg/responder"
+	"github.com/codevault-llc/minerva/internal/api/routes"
+	"github.com/codevault-llc/minerva/pkg/responder"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/compress"
 	"github.com/gofiber/fiber/v2/middleware/cors"

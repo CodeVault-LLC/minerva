@@ -1,7 +1,7 @@
 package viewmodels
 
 import (
-	"github.com/codevault-llc/humblebrag-api/internal/contents/models/entities"
+	"github.com/codevault-llc/minerva/internal/contents/models/entities"
 )
 
 type Finding struct {
