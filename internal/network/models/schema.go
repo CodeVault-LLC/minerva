@@ -13,7 +13,11 @@ CREATE TABLE IF NOT EXISTS networks (
 	ip_ranges TEXT[] NOT NULL,    -- PostgreSQL array for IP ranges
 
 	-- HTTP fields
-	http_headers TEXT[] NOT NULL  -- PostgreSQL array for HTTP headers
+	http_headers TEXT[] NOT NULL,  -- PostgreSQL array for HTTP headers
+
+	-- Timestamps
+	created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS whois (

@@ -2,7 +2,6 @@ package network
 
 import (
 	"github.com/codevault-llc/minerva/internal/network/models/repository"
-	"github.com/codevault-llc/minerva/internal/network/models/viewmodels"
 	"github.com/codevault-llc/minerva/pkg/logger"
 	"github.com/codevault-llc/minerva/pkg/responder"
 	"github.com/codevault-llc/minerva/pkg/utils"
@@ -40,10 +39,6 @@ func getScanNetwork(c *fiber.Ctx) error {
 		return responder.CreateError(responder.ErrDatabaseQueryFailed).Error
 	}
 
-	if network.Id == 0 {
-		return responder.CreateError(responder.ErrResourceNotFound).Error
-	}
-
-	responder.WriteJSONResponse(c, responder.CreateSuccessResponse(viewmodels.ConvertNetwork(network), "Successfully retrieved scan network"))
+	responder.WriteJSONResponse(c, responder.CreateSuccessResponse(network, "Successfully retrieved scan network"))
 	return nil
 }

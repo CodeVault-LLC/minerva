@@ -53,11 +53,19 @@ func (n *NetworkRepo) Create(network entities.NetworkModel) (uint, error) {
 	return networkId, nil
 }
 
-func (n *NetworkRepo) GetScanNetwork(id uint) (entities.NetworkModel, error) {
-	var network entities.NetworkModel
-	if err := n.db.Get(&network, "SELECT * FROM networks WHERE scan_id = $1", id); err != nil {
-		return entities.NetworkModel{}, err
+type combinedNetwork struct {
+	entities.NetworkModel
+	entities.DnsModel
+	entities.WhoisModel
+	entities.CertificateModel
+}
+
+func (n *NetworkRepo) GetScanNetwork(id uint) (combinedNetwork, error) {
+	var combinedNetworks combinedNetwork
+
+	if err := n.db.Get(&combinedNetworks, "SELECT * FROM networks LEFT JOIN dns ON networks.id = dns.network_id LEFT JOIN whois ON networks.id = whois.network_id LEFT JOIN certificates ON networks.id = certificates.network_id WHERE scan_id = $1", id); err != nil {
+		return combinedNetwork{}, err
 	}
 
-	return network, nil
+	return combinedNetworks, nil
 }
