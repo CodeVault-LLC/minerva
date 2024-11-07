@@ -23,7 +23,7 @@ jobs:
           go-version: ${{ matrix.go-version }}
           check-latest: true
       - name: Build
-        run: go build -v -o /dev/null .
+        run: go build -v -o /dev/null ./cmd
       - name: Test
         run: go test -v ./...
       - name: Vet
