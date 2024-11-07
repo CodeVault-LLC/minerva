@@ -5,7 +5,7 @@ builds:
   - env:
       - CGO_ENABLED=0
     ldflags:
-      - -s -w -X github.com/jpillora/chisel/share.BuildVersion={{.Version}}
+      - -s -w -X github.com/codevault-llc/minerva/share.BuildVersion={{.Version}}
     flags:
       - -trimpath
     goos:
@@ -32,6 +32,7 @@ builds:
     gomips:
       - hardfloat
       - softfloat
+    main: ./cmd
 nfpms:
   - maintainer: "https://github.com/{{ .Env.GITHUB_USER }}"
     formats:
