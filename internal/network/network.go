@@ -5,30 +5,26 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/codevault-llc/minerva/internal/common"
 	generalEntities "github.com/codevault-llc/minerva/internal/core/models/entities"
 	"github.com/codevault-llc/minerva/internal/network/models/entities"
 	"github.com/codevault-llc/minerva/internal/network/models/repository"
 	"github.com/codevault-llc/minerva/internal/network/modules"
 	"github.com/codevault-llc/minerva/pkg/logger"
-	"github.com/codevault-llc/minerva/pkg/types"
 	"github.com/codevault-llc/minerva/pkg/utils"
 	whoisparser "github.com/likexian/whois-parser"
 	"go.uber.org/zap"
 )
 
-type MiniModule interface {
-	Run(job generalEntities.JobModel) (interface{}, error) // Executes the mini-module logic
-	Name() string                                          // Returns the mini-module name
-}
-
 // NetworkModule orchestrates network-related scans through sub-modules
 type NetworkModule struct {
-	modules []MiniModule
+	modules         []common.MiniModule
+	runtimeLocation common.RuntimeLocation
 }
 
-func NewNetworkModule() *NetworkModule {
+func NewNetworkModule(runtimeLocation common.RuntimeLocation) *NetworkModule {
 	return &NetworkModule{
-		modules: []MiniModule{
+		modules: []common.MiniModule{
 			&modules.IPLookupModule{},
 			&modules.IPRangeLookupModule{},
 			&modules.HeaderModule{},
@@ -36,11 +32,12 @@ func NewNetworkModule() *NetworkModule {
 			&modules.DNSModule{},
 			&modules.CertificateModule{},
 		},
+		runtimeLocation: runtimeLocation,
 	}
 }
 
 // Execute runs the Network-specific scan logic
-func (m *NetworkModule) Execute(job generalEntities.JobModel, website types.WebsiteAnalysis) error {
+func (m *NetworkModule) Execute(job generalEntities.JobModel, website *common.WebsiteAnalysis) error {
 	var wg sync.WaitGroup
 	var mu sync.Mutex
 	results := make(map[string]interface{})
@@ -49,7 +46,7 @@ func (m *NetworkModule) Execute(job generalEntities.JobModel, website types.Webs
 	for _, mod := range m.modules {
 		wg.Add(1)
 		logger.Log.Info("Running module", zap.String("module", mod.Name()))
-		go func(mod MiniModule) {
+		go func(mod common.MiniModule) {
 			defer wg.Done()
 			result, err := mod.Run(job)
 			if err != nil {
@@ -197,4 +194,8 @@ func (m *NetworkModule) saveResults(scanID uint, results map[string]interface{})
 // Name returns the module name
 func (m *NetworkModule) Name() string {
 	return "Network"
+}
+
+func (m *NetworkModule) RuntimeLocation() common.RuntimeLocation {
+	return m.runtimeLocation
 }

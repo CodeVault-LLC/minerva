@@ -4,12 +4,13 @@ import (
 	"log"
 	"strings"
 
+	"github.com/codevault-llc/minerva/internal/common"
 	"github.com/codevault-llc/minerva/pkg/types"
 	"github.com/lucasjones/reggen"
 	regexp "github.com/wasilibs/go-re2"
 )
 
-func GenericScan(rule types.Rule, script types.FileRequest) []Match {
+func GenericScan(rule types.Rule, script common.FileRequest) []Match {
 	re, err := regexp.Compile(rule.Regex.String())
 	if err != nil {
 		log.Fatalf("Failed to compile regex: %v", err)

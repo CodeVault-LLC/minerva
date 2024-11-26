@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/codevault-llc/minerva/config"
+	"github.com/codevault-llc/minerva/internal/common"
 	"github.com/codevault-llc/minerva/internal/contents/models/entities"
 	repository "github.com/codevault-llc/minerva/internal/contents/models/repository"
 	generalEntities "github.com/codevault-llc/minerva/internal/core/models/entities"
@@ -15,13 +16,17 @@ import (
 	"go.uber.org/zap"
 )
 
-type ContentModule struct{}
-
-func NewContentModule() *ContentModule {
-	return &ContentModule{}
+type ContentModule struct {
+	runtimeLocation common.RuntimeLocation
 }
 
-func (m *ContentModule) Execute(job generalEntities.JobModel, website types.WebsiteAnalysis) error {
+func NewContentModule(runtimeLocation common.RuntimeLocation) *ContentModule {
+	return &ContentModule{
+		runtimeLocation: runtimeLocation,
+	}
+}
+
+func (m *ContentModule) Execute(job generalEntities.JobModel, website *common.WebsiteAnalysis) error {
 	for _, script := range website.Assets {
 		hashedBody := utils.SHA256(script.Content)
 
@@ -29,7 +34,7 @@ func (m *ContentModule) Execute(job generalEntities.JobModel, website types.Webs
 		if err != nil {
 			logger.Log.Error("Failed to find content by hash: %v", zap.Error(err))
 
-			var jsFiles []types.FileRequest
+			var jsFiles []common.FileRequest
 			for _, asset := range website.Assets {
 				if asset.FileType == "application/javascript" {
 					jsFiles = append(jsFiles, asset)
@@ -92,9 +97,9 @@ func (m *ContentModule) Execute(job generalEntities.JobModel, website types.Webs
 		}
 	}
 
-	var jsFiles []types.FileRequest
+	var jsFiles []common.FileRequest
 	for _, asset := range website.Assets {
-		if asset.FileType == "application/javascript" {
+		if asset.FileType == string(utils.ApplicationJavascript) {
 			jsFiles = append(jsFiles, asset)
 		}
 	}
@@ -112,7 +117,11 @@ func (m *ContentModule) Name() string {
 	return "content"
 }
 
-func scanSecrets(scripts []types.FileRequest) []utils.RegexReturn {
+func (m *ContentModule) RuntimeLocation() common.RuntimeLocation {
+	return m.runtimeLocation
+}
+
+func scanSecrets(scripts []common.FileRequest) []utils.RegexReturn {
 	var results []utils.RegexReturn
 
 	var wg sync.WaitGroup

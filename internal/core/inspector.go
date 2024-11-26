@@ -3,10 +3,10 @@ package core
 import (
 	"fmt"
 
+	"github.com/codevault-llc/minerva/internal/common"
 	"github.com/codevault-llc/minerva/internal/contents"
 	"github.com/codevault-llc/minerva/internal/core/models/entities"
 	"github.com/codevault-llc/minerva/internal/core/models/repository"
-	"github.com/codevault-llc/minerva/internal/core/modules"
 	"github.com/codevault-llc/minerva/internal/network"
 	"github.com/codevault-llc/minerva/pkg/logger"
 	"github.com/codevault-llc/minerva/pkg/utils"
@@ -14,16 +14,16 @@ import (
 )
 
 type Inspector struct {
-	modules map[string]modules.ScanModule
+	modules map[string]common.ScanModule
 }
 
 var InspectorCore *Inspector
 
 // NewInspector initializes the Inspector with necessary dependencies
 func NewInspector() *Inspector {
-	inspector := &Inspector{modules: make(map[string]modules.ScanModule)}
-	inspector.modules["network"] = network.NewNetworkModule()
-	inspector.modules["content"] = contents.NewContentModule()
+	inspector := &Inspector{modules: make(map[string]common.ScanModule)}
+	inspector.modules["network"] = network.NewNetworkModule(common.RuntimeLocationPostScan)
+	inspector.modules["content"] = contents.NewContentModule(common.RuntimeLocationPostScan)
 	return inspector
 }
 
@@ -39,6 +39,17 @@ func (i *Inspector) Execute(job *entities.JobModel) error {
 
 // performWebsiteScan handles website scanning logic
 func (i *Inspector) performWebsiteScan(job *entities.JobModel) error {
+	go func() {
+		for _, module := range i.modules {
+			if module.RuntimeLocation() == common.RuntimeLocationPreScan {
+				if err := module.Execute(*job, nil); err != nil {
+					logger.Log.Error("Module failed", zap.Error(err), zap.String("module", module.Name()))
+					continue
+				}
+			}
+		}
+	}()
+
 	requestedWebsite, err := FetchWebsite(job.URL, job.UserAgent)
 	if err != nil {
 		return err
@@ -70,9 +81,11 @@ func (i *Inspector) performWebsiteScan(job *entities.JobModel) error {
 
 	go func() {
 		for _, module := range i.modules {
-			if err := module.Execute(*job, website); err != nil {
-				logger.Log.Error("Module failed", zap.Error(err), zap.String("module", module.Name()))
-				continue
+			if module.RuntimeLocation() == common.RuntimeLocationPostScan {
+				if err := module.Execute(*job, &website); err != nil {
+					logger.Log.Error("Module failed", zap.Error(err), zap.String("module", module.Name()))
+					continue
+				}
 			}
 		}
 	}()

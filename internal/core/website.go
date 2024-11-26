@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/codevault-llc/minerva/internal/common"
 	"github.com/codevault-llc/minerva/pkg/logger"
 	"github.com/codevault-llc/minerva/pkg/responder"
-	"github.com/codevault-llc/minerva/pkg/types"
 	"github.com/codevault-llc/minerva/pkg/utils"
 	"github.com/go-rod/rod"
 	"github.com/go-rod/rod/lib/proto"
@@ -33,8 +33,8 @@ func CloseBrowser() {
 }
 
 type WebsiteResponse struct {
-	Redirects    []types.Redirect
-	Files        []types.FileRequest
+	Redirects    []common.Redirect
+	Files        []common.FileRequest
 	FinalHTML    string
 	ParsedHTML   *html.Node
 	WebsiteTitle string
@@ -55,15 +55,13 @@ func FetchWebsite(url, userAgent string) (*WebsiteResponse, error) {
 		UserAgent: userAgent,
 	})
 
-	var redirects []types.Redirect
-	var networkFiles []types.FileRequest
+	var redirects []common.Redirect
+	var networkFiles []common.FileRequest
 
 	router := page.HijackRequests()
 
 	router.MustAdd("*.*", func(c *rod.Hijack) {
 		requestURL := c.Request.URL().String()
-
-		//logger.Log.Info("Request intercepted", zap.String("url", requestURL))
 
 		handleRequest := func() {
 			switch c.Request.Type() {
@@ -71,14 +69,10 @@ func FetchWebsite(url, userAgent string) (*WebsiteResponse, error) {
 				if err := rod.Try(func() {
 					c.MustLoadResponse()
 				}); err != nil {
-					if err == context.Canceled {
-						logger.Log.Error("Request canceled", zap.String("url", requestURL))
-					} else {
-						logger.Log.Error("Failed to load script response", zap.Error(err), zap.String("url", requestURL))
-					}
+					logger.Log.Error("Failed to load script response", zap.Error(err), zap.String("url", requestURL))
 				}
 
-				networkFiles = append(networkFiles, types.FileRequest{
+				networkFiles = append(networkFiles, common.FileRequest{
 					Src:        requestURL,
 					Content:    c.Response.Body(),
 					HashedBody: utils.SHA256(c.Response.Body()),
@@ -89,18 +83,14 @@ func FetchWebsite(url, userAgent string) (*WebsiteResponse, error) {
 				if err := rod.Try(func() {
 					c.MustLoadResponse()
 				}); err != nil {
-					if err == context.Canceled {
-						logger.Log.Error("Request canceled", zap.String("url", requestURL))
-					} else {
-						logger.Log.Error("Failed to load css response", zap.Error(err), zap.String("url", requestURL))
-					}
+					logger.Log.Error("Failed to load css response", zap.Error(err), zap.String("url", requestURL))
 				}
 
 				logger.Log.Info("Document request intercepted", zap.String("url", requestURL))
 
-				redirects = append(redirects, types.Redirect{
+				redirects = append(redirects, common.Redirect{
 					Url: requestURL,
-					Screenshot: types.Screenshot{
+					Screenshot: common.Screenshot{
 						Content: string(page.MustWaitStable().MustScreenshotFullPage()),
 					},
 					StatusCode: c.Response.RawResponse.StatusCode,
@@ -109,14 +99,10 @@ func FetchWebsite(url, userAgent string) (*WebsiteResponse, error) {
 				if err := rod.Try(func() {
 					c.MustLoadResponse()
 				}); err != nil {
-					if err == context.Canceled {
-						logger.Log.Error("Request canceled", zap.String("url", requestURL))
-					} else {
-						logger.Log.Error("Failed to load css response", zap.Error(err), zap.String("url", requestURL))
-					}
+					logger.Log.Error("Failed to load css response", zap.Error(err), zap.String("url", requestURL))
 				}
 
-				networkFiles = append(networkFiles, types.FileRequest{
+				networkFiles = append(networkFiles, common.FileRequest{
 					Src:        requestURL,
 					Content:    c.Response.Body(),
 					HashedBody: utils.SHA256(c.Response.Body()),
@@ -127,14 +113,10 @@ func FetchWebsite(url, userAgent string) (*WebsiteResponse, error) {
 				if err := rod.Try(func() {
 					c.MustLoadResponse()
 				}); err != nil {
-					if err == context.Canceled {
-						logger.Log.Error("Request canceled", zap.String("url", requestURL))
-					} else {
-						logger.Log.Error("Failed to load font response", zap.Error(err), zap.String("url", requestURL))
-					}
+					logger.Log.Error("Failed to load font response", zap.Error(err), zap.String("url", requestURL))
 				}
 
-				networkFiles = append(networkFiles, types.FileRequest{
+				networkFiles = append(networkFiles, common.FileRequest{
 					Src:        requestURL,
 					Content:    c.Response.Body(),
 					HashedBody: utils.SHA256(c.Response.Body()),
@@ -145,14 +127,12 @@ func FetchWebsite(url, userAgent string) (*WebsiteResponse, error) {
 				if err := rod.Try(func() {
 					c.MustLoadResponse()
 				}); err != nil {
-					if err == context.Canceled {
-						logger.Log.Error("Request canceled", zap.String("url", requestURL))
-					} else {
-						logger.Log.Error("Failed to load xhr response", zap.Error(err), zap.String("url", requestURL))
-					}
+					logger.Log.Error("Failed to load xhr response", zap.Error(err), zap.String("url", requestURL))
 				}
 
-				networkFiles = append(networkFiles, types.FileRequest{
+				logger.Log.Info("XHR request intercepted", zap.String("url", requestURL), zap.String("data", string(c.Response.Body())))
+
+				networkFiles = append(networkFiles, common.FileRequest{
 					Src:        requestURL,
 					Content:    c.Response.Body(),
 					HashedBody: utils.SHA256(c.Response.Body()),
@@ -194,8 +174,8 @@ func FetchWebsite(url, userAgent string) (*WebsiteResponse, error) {
 }
 
 // AnalyzeHTML extracts scripts, styles, and metadata from the parsed HTML.
-func AnalyzeHTML(response *WebsiteResponse) (types.WebsiteAnalysis, error) {
-	var extractedFiles []types.FileRequest
+func AnalyzeHTML(response *WebsiteResponse) (common.WebsiteAnalysis, error) {
+	var extractedFiles []common.FileRequest
 	title := utils.ExtractTitle(response.ParsedHTML)
 
 	utils.TraverseHTML(response.ParsedHTML, func(node *html.Node) {
@@ -215,7 +195,7 @@ func AnalyzeHTML(response *WebsiteResponse) (types.WebsiteAnalysis, error) {
 
 	extractedFiles = append(extractedFiles, response.Files...)
 
-	return types.WebsiteAnalysis{
+	return common.WebsiteAnalysis{
 		Url:        response.FinalHTML,
 		Title:      title,
 		StatusCode: 200,

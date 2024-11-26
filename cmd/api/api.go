@@ -1,11 +1,16 @@
 package api
 
 import (
-	"github.com/codevault-llc/minerva/internal/api/routes"
+	"net/http"
+
+	"github.com/codevault-llc/minerva/internal/contents"
+	"github.com/codevault-llc/minerva/internal/core"
+	"github.com/codevault-llc/minerva/internal/network"
 	"github.com/codevault-llc/minerva/pkg/responder"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/compress"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/filesystem"
 	"github.com/gofiber/fiber/v2/middleware/helmet"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/gofiber/fiber/v2/middleware/logger"
@@ -68,10 +73,27 @@ func Start() {
 		ExposeHeaders:    "",
 	}))
 
-	api := routes.SetupRouter(app)
+	api := setupRouter(app)
 
 	err := api.Listen(":3000")
 	if err != nil {
 		panic(err)
 	}
+}
+
+func setupRouter(app *fiber.App) *fiber.App {
+	app.Use(filesystem.New(filesystem.Config{
+		Root: http.Dir("./swagger"),
+	}))
+
+	app.Get("/docs", serveReDoc)
+
+	api := app.Group("/api/v1")
+
+	// Scan routes
+	_ = core.RegisterCoreRouter(api)
+	_ = network.RegisterNetworkRouter(api)
+	_ = contents.RegisterContentRoutes(api)
+
+	return app
 }

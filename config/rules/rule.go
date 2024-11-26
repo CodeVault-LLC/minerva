@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/codevault-llc/minerva/internal/common"
 	"github.com/codevault-llc/minerva/pkg/types"
 	"github.com/codevault-llc/minerva/pkg/utils"
 	regexp "github.com/wasilibs/go-re2"
@@ -82,7 +83,7 @@ func validate(r types.Rule, truePositives []string, falsePositives []string) *ty
 	rules := make(map[string]types.Rule)
 	rules[r.RuleID] = r
 	for _, tp := range truePositives {
-		if len(utils.GenericScan(r, types.FileRequest{
+		if len(utils.GenericScan(r, common.FileRequest{
 			Src:     "validate.js",
 			Content: tp,
 		})) != 1 {
@@ -90,7 +91,7 @@ func validate(r types.Rule, truePositives []string, falsePositives []string) *ty
 		}
 	}
 	for _, fp := range falsePositives {
-		if len(utils.GenericScan(r, types.FileRequest{
+		if len(utils.GenericScan(r, common.FileRequest{
 			Src:     "validate.js",
 			Content: fp,
 		})) != 0 {

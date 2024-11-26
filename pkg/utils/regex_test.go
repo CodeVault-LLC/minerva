@@ -3,6 +3,7 @@ package utils
 import (
 	"testing"
 
+	"github.com/codevault-llc/minerva/internal/common"
 	"github.com/codevault-llc/minerva/pkg/types"
 	regexp "github.com/wasilibs/go-re2"
 )
@@ -17,7 +18,7 @@ func TestGenericScan(t *testing.T) {
 
 	content := "Hello, this is just a simple little fun test string which should work perfectly."
 
-	script := types.FileRequest{
+	script := common.FileRequest{
 		Src:        "test",
 		Content:    content,
 		HashedBody: "test",

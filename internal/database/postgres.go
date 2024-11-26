@@ -109,8 +109,5 @@ func InsertStruct(tx *sqlx.Tx, query string, values []interface{}) (uint, error)
 		return 0, fmt.Errorf("cannot insert into %q: %w", query, err)
 	}
 
-	// Log successful insertion
-	logger.Log.Info("Inserted record", zap.Int64("id", id.Val))
-
 	return uint(id.Val), nil
 }

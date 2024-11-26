@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"github.com/codevault-llc/minerva/pkg/types"
+	"github.com/codevault-llc/minerva/internal/common"
 	"golang.org/x/net/html"
 )
 
@@ -17,51 +17,51 @@ func ExtractTitle(doc *html.Node) string {
 }
 
 // ProcessScriptNode extracts data from a script element.
-func ProcessScriptNode(node *html.Node) types.FileRequest {
+func ProcessScriptNode(node *html.Node) common.FileRequest {
 	// Handle inline script.
 	if node.FirstChild != nil && node.FirstChild.Type == html.TextNode {
 		return CreateFileRequest("inline-script", node.FirstChild.Data, "application/javascript")
 	}
-	return types.FileRequest{}
+	return common.FileRequest{}
 }
 
 // ProcessStyleNode extracts data from a style element.
-func ProcessStyleNode(node *html.Node) types.FileRequest {
+func ProcessStyleNode(node *html.Node) common.FileRequest {
 	if node.FirstChild != nil && node.FirstChild.Type == html.TextNode {
 		return CreateFileRequest("inline-style", node.FirstChild.Data, "text/css")
 	}
-	return types.FileRequest{}
+	return common.FileRequest{}
 }
 
 // ProcessLinkNode extracts data from a link element if it's a stylesheet.
-func ProcessLinkNode(node *html.Node) types.FileRequest {
+func ProcessLinkNode(node *html.Node) common.FileRequest {
 	for _, attr := range node.Attr {
 		if attr.Key == "href" {
-			return types.FileRequest{
+			return common.FileRequest{
 				Src:      attr.Val,
 				FileType: "text/css",
 			}
 		}
 	}
-	return types.FileRequest{}
+	return common.FileRequest{}
 }
 
 // ProcessFontNode extracts data from a link element if it's a font.
-func ProcessFontNode(node *html.Node) types.FileRequest {
+func ProcessFontNode(node *html.Node) common.FileRequest {
 	for _, attr := range node.Attr {
 		if attr.Key == "href" {
-			return types.FileRequest{
+			return common.FileRequest{
 				Src:      attr.Val,
 				FileType: "font",
 			}
 		}
 	}
-	return types.FileRequest{}
+	return common.FileRequest{}
 }
 
 // CreateFileRequest constructs a FileRequest with content details.
-func CreateFileRequest(src, content, fileType string) types.FileRequest {
-	return types.FileRequest{
+func CreateFileRequest(src, content, fileType string) common.FileRequest {
+	return common.FileRequest{
 		Src:        src,
 		Content:    content,
 		HashedBody: SHA256(content),
