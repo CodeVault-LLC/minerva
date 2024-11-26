@@ -13,9 +13,7 @@ import (
 	networkRepository "github.com/codevault-llc/minerva/internal/network/models/repository"
 	"github.com/codevault-llc/minerva/internal/updater"
 	"github.com/codevault-llc/minerva/pkg/logger"
-	"github.com/jmoiron/sqlx"
 	"github.com/joho/godotenv"
-	_ "github.com/lib/pq"
 	"go.uber.org/zap"
 )
 
@@ -33,18 +31,10 @@ func main() {
 	}
 
 	// Initialize the database
-	postgresUser := os.Getenv("POSTGRES_USER")
-	postgresPassword := os.Getenv("POSTGRES_PASSWORD")
-	postgresDb := os.Getenv("POSTGRES_DB")
-
-	//user:password@(localhost:3306)/database_name
-	connStr := fmt.Sprintf("postgres://%s:%s@localhost:5434/%s?sslmode=disable", postgresUser, postgresPassword, postgresDb)
-	db, err := database.InitPostgres(connStr)
+	db, err := database.NewDatabase()
 	if err != nil {
-		log.Error("Error connecting to database", zap.Error(err))
-		return
+		log.Error("Error connecting to database %v", zap.Error(err))
 	}
-	log.Info("Connected to database")
 
 	// Initialize Redis
 	_, err = database.InitRedis()
@@ -67,7 +57,7 @@ func main() {
 	api.Start()
 }
 
-func SetupDatabases(db *sqlx.DB) {
+func SetupDatabases(db *database.Database) {
 	repository.ScanRepository = repository.NewScanRepository(db)
 	networkRepository.NetworkRepository = networkRepository.NewNetworkRepository(db)
 	contentRepository.ContentRepository = contentRepository.NewContentRepo(db)

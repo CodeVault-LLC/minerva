@@ -92,7 +92,6 @@ func (m *NetworkModule) saveResults(scanID uint, results map[string]interface{})
 				}
 				return ""
 			}(),
-
 			DomainName:  whoisRecord.Domain.Name,
 			Registrar:   utils.SafeString(whoisRecord.Registrar.Name),
 			Email:       utils.SafeString(whoisRecord.Registrant.Email),
@@ -106,7 +105,6 @@ func (m *NetworkModule) saveResults(scanID uint, results map[string]interface{})
 			RegistrantEmail:      utils.SafeString(whoisRecord.Registrant.Email),
 			RegistrantPhone:      utils.SafeString(whoisRecord.Registrant.Phone),
 			RegistrantOrg:        utils.SafeString(whoisRecord.Registrant.Organization),
-
 			AdminName: func() string {
 				if whoisRecord.Administrative != nil && whoisRecord.Administrative.Name != "" {
 					return whoisRecord.Administrative.Name

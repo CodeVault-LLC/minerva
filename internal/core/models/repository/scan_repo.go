@@ -3,19 +3,16 @@ package repository
 import (
 	"github.com/codevault-llc/minerva/internal/core/models/entities"
 	"github.com/codevault-llc/minerva/internal/database"
-	"github.com/codevault-llc/minerva/pkg/logger"
-	"github.com/jmoiron/sqlx"
-	"go.uber.org/zap"
 )
 
 type ScanRepo struct {
-	db *sqlx.DB
+	database *database.Database
 }
 
 // NewScanRepository creates a new ScanRepository
-func NewScanRepository(db *sqlx.DB) *ScanRepo {
+func NewScanRepository(database *database.Database) *ScanRepo {
 	return &ScanRepo{
-		db: db,
+		database: database,
 	}
 }
 
@@ -23,48 +20,30 @@ var ScanRepository *ScanRepo
 
 // SaveScanResult saves the scan result in the database
 func (repository *ScanRepo) SaveScanResult(job *entities.JobModel, scan entities.ScanModel) (uint, error) {
-	tx, err := repository.db.Beginx()
+	query := "INSERT INTO scans (job_id, status, url) VALUES (?, ?, ?) RETURNING id"
+
+	queryResult := repository.database.GetDatabase().Query(query, job.ID, entities.ScanStatusComplete, scan.Url)
+	err := queryResult.Exec()
 	if err != nil {
 		return 0, err
 	}
 
-	query, values, err := database.StructToQuery(scan, "scans")
+	var scanId uint
+	err = queryResult.Scan(&scanId)
 	if err != nil {
-		logger.Log.Error("Failed to generate query", zap.Error(err))
 		return 0, err
 	}
 
-	returnId, err := database.InsertStruct(tx, query, values)
-	if err != nil {
-		logger.Log.Error("Failed to insert certificate", zap.Error(err))
-		err := tx.Rollback()
-
-		if err != nil {
-			logger.Log.Error("Failed to rollback transaction", zap.Error(err))
-		}
-		return 0, err
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		logger.Log.Error("Failed to commit transaction", zap.Error(err))
-		return 0, err
-	}
-
-	return returnId, nil
+	return scanId, nil
 }
 
 func (repository *ScanRepo) GetScanResult(scanId uint) (entities.ScanModel, error) {
-	query := "SELECT * FROM scans WHERE id = $1"
-	stmt, err := repository.db.Preparex(query)
-	if err != nil {
-		return entities.ScanModel{}, err
-	}
+	query := "SELECT * FROM scans WHERE id = ?"
+	queryResult := repository.database.GetDatabase().Query(query, scanId)
 
 	var scan entities.ScanModel
-	err = stmt.Get(&scan, scanId)
+	err := queryResult.Scan(&scan)
 	if err != nil {
-		logger.Log.Error("Failed to get scan", zap.Error(err))
 		return entities.ScanModel{}, err
 	}
 
@@ -73,15 +52,11 @@ func (repository *ScanRepo) GetScanResult(scanId uint) (entities.ScanModel, erro
 
 func (repository *ScanRepo) GetScans() ([]entities.ScanModel, error) {
 	query := "SELECT * FROM scans"
-	stmt, err := repository.db.Preparex(query)
-	if err != nil {
-		return nil, err
-	}
+	queryResult := repository.database.GetDatabase().Query(query)
 
 	var scans []entities.ScanModel
-	err = stmt.Select(&scans)
+	err := queryResult.Scan(&scans)
 	if err != nil {
-		logger.Log.Error("Failed to get scan", zap.Error(err))
 		return nil, err
 	}
 
@@ -89,7 +64,9 @@ func (repository *ScanRepo) GetScans() ([]entities.ScanModel, error) {
 }
 
 func (repository *ScanRepo) CompleteScan(scanId uint) error {
-	_, err := repository.db.Exec("UPDATE scans SET status = $1 WHERE id = $2", entities.ScanStatusComplete, scanId)
+	query := "UPDATE scans SET status = ? WHERE id = ?"
+	queryResult := repository.database.GetDatabase().Query(query, entities.ScanStatusComplete, scanId)
+	err := queryResult.Exec()
 	if err != nil {
 		return err
 	}

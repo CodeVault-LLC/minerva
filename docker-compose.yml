@@ -7,19 +7,19 @@ volumes:
 
 services:
   db:
-    image: postgres:alpine
-    container_name: humblebrag-db
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-    expose:
-      - "5434"
+    image: cassandra:latest
     ports:
-      - "5434:5434"
+      - "9042:9042"
+    environment:
+      - CASSANDRA_CLUSTER_NAME=MyCluster
+      - CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch
+      - CASSANDRA_DC=DC1
+      - CASSANDRA_RACK=Rack1
+      - CASSANDRA_LISTEN_ADDRESS=cassandra-db
+      - CASSANDRA_BROADCAST_ADDRESS=cassandra-db
+      - CASSANDRA_SEEDS=cassandra-db
     volumes:
-      - db-data:/var/lib/postgresql/data
-    command: -p 5434
+      - db-data:/var/lib/cassandra
 
   cache:
     image: redis:alpine
@@ -41,12 +41,6 @@ services:
     command: server /data
     volumes:
       - minio-data:/data
-
-  rabbitmq:
-    image: rabbitmq:3-management
-    ports:
-      - "5672:5672"
-      - "15672:15672"
 
 networks:
   web_network:

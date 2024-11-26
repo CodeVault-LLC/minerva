@@ -4,62 +4,25 @@ import (
 	"github.com/codevault-llc/minerva/internal/database"
 	"github.com/codevault-llc/minerva/internal/network/models/entities"
 	"github.com/codevault-llc/minerva/pkg/logger"
-	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
 )
 
 type NetworkRepo struct {
-	db *sqlx.DB
+	database *database.Database
 }
 
 var NetworkRepository *NetworkRepo
 
 // NewNetworkRepository creates a new NetworkRepository
-func NewNetworkRepository(db *sqlx.DB) *NetworkRepo {
+func NewNetworkRepository(database *database.Database) *NetworkRepo {
 	return &NetworkRepo{
-		db: db,
+		database: database,
 	}
 }
 
 // NetworkRepositoryInterface is the interface for the NetworkRepository
 func (n *NetworkRepo) Create(network entities.NetworkModel) (uint, error) {
-	tx, err := n.db.Beginx()
-	if err != nil {
-		return 0, err
-	}
-
-	// Get query and values from StructToQuery
-	query, values, err := database.StructToQuery(network, "networks")
-	if err != nil {
-		err := tx.Rollback()
-		if err != nil {
-			logger.Log.Error("Failed to rollback transaction", zap.Error(err))
-		}
-
-		return 0, err
-	}
-
-	logger.Log.Info("Query", zap.String("query", query), zap.Any("values", values))
-
-	// Insert using InsertStruct with query and values
-	networkId, err := database.InsertStruct(tx, query, values)
-	if err != nil {
-		logger.Log.Error("Failed to insert network", zap.Error(err))
-
-		err := tx.Rollback()
-		if err != nil {
-			logger.Log.Error("Failed to rollback transaction", zap.Error(err))
-		}
-		return 0, err
-	}
-
-	// Commit transaction
-	err = tx.Commit()
-	if err != nil {
-		return 0, err
-	}
-
-	return networkId, nil
+	
 }
 
 type combinedNetwork struct {
