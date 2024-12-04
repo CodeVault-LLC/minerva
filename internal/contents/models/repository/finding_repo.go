@@ -6,16 +6,15 @@ import (
 	"github.com/codevault-llc/minerva/internal/database"
 	"github.com/codevault-llc/minerva/pkg/logger"
 	"github.com/codevault-llc/minerva/pkg/utils"
-	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
 )
 
 type FindingRepo struct {
-	db *sqlx.DB
+	database *database.Database
 }
 
-func NewFindingRepo(db *sqlx.DB) *FindingRepo {
-	return &FindingRepo{db: db}
+func NewFindingRepo(database *database.Database) *FindingRepo {
+	return &FindingRepo{database: database}
 }
 
 var FindingRepository *FindingRepo
@@ -34,23 +33,11 @@ func (repository *FindingRepo) SaveFindingResult(job generalEntities.JobModel, f
 				RegexDescription: finding.Description,
 			}
 
-			tx, err := repository.db.Beginx()
+			query := "INSERT INTO finding (scan_id, line, match, source, regex_name, regex_description) VALUES ($1, $2, $3, $4, $5, $6)"
+			queryResult := repository.database.GetDatabase().Query(query, finding.ScanId, finding.Line, finding.Match, finding.Source, finding.RegexName, finding.RegexDescription)
+			err := queryResult.Exec()
 			if err != nil {
-				return err
-			}
-
-			query, values, err := database.StructToQuery(finding, "finding")
-			if err != nil {
-				return err
-			}
-
-			_, err = database.InsertStruct(tx, query, values)
-			if err != nil {
-				return err
-			}
-
-			err = tx.Commit()
-			if err != nil {
+				logger.Log.Error("Failed to save finding", zap.Error(err))
 				return err
 			}
 		}
@@ -62,9 +49,18 @@ func (repository *FindingRepo) SaveFindingResult(job generalEntities.JobModel, f
 func (repository *FindingRepo) GetScanFindings(scanID uint) ([]entities.FindingModel, error) {
 	var findings []entities.FindingModel
 
-	err := repository.db.Select(&findings, "SELECT * FROM finding WHERE scan_id = $1", scanID)
+	query := "SELECT * FROM finding WHERE scan_id = $1"
+	queryResult := repository.database.GetDatabase().Query(query, scanID)
+
+	err := queryResult.Exec()
 	if err != nil {
 		logger.Log.Error("Failed to get scan findings", zap.Error(err))
+		return nil, err
+	}
+
+	err = queryResult.Scan(&findings)
+	if err != nil {
+		logger.Log.Error("Failed to scan scan findings", zap.Error(err))
 		return nil, err
 	}
 

@@ -5,54 +5,51 @@ import (
 	"github.com/codevault-llc/minerva/internal/contents/models/viewmodels"
 	"github.com/codevault-llc/minerva/internal/database"
 	"github.com/codevault-llc/minerva/pkg/logger"
-	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
 )
 
 type ContentRepo struct {
-	db *sqlx.DB
+	database *database.Database
 }
 
-func NewContentRepo(db *sqlx.DB) *ContentRepo {
-	return &ContentRepo{db: db}
+func NewContentRepo(database *database.Database) *ContentRepo {
+	return &ContentRepo{database: database}
 }
 
 var ContentRepository *ContentRepo
 
 func (repository *ContentRepo) SaveContentResult(content entities.ContentModel) (uint, error) {
-	tx, err := repository.db.Beginx()
+	query := "INSERT INTO content (hashed_body, access_count, scan_id) VALUES ($1, $2, $3) RETURNING id"
+
+	queryResult := repository.database.GetDatabase().Query(query, content.HashedBody, content.AccessCount, content.ScanId)
+	err := queryResult.Exec()
 	if err != nil {
 		return 0, err
 	}
 
-	query, values, err := database.StructToQuery(content, "content")
+	var contentId uint
+	err = queryResult.Scan(&contentId)
 	if err != nil {
 		return 0, err
 	}
 
-	contentResponse, err := database.InsertStruct(tx, query, values)
-	if err != nil {
-		return 0, err
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return 0, err
-	}
-
-	return contentResponse, nil
+	return contentId, nil
 }
 
 func (repository *ContentRepo) FindContentByHash(hashedBody string) (entities.ContentModel, error) {
 	query := "SELECT * FROM content WHERE hashed_body = $1"
-	stmt, err := repository.db.Preparex(query)
+	queryResult := repository.database.GetDatabase().Query(query, hashedBody)
+
+	err := queryResult.Exec()
 	if err != nil {
+		logger.Log.Error("Failed to retrieve content", zap.Error(err))
 		return entities.ContentModel{}, err
 	}
 
 	var content entities.ContentModel
-	err = stmt.Get(&content, hashedBody)
+	err = queryResult.Scan(&content)
 	if err != nil {
+		logger.Log.Error("Failed to scan content", zap.Error(err))
 		return entities.ContentModel{}, err
 	}
 
@@ -60,24 +57,12 @@ func (repository *ContentRepo) FindContentByHash(hashedBody string) (entities.Co
 }
 
 func (repository *ContentRepo) IncrementAccessCount(contentID uint) error {
-	tx, err := repository.db.Beginx()
-	if err != nil {
-		return err
-	}
+	query := "UPDATE content SET access_count = access_count + 1 WHERE id = $1"
+	queryResult := repository.database.GetDatabase().Query(query, contentID)
 
-	_, err = tx.Exec("UPDATE content SET access_count = access_count + 1 WHERE id = $1", contentID)
+	err := queryResult.Exec()
 	if err != nil {
 		logger.Log.Error("Failed to increment access count", zap.Error(err))
-
-		err := tx.Rollback()
-		if err != nil {
-			logger.Log.Error("Failed to rollback transaction", zap.Error(err))
-		}
-		return err
-	}
-
-	err = tx.Commit()
-	if err != nil {
 		return err
 	}
 
@@ -85,23 +70,11 @@ func (repository *ContentRepo) IncrementAccessCount(contentID uint) error {
 }
 
 func (repository *ContentRepo) CreateContentStorage(storage entities.ContentStorageModel) error {
-	tx, err := repository.db.Beginx()
+	query := "INSERT INTO content_storage (content_id, storage_key, storage_url) VALUES ($1, $2, $3)"
+	queryResult := repository.database.GetDatabase().Query(query)
+	err := queryResult.Exec()
 	if err != nil {
-		return err
-	}
-
-	query, values, err := database.StructToQuery(storage, "content_storage")
-	if err != nil {
-		return err
-	}
-
-	_, err = database.InsertStruct(tx, query, values)
-	if err != nil {
-		return err
-	}
-
-	err = tx.Commit()
-	if err != nil {
+		logger.Log.Error("Failed to create content storage", zap.Error(err))
 		return err
 	}
 
@@ -116,22 +89,24 @@ func (repository *ContentRepo) GetScanContents(scanId uint) ([]viewmodels.Conten
 	}
 	var combinedContents []CombinedContent
 
-	err := repository.db.Select(&combinedContents, "SELECT * FROM content LEFT JOIN content_storage ON content.id = content_storage.content_id WHERE scan_id = $1", scanId)
+	queryResult := repository.database.GetDatabase().Query("SELECT * FROM content WHERE scan_id = $1", scanId)
+
+	err := queryResult.Exec()
 	if err != nil {
 		logger.Log.Error("Failed to retrieve content", zap.Error(err))
 		return nil, err
 	}
 
-	// Create maps to hold associated tags and storage information.
 	contentIDs := make([]uint, len(contents))
 	for i, c := range contents {
 		contentIDs[i] = c.Id
 	}
 
-	// Retrieve associated tags for each content ID.
 	tagsMap := make(map[uint][]string)
 	var tags []entities.ContentTagsModel
-	err = repository.db.Get(&tags, "SELECT * FROM content_tags WHERE content_id IN $1", contentIDs)
+
+	queryResult = repository.database.GetDatabase().Query("SELECT * FROM content_tags WHERE content_id IN (?)", contentIDs)
+	err = queryResult.Exec()
 	if err != nil {
 		logger.Log.Error("Failed to retrieve tags", zap.Error(err))
 		return nil, err
@@ -158,7 +133,8 @@ func (repository *ContentRepo) GetScanContents(scanId uint) ([]viewmodels.Conten
 func (repository *ContentRepo) GetScanContent(contentId uint) (entities.ContentModel, error) {
 	var content entities.ContentModel
 
-	err := repository.db.Get(&content, "SELECT * FROM content WHERE id = $1", contentId)
+	queryResult := repository.database.GetDatabase().Query("SELECT * FROM content WHERE id = $1", contentId)
+	err := queryResult.Exec()
 	if err != nil {
 		logger.Log.Error("Failed to retrieve content", zap.Error(err))
 		return entities.ContentModel{}, err

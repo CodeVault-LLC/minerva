@@ -18,7 +18,6 @@ import (
 )
 
 func main() {
-	// Initialize the logger
 	log, err := logger.InitLogger()
 	if err != nil {
 		fmt.Println("Failed to initialize logger")
@@ -30,20 +29,17 @@ func main() {
 		log.Error("Error loading .env file", zap.Error(err))
 	}
 
-	// Initialize the database
 	db, err := database.NewDatabase()
 	if err != nil {
 		log.Error("Error connecting to database %v", zap.Error(err))
 	}
 
-	// Initialize Redis
 	_, err = database.InitRedis()
 	if err != nil {
 		log.Error("Error connecting to redis %v", zap.Error(err))
 	}
 	log.Info("Connected to redis")
 
-	// Initialize AWS
 	err = database.InitAWS()
 	if err != nil {
 		log.Error("Error connecting to AWS %v", zap.Error(err))
@@ -62,9 +58,6 @@ func SetupDatabases(db *database.Database) {
 	networkRepository.NetworkRepository = networkRepository.NewNetworkRepository(db)
 	contentRepository.ContentRepository = contentRepository.NewContentRepo(db)
 	contentRepository.FindingRepository = contentRepository.NewFindingRepo(db)
-	networkRepository.DnsRepository = networkRepository.NewDnsRepository(db)
-	networkRepository.WhoisRepository = networkRepository.NewWhoisRepository(db)
-	networkRepository.CertificateRepository = networkRepository.NewCertificateRepository(db)
 }
 
 func SetupScanning() {

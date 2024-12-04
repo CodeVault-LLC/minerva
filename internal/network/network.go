@@ -68,109 +68,13 @@ func (m *NetworkModule) Execute(job generalEntities.JobModel, website *common.We
 
 func (m *NetworkModule) saveResults(scanID uint, results map[string]interface{}) error {
 	networkModel := entities.NetworkModel{
-		ScanId:      scanID,
 		IpAddresses: results["IPLookup"].([]string),
 		IpRanges:    results["IPRangeLookup"].([]string),
 		HttpHeaders: results["Header"].([]string),
 	}
 
-	networkResponse, err := repository.NetworkRepository.Create(networkModel)
-	if err != nil {
-		logger.Log.Error("Failed to create network: %v", zap.Error(err))
-		return err
-	}
-
-	whoisRecord := results["Whois"].(whoisparser.WhoisInfo)
-	if whoisRecord.Registrar != nil {
-		logger.Log.Info("Whois record:", zap.Any("whois", whoisRecord.Administrative))
-
-		whois := entities.WhoisModel{
-			NetworkId: networkResponse,
-			Status: func() string {
-				if len(whoisRecord.Domain.Status) > 0 {
-					return whoisRecord.Domain.Status[0]
-				}
-				return ""
-			}(),
-			DomainName:  whoisRecord.Domain.Name,
-			Registrar:   utils.SafeString(whoisRecord.Registrar.Name),
-			Email:       utils.SafeString(whoisRecord.Registrant.Email),
-			Phone:       utils.SafeString(whoisRecord.Registrant.Phone),
-			NameServers: whoisRecord.Domain.NameServers,
-
-			RegistrantName:       utils.SafeString(whoisRecord.Registrant.Name),
-			RegistrantCity:       utils.SafeString(whoisRecord.Registrant.City),
-			RegistrantPostalCode: utils.SafeString(whoisRecord.Registrant.PostalCode),
-			RegistrantCountry:    utils.SafeString(whoisRecord.Registrant.Country),
-			RegistrantEmail:      utils.SafeString(whoisRecord.Registrant.Email),
-			RegistrantPhone:      utils.SafeString(whoisRecord.Registrant.Phone),
-			RegistrantOrg:        utils.SafeString(whoisRecord.Registrant.Organization),
-			AdminName: func() string {
-				if whoisRecord.Administrative != nil && whoisRecord.Administrative.Name != "" {
-					return whoisRecord.Administrative.Name
-				}
-				return ""
-			}(),
-			AdminEmail: func() string {
-				if whoisRecord.Administrative != nil {
-					return utils.SafeString(whoisRecord.Administrative.Email)
-				}
-				return ""
-			}(),
-			AdminPhone: func() string {
-				if whoisRecord.Administrative != nil {
-					return utils.SafeString(whoisRecord.Administrative.Phone)
-				}
-				return ""
-			}(),
-			AdminOrg: func() string {
-				if whoisRecord.Administrative != nil {
-					return utils.SafeString(whoisRecord.Administrative.Organization)
-				}
-				return ""
-			}(),
-			AdminCity: func() string {
-				if whoisRecord.Administrative != nil {
-					return utils.SafeString(whoisRecord.Administrative.City)
-				}
-				return ""
-			}(),
-			AdminPostalCode: func() string {
-				if whoisRecord.Administrative != nil {
-					return utils.SafeString(whoisRecord.Administrative.PostalCode)
-				}
-				return ""
-			}(),
-			AdminCountry: func() string {
-				if whoisRecord.Administrative != nil {
-					return utils.SafeString(whoisRecord.Administrative.Country)
-				}
-				return ""
-			}(),
-
-			Updated: whoisRecord.Domain.UpdatedDate,
-			Created: whoisRecord.Domain.CreatedDate,
-			Expires: whoisRecord.Domain.ExpirationDate,
-		}
-
-		err := repository.WhoisRepository.SaveWhoisResult(whois)
-		if err != nil {
-			logger.Log.Error("Failed to create whois: %v", zap.Error(err))
-			return err
-		}
-	}
-
-	for _, certificate := range results["Certificate"].([]*x509.Certificate) {
-		_, err := repository.CertificateRepository.Create(networkResponse, *certificate)
-		if err != nil {
-			logger.Log.Error("Failed to create certificate: %v", zap.Error(err))
-			return err
-		}
-	}
-
 	dnsResults := results["DNS"].(modules.DNSResults)
-	dns := entities.DnsModel{
-		NetworkId:   networkResponse,
+	dnsModel := entities.DnsModel{
 		Cname:       dnsResults.CNAME,
 		ARecords:    dnsResults.ARecords,
 		AAAARecords: dnsResults.AAAARecords,
@@ -181,11 +85,89 @@ func (m *NetworkModule) saveResults(scanID uint, results map[string]interface{})
 		Dnssec:      dnsResults.DNSSEC,
 	}
 
-	err = repository.DnsRepository.SaveDnsResult(dns)
+	whoisRecord := results["Whois"].(whoisparser.WhoisInfo)
+	if whoisRecord.Registrar != nil {
+		logger.Log.Info("Whois record:", zap.Any("whois", whoisRecord.Administrative))
+	}
+
+	whoisModel := entities.WhoisModel{
+		Status: func() string {
+			if len(whoisRecord.Domain.Status) > 0 {
+				return whoisRecord.Domain.Status[0]
+			}
+			return ""
+		}(),
+		DomainName:  whoisRecord.Domain.Name,
+		Registrar:   utils.SafeString(whoisRecord.Registrar.Name),
+		Email:       utils.SafeString(whoisRecord.Registrant.Email),
+		Phone:       utils.SafeString(whoisRecord.Registrant.Phone),
+		NameServers: whoisRecord.Domain.NameServers,
+
+		RegistrantName:       utils.SafeString(whoisRecord.Registrant.Name),
+		RegistrantCity:       utils.SafeString(whoisRecord.Registrant.City),
+		RegistrantPostalCode: utils.SafeString(whoisRecord.Registrant.PostalCode),
+		RegistrantCountry:    utils.SafeString(whoisRecord.Registrant.Country),
+		RegistrantEmail:      utils.SafeString(whoisRecord.Registrant.Email),
+		RegistrantPhone:      utils.SafeString(whoisRecord.Registrant.Phone),
+		RegistrantOrg:        utils.SafeString(whoisRecord.Registrant.Organization),
+		AdminName: func() string {
+			if whoisRecord.Administrative != nil && whoisRecord.Administrative.Name != "" {
+				return whoisRecord.Administrative.Name
+			}
+			return ""
+		}(),
+		AdminEmail: func() string {
+			if whoisRecord.Administrative != nil {
+				return utils.SafeString(whoisRecord.Administrative.Email)
+			}
+			return ""
+		}(),
+		AdminPhone: func() string {
+			if whoisRecord.Administrative != nil {
+				return utils.SafeString(whoisRecord.Administrative.Phone)
+			}
+			return ""
+		}(),
+		AdminOrg: func() string {
+			if whoisRecord.Administrative != nil {
+				return utils.SafeString(whoisRecord.Administrative.Organization)
+			}
+			return ""
+		}(),
+		AdminCity: func() string {
+			if whoisRecord.Administrative != nil {
+				return utils.SafeString(whoisRecord.Administrative.City)
+			}
+			return ""
+		}(),
+		AdminPostalCode: func() string {
+			if whoisRecord.Administrative != nil {
+				return utils.SafeString(whoisRecord.Administrative.PostalCode)
+			}
+			return ""
+		}(),
+		AdminCountry: func() string {
+			if whoisRecord.Administrative != nil {
+				return utils.SafeString(whoisRecord.Administrative.Country)
+			}
+			return ""
+		}(),
+
+		Updated: whoisRecord.Domain.UpdatedDate,
+		Created: whoisRecord.Domain.CreatedDate,
+		Expires: whoisRecord.Domain.ExpirationDate,
+	}
+
+	certificates := results["Certificate"].([]x509.Certificate)
+
+	networkId, err := repository.NetworkRepository.Create(scanID, networkModel, whoisModel, dnsModel, certificates)
 	if err != nil {
-		logger.Log.Error("Failed to create DNS: %v", zap.Error(err))
+		logger.Log.Error("Failed to create network: %v", zap.Error(err))
 		return err
 	}
+
+	logger.Log.Info("Network created", zap.Uint("networkId", networkId))
+
 	return nil
 }
 

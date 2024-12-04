@@ -1,12 +1,12 @@
 version: "3"
 
 volumes:
-  db-data:
+  cassandra-data:
   cache-data:
   minio-data:
 
 services:
-  db:
+  cassandra-db:
     image: cassandra:latest
     ports:
       - "9042:9042"
@@ -19,7 +19,7 @@ services:
       - CASSANDRA_BROADCAST_ADDRESS=cassandra-db
       - CASSANDRA_SEEDS=cassandra-db
     volumes:
-      - db-data:/var/lib/cassandra
+      - cassandra-data:/var/lib/cassandra
 
   cache:
     image: redis:alpine

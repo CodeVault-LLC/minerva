@@ -20,9 +20,9 @@ var ScanRepository *ScanRepo
 
 // SaveScanResult saves the scan result in the database
 func (repository *ScanRepo) SaveScanResult(job *entities.JobModel, scan entities.ScanModel) (uint, error) {
-	query := "INSERT INTO scans (job_id, status, url) VALUES (?, ?, ?) RETURNING id"
+	query := "INSERT INTO scans (status, url) VALUES (?, ?) RETURNING id"
 
-	queryResult := repository.database.GetDatabase().Query(query, job.ID, entities.ScanStatusComplete, scan.Url)
+	queryResult := repository.database.GetDatabase().Query(query, entities.ScanStatusComplete, scan.Url)
 	err := queryResult.Exec()
 	if err != nil {
 		return 0, err

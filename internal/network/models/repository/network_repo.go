@@ -1,10 +1,10 @@
 package repository
 
 import (
+	"crypto/x509"
+
 	"github.com/codevault-llc/minerva/internal/database"
 	"github.com/codevault-llc/minerva/internal/network/models/entities"
-	"github.com/codevault-llc/minerva/pkg/logger"
-	"go.uber.org/zap"
 )
 
 type NetworkRepo struct {
@@ -21,8 +21,22 @@ func NewNetworkRepository(database *database.Database) *NetworkRepo {
 }
 
 // NetworkRepositoryInterface is the interface for the NetworkRepository
-func (n *NetworkRepo) Create(network entities.NetworkModel) (uint, error) {
-	
+func (n *NetworkRepo) Create(scanId uint, network entities.NetworkModel, whois entities.WhoisModel, dns entities.DnsModel, certificates []x509.Certificate) (uint, error) {
+	query := "INSERT INTO networks (scan_id, network, whois, dns, certificates) VALUES (?, ?, ?, ?, ?)"
+
+	queryResult := n.database.GetDatabase().Query(query, scanId, network, whois, dns, certificates)
+	err := queryResult.Exec()
+	if err != nil {
+		return 0, err
+	}
+
+	var networkId uint
+	err = queryResult.Scan(&networkId)
+	if err != nil {
+		return 0, err
+	}
+
+	return networkId, nil
 }
 
 type combinedNetwork struct {
@@ -33,14 +47,16 @@ type combinedNetwork struct {
 }
 
 func (n *NetworkRepo) GetScanNetwork(id uint) (combinedNetwork, error) {
-	query := "SELECT * FROM networks LEFT JOIN dns ON networks.id = dns.network_id LEFT JOIN whois ON networks.id = whois.network_id LEFT JOIN certificates ON networks.id = certificates.network_id WHERE scan_id = $1"
-	stmt, err := n.db.Preparex(query)
+	query := "SELECT * FROM networks WHERE id = ?"
+
+	queryResult := n.database.GetDatabase().Query(query, id)
+	err := queryResult.Exec()
 	if err != nil {
 		return combinedNetwork{}, err
 	}
 
 	var combinedNetworks combinedNetwork
-	err = stmt.Get(&combinedNetworks, id)
+	err = queryResult.Scan(&combinedNetworks)
 	if err != nil {
 		return combinedNetwork{}, err
 	}

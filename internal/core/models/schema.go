@@ -1,21 +1,18 @@
 package models
 
-var CoreSchema = `
-CREATE TABLE IF NOT EXISTS scans (
-	id SERIAL PRIMARY KEY,
+var CoreSchema = []string{`CREATE TABLE IF NOT EXISTS minerva.scans (
+    id TEXT PRIMARY KEY,
 
-	url TEXT NOT NULL,                     -- URL to scan
-	title VARCHAR(255),                    -- Title of the page
-	status_code INTEGER NOT NULL,          -- HTTP status code
+    url TEXT,
+    title TEXT,
+    status_code INT,
 
-	status VARCHAR(50) NOT NULL DEFAULT 'complete', -- Scan status
+    status TEXT,
 
-	sha256 VARCHAR(64) NOT NULL,            -- SHA256 hash
-	sha1 VARCHAR(40) NOT NULL,              -- SHA1 hash
-	md5 VARCHAR(32) NOT NULL,               -- MD5 hash
+    sha256 TEXT,
+    sha1 TEXT,
+    md5 TEXT,
 
-	created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-	updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
-	deleted_at TIMESTAMP
-);
-`
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP
+);`}

@@ -3,24 +3,15 @@ package entities
 import (
 	"crypto/x509"
 	"time"
-
-	"github.com/lib/pq"
 )
 
 type NetworkModel struct {
 	Id uint `db:"id"`
 
-	ScanId uint `db:"scan_id"`
+	IpAddresses []string `db:"ip_addresses"`
+	IpRanges    []string `db:"ip_ranges"`
 
-	IpAddresses pq.StringArray `db:"ip_addresses"`
-	IpRanges    pq.StringArray `db:"ip_ranges"`
-
-	HttpHeaders pq.StringArray `db:"http_headers"`
-
-	// Relations
-	Certificates []CertificateModel `db:"-"`
-	Whois        WhoisModel         `db:"-"`
-	DNS          DnsModel           `db:"-"`
+	HttpHeaders []string `db:"http_headers"`
 
 	CreatedAt time.Time `db:"created_at"`
 	UpdatedAt time.Time `db:"updated_at"`
@@ -29,17 +20,15 @@ type NetworkModel struct {
 type WhoisModel struct {
 	Id uint `db:"id"`
 
-	NetworkId uint `db:"network_id"`
-
-	DomainName  string         `db:"domain_name"`
-	Registrar   string         `db:"registrar"`
-	Email       string         `db:"email"`
-	Phone       string         `db:"phone"`
-	Updated     string         `db:"updated"`
-	Created     string         `db:"created"`
-	Expires     string         `db:"expires"`
-	Status      string         `db:"status"`
-	NameServers pq.StringArray `db:"name_servers"`
+	DomainName  string   `db:"domain_name"`
+	Registrar   string   `db:"registrar"`
+	Email       string   `db:"email"`
+	Phone       string   `db:"phone"`
+	Updated     string   `db:"updated"`
+	Created     string   `db:"created"`
+	Expires     string   `db:"expires"`
+	Status      string   `db:"status"`
+	NameServers []string `db:"name_servers"`
 
 	RegistrantName       string `db:"registrant_name"`
 	RegistrantEmail      string `db:"registrant_email"`
@@ -64,22 +53,18 @@ type WhoisModel struct {
 type DnsModel struct {
 	Id uint `db:"id"`
 
-	NetworkId uint `db:"network_id"`
-
-	Cname       pq.StringArray `db:"cname"`
-	ARecords    pq.StringArray `db:"a_records"`
-	AAAARecords pq.StringArray `db:"aaaa_records"`
-	MxRecords   pq.StringArray `db:"mx_records"`
-	NsRecords   pq.StringArray `db:"ns_records"`
-	TxtRecords  pq.StringArray `db:"txt_records"`
-	PtrRecord   string         `db:"ptr_record"`
-	Dnssec      bool           `db:"dnssec"`
+	Cname       []string `db:"cname"`
+	ARecords    []string `db:"a_records"`
+	AAAARecords []string `db:"aaaa_records"`
+	MxRecords   []string `db:"mx_records"`
+	NsRecords   []string `db:"ns_records"`
+	TxtRecords  []string `db:"txt_records"`
+	PtrRecord   string   `db:"ptr_record"`
+	Dnssec      bool     `db:"dnssec"`
 }
 
 type CertificateModel struct {
 	Id uint `db:"id"`
-
-	NetworkId uint `db:"network_id"`
 
 	Subject string `db:"subject"`
 	Issuer  string `db:"issuer"`
@@ -100,18 +85,18 @@ type CertificateModel struct {
 	BasicConstraintsValid bool `db:"basic_constraints_valid"`
 	IsCa                  bool `db:"is_ca"`
 
-	DnsNames       pq.StringArray `db:"dns_names"`
-	EmailAddresses pq.StringArray `db:"email_addresses"`
-	IpAddresses    pq.StringArray `db:"ip_addresses"`
-	Uris           pq.StringArray `db:"uris"`
+	DnsNames       []string `db:"dns_names"`
+	EmailAddresses []string `db:"email_addresses"`
+	IpAddresses    []string `db:"ip_addresses"`
+	Uris           []string `db:"uris"`
 
 	PermittedDnsDomainsCritical bool     `db:"permitted_dns_domains_critical"`
-	PermittedDnsDomains         pq.StringArray `db:"permitted_dns_domains"`
-	ExcludedDnsDomains          pq.StringArray `db:"excluded_dns_domains"`
-	PermittedIpRanges           pq.StringArray `db:"permitted_ip_ranges"`
-	ExcludedIpRanges            pq.StringArray `db:"excluded_ip_ranges"`
-	PermittedEmailAddresses     pq.StringArray `db:"permitted_email_addresses"`
-	ExcludedEmailAddresses      pq.StringArray `db:"excluded_email_addresses"`
-	PermittedUriDomains         pq.StringArray `db:"permitted_uri_domains"`
-	ExcludedUriDomains          pq.StringArray `db:"excluded_uri_domains"`
+	PermittedDnsDomains         []string `db:"permitted_dns_domains"`
+	ExcludedDnsDomains          []string `db:"excluded_dns_domains"`
+	PermittedIpRanges           []string `db:"permitted_ip_ranges"`
+	ExcludedIpRanges            []string `db:"excluded_ip_ranges"`
+	PermittedEmailAddresses     []string `db:"permitted_email_addresses"`
+	ExcludedEmailAddresses      []string `db:"excluded_email_addresses"`
+	PermittedUriDomains         []string `db:"permitted_uri_domains"`
+	ExcludedUriDomains          []string `db:"excluded_uri_domains"`
 }
