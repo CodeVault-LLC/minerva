@@ -3,8 +3,6 @@ package viewmodels
 import "github.com/codevault-llc/minerva/internal/network/models/entities"
 
 type Whois struct {
-	ID uint `json:"id"`
-
 	DomainName  string   `json:"domain_name"`
 	Registrar   string   `json:"registrar"`
 	Email       string   `json:"email"`
@@ -39,8 +37,6 @@ type Whois struct {
 
 func ConvertWhois(whois entities.WhoisModel) Whois {
 	return Whois{
-		ID: whois.Id,
-
 		DomainName:  whois.DomainName,
 		Registrar:   whois.Registrar,
 		Email:       whois.Email,

@@ -3,21 +3,20 @@ package entities
 import "time"
 
 type ScanModel struct {
-	Id int `db:"id"`
+	Id string `cql:"id"`
 
-	Url        string `db:"url"`
-	Title      string `db:"title"`
-	StatusCode int    `db:"status_code"`
+	Url        string `cql:"url"`
+	Title      string `cql:"title"`
+	StatusCode int    `cql:"status_code"`
 
-	Status ScanStatus `db:"status"`
+	Status ScanStatus `cql:"status"`
 
-	Sha256 string `db:"sha256"`
-	Sha1   string `db:"sha1"`
-	Md5    string `db:"md5"`
+	Sha256 string `cql:"sha256"`
+	Sha1   string `cql:"sha1"`
+	Md5    string `cql:"md5"`
 
-	CreatedAt time.Time  `db:"created_at"`
-	UpdatedAt time.Time  `db:"updated_at"`
-	DeletedAt *time.Time `db:"deleted_at"`
+	CreatedAt time.Time `cql:"created_at"`
+	UpdatedAt time.Time `cql:"updated_at"`
 }
 
 type ScanStatus string

@@ -28,7 +28,7 @@ func ConvertJob(job entities.JobModel) JobResponse {
 type JobResponse struct {
 	ID        string             `json:"id"`
 	Type      string             `json:"type"`
-	ScanID    uint               `json:"scan_id"`
+	ScanID    string             `json:"scan_id"`
 	URL       string             `json:"url"`
 	Status    entities.JobStatus `json:"status"`
 	CreatedAt time.Time          `json:"created_at"`

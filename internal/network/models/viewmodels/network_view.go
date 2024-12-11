@@ -16,7 +16,6 @@ type Network struct {
 
 func ConvertNetwork(network entities.NetworkModel) Network {
 	return Network{
-		ID:          network.Id,
 		IPAddresses: network.IpAddresses,
 		IPRanges:    network.IpRanges,
 		HTTPHeaders: network.HttpHeaders,

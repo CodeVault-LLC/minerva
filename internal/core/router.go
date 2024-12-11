@@ -104,17 +104,12 @@ func GetScans(c *fiber.Ctx) error {
 func GetScan(c *fiber.Ctx) error {
 	scanID := c.Params("scanID")
 
-	scanUint, err := utils.ParseUint(scanID)
-	if err != nil {
-		return responder.CreateError(responder.ErrInvalidRequest).Error
-	}
-
-	scan, err := repository.ScanRepository.GetScanResult(uint(scanUint))
+	scan, err := repository.ScanRepository.GetScanResult(scanID)
 	if err != nil {
 		return responder.CreateError(responder.ErrDatabaseQueryFailed).Error
 	}
 
-	if scan.Id == 0 {
+	if scan.Id == "" {
 		return responder.CreateError(responder.ErrResourceNotFound).Error
 	}
 

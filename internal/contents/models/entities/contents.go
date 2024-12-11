@@ -3,71 +3,43 @@ package entities
 import "time"
 
 type ContentModel struct {
-	Id uint `db:"id"`
+	Id     string `cql:"id"`
+	ScanId string `cql:"scan_id"`
 
-	ScanId uint `db:"scan_id"`
+	HashedBody  string `cql:"hashed_body"`
+	Source      string `cql:"source"`
+	FileSize    int64  `cql:"file_size"`
+	FileType    string `cql:"file_type"`
+	StorageType string `cql:"storage_type"`
 
-	HashedBody     string    `db:"hashed_body"`
-	Source         string    `db:"source"`
-	FileSize       int64     `db:"file_size"`
-	FileType       string    `db:"file_type"`
-	StorageType    string    `db:"storage_type"`
-	LastAccessedAt time.Time `db:"last_accessed_at"`
-	AccessCount    int64     `db:"access_count"`
+	Tags []string `cql:"tags"`
 
-	// Relationships
-	Tags     []ContentTagsModel  `db:"-"`
-	Storage  ContentStorageModel `db:"-"`
-	Access   []ContentAccessLog  `db:"-"`
-	Findings []FindingModel      `db:"-"`
-
-	CreatedAt time.Time  `db:"created_at"`
-	UpdatedAt time.Time  `db:"updated_at"`
-	DeletedAt *time.Time `db:"deleted_at"`
-}
-
-type ContentTagsModel struct {
-	Id uint `db:"id"`
-
-	ContentId uint `db:"content_id"`
-
-	Tag string `db:"tag"`
+	CreatedAt time.Time `cql:"created_at"`
+	UpdatedAt time.Time `cql:"updated_at"`
 }
 
 type ContentStorageModel struct {
-	Id uint `db:"id"`
+	Id string `cql:"id"`
 
-	ContentId       uint   `db:"content_id"`
-	BucketName      string `db:"bucket_name"`
-	ObjectKey       string `db:"object_key"`
-	Location        string `db:"location"`
-	StorageEndpoint string `db:"storage_endpoint"`
-	Encryption      string `db:"encryption"`
-}
-
-type ContentAccessLog struct {
-	Id uint `db:"id"`
-
-	ContentId uint `db:"content_id"`
-
-	AccessedAt time.Time `db:"accessed_at"`
-	AccessType string    `db:"access_type"`
-	IpAddress  string    `db:"ip_address"`
+	ContentId       string `cql:"content_id"`
+	BucketName      string `cql:"bucket_name"`
+	ObjectKey       string `cql:"object_key"`
+	Location        string `cql:"location"`
+	StorageEndpoint string `cql:"storage_endpoint"`
+	Encryption      string `cql:"encryption"`
 }
 
 type FindingModel struct {
-	Id uint `db:"id"`
+	Id     string `cql:"id"`
+	ScanId string `cql:"scan_id"`
 
-	ScanId uint `db:"scan_id"`
+	RegexName        string `cql:"regex_name"`
+	RegexDescription string `cql:"regex_description"`
 
-	RegexName        string `db:"regex_name"`
-	RegexDescription string `db:"regex_description"`
+	Match  string `cql:"match"`
+	Source string `cql:"source"`
+	Line   int    `cql:"line"`
 
-	Match  string `db:"match"`
-	Source string `db:"source"`
-	Line   int    `db:"line"`
-
-	CreatedAt time.Time  `db:"created_at"`
-	UpdatedAt time.Time  `db:"updated_at"`
-	DeletedAt *time.Time `db:"deleted_at"`
+	CreatedAt time.Time `cql:"created_at"`
+	UpdatedAt time.Time `cql:"updated_at"`
 }

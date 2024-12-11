@@ -3,7 +3,7 @@ package viewmodels
 import "github.com/codevault-llc/minerva/internal/core/models/entities"
 
 type Scan struct {
-	ID uint `json:"id"`
+	ID string `json:"id"`
 
 	Url        string `json:"url"`
 	Title      string `json:"title"`
@@ -21,7 +21,7 @@ type Scan struct {
 
 func ConvertScan(scan entities.ScanModel) Scan {
 	return Scan{
-		ID: uint(scan.Id),
+		ID: scan.Id,
 
 		Url:        scan.Url,
 		Title:      scan.Title,

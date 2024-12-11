@@ -12,6 +12,7 @@ import (
 	"github.com/codevault-llc/minerva/internal/network/modules"
 	"github.com/codevault-llc/minerva/pkg/logger"
 	"github.com/codevault-llc/minerva/pkg/utils"
+	"github.com/google/uuid"
 	whoisparser "github.com/likexian/whois-parser"
 	"go.uber.org/zap"
 )
@@ -66,13 +67,7 @@ func (m *NetworkModule) Execute(job generalEntities.JobModel, website *common.We
 	return m.saveResults(job.ScanID, results)
 }
 
-func (m *NetworkModule) saveResults(scanID uint, results map[string]interface{}) error {
-	networkModel := entities.NetworkModel{
-		IpAddresses: results["IPLookup"].([]string),
-		IpRanges:    results["IPRangeLookup"].([]string),
-		HttpHeaders: results["Header"].([]string),
-	}
-
+func (m *NetworkModule) saveResults(scanID string, results map[string]interface{}) error {
 	dnsResults := results["DNS"].(modules.DNSResults)
 	dnsModel := entities.DnsModel{
 		Cname:       dnsResults.CNAME,
@@ -158,15 +153,27 @@ func (m *NetworkModule) saveResults(scanID uint, results map[string]interface{})
 		Expires: whoisRecord.Domain.ExpirationDate,
 	}
 
-	certificates := results["Certificate"].([]x509.Certificate)
+	certificates := results["Certificate"].([]*x509.Certificate)
 
-	networkId, err := repository.NetworkRepository.Create(scanID, networkModel, whoisModel, dnsModel, certificates)
+	networkModel := entities.NetworkModel{
+		Id:          uuid.New().String(),
+		IpAddresses: results["IPLookup"].([]string),
+		IpRanges:    results["IPRangeLookup"].([]string),
+		HttpHeaders: results["Header"].([]string),
+
+		WhoisModel:       whoisModel,
+		DnsModel:         dnsModel,
+		CertificateModel: certificates,
+
+		CreatedAt: utils.GetCurrentTime(),
+		UpdatedAt: utils.GetCurrentTime(),
+	}
+
+	err := repository.NetworkRepository.Create(scanID, networkModel)
 	if err != nil {
 		logger.Log.Error("Failed to create network: %v", zap.Error(err))
 		return err
 	}
-
-	logger.Log.Info("Network created", zap.Uint("networkId", networkId))
 
 	return nil
 }

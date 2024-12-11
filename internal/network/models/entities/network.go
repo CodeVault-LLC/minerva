@@ -6,97 +6,58 @@ import (
 )
 
 type NetworkModel struct {
-	Id uint `db:"id"`
+	Id string `cql:"id"`
 
-	IpAddresses []string `db:"ip_addresses"`
-	IpRanges    []string `db:"ip_ranges"`
+	IpAddresses []string `cql:"ip_addresses"`
+	IpRanges    []string `cql:"ip_ranges"`
 
-	HttpHeaders []string `db:"http_headers"`
+	HttpHeaders      []string            `cql:"http_headers"`
+	WhoisModel       WhoisModel          `cql:"whois"`
+	DnsModel         DnsModel            `cql:"dns"`
+	CertificateModel []*x509.Certificate `cql:"certificates"`
 
-	CreatedAt time.Time `db:"created_at"`
-	UpdatedAt time.Time `db:"updated_at"`
+	CreatedAt time.Time `cql:"created_at"`
+	UpdatedAt time.Time `cql:"updated_at"`
 }
 
 type WhoisModel struct {
-	Id uint `db:"id"`
+	DomainName  string   `cql:"domain_name"`
+	Registrar   string   `cql:"registrar"`
+	Email       string   `cql:"email"`
+	Phone       string   `cql:"phone"`
+	Updated     string   `cql:"updated"`
+	Created     string   `cql:"created"`
+	Expires     string   `cql:"expires"`
+	Status      string   `cql:"status"`
+	NameServers []string `cql:"name_servers"`
 
-	DomainName  string   `db:"domain_name"`
-	Registrar   string   `db:"registrar"`
-	Email       string   `db:"email"`
-	Phone       string   `db:"phone"`
-	Updated     string   `db:"updated"`
-	Created     string   `db:"created"`
-	Expires     string   `db:"expires"`
-	Status      string   `db:"status"`
-	NameServers []string `db:"name_servers"`
+	RegistrantName       string `cql:"registrant_name"`
+	RegistrantEmail      string `cql:"registrant_email"`
+	RegistrantPhone      string `cql:"registrant_phone"`
+	RegistrantOrg        string `cql:"registrant_org"`
+	RegistrantCity       string `cql:"registrant_city"`
+	RegistrantCountry    string `cql:"registrant_country"`
+	RegistrantPostalCode string `cql:"registrant_postal_code"`
 
-	RegistrantName       string `db:"registrant_name"`
-	RegistrantEmail      string `db:"registrant_email"`
-	RegistrantPhone      string `db:"registrant_phone"`
-	RegistrantOrg        string `db:"registrant_org"`
-	RegistrantCity       string `db:"registrant_city"`
-	RegistrantCountry    string `db:"registrant_country"`
-	RegistrantPostalCode string `db:"registrant_postal_code"`
+	AdminName       string `cql:"admin_name"`
+	AdminEmail      string `cql:"admin_email"`
+	AdminPhone      string `cql:"admin_phone"`
+	AdminOrg        string `cql:"admin_org"`
+	AdminCity       string `cql:"admin_city"`
+	AdminCountry    string `cql:"admin_country"`
+	AdminPostalCode string `cql:"admin_postal_code"`
 
-	AdminName       string `db:"admin_name"`
-	AdminEmail      string `db:"admin_email"`
-	AdminPhone      string `db:"admin_phone"`
-	AdminOrg        string `db:"admin_org"`
-	AdminCity       string `db:"admin_city"`
-	AdminCountry    string `db:"admin_country"`
-	AdminPostalCode string `db:"admin_postal_code"`
-
-	CreatedAt time.Time `db:"created_at"`
-	UpdatedAt time.Time `db:"updated_at"`
+	CreatedAt time.Time `cql:"created_at"`
+	UpdatedAt time.Time `cql:"updated_at"`
 }
 
 type DnsModel struct {
-	Id uint `db:"id"`
-
-	Cname       []string `db:"cname"`
-	ARecords    []string `db:"a_records"`
-	AAAARecords []string `db:"aaaa_records"`
-	MxRecords   []string `db:"mx_records"`
-	NsRecords   []string `db:"ns_records"`
-	TxtRecords  []string `db:"txt_records"`
-	PtrRecord   string   `db:"ptr_record"`
-	Dnssec      bool     `db:"dnssec"`
-}
-
-type CertificateModel struct {
-	Id uint `db:"id"`
-
-	Subject string `db:"subject"`
-	Issuer  string `db:"issuer"`
-
-	NotBefore time.Time `db:"not_before"`
-	NotAfter  time.Time `db:"not_after"`
-
-	SignatureAlgorithm x509.SignatureAlgorithm `db:"signature_algorithm"`
-	Signature          []byte                  `db:"signature"`
-
-	PublicKeyAlgorithm x509.PublicKeyAlgorithm `db:"public_key_algorithm"`
-	PublicKey          string                  `db:"public_key"`
-
-	SerialNumber string        `db:"serial_number"`
-	Version      int           `db:"version"`
-	KeyUsage     x509.KeyUsage `db:"key_usage"`
-
-	BasicConstraintsValid bool `db:"basic_constraints_valid"`
-	IsCa                  bool `db:"is_ca"`
-
-	DnsNames       []string `db:"dns_names"`
-	EmailAddresses []string `db:"email_addresses"`
-	IpAddresses    []string `db:"ip_addresses"`
-	Uris           []string `db:"uris"`
-
-	PermittedDnsDomainsCritical bool     `db:"permitted_dns_domains_critical"`
-	PermittedDnsDomains         []string `db:"permitted_dns_domains"`
-	ExcludedDnsDomains          []string `db:"excluded_dns_domains"`
-	PermittedIpRanges           []string `db:"permitted_ip_ranges"`
-	ExcludedIpRanges            []string `db:"excluded_ip_ranges"`
-	PermittedEmailAddresses     []string `db:"permitted_email_addresses"`
-	ExcludedEmailAddresses      []string `db:"excluded_email_addresses"`
-	PermittedUriDomains         []string `db:"permitted_uri_domains"`
-	ExcludedUriDomains          []string `db:"excluded_uri_domains"`
+	Cname       []string `cql:"cname"`
+	ARecords    []string `cql:"a_records"`
+	AAAARecords []string `cql:"aaaa_records"`
+	MxRecords   []string `cql:"mx_records"`
+	NsRecords   []string `cql:"ns_records"`
+	TxtRecords  []string `cql:"txt_records"`
+	PtrRecord   string   `cql:"ptr_record"`
+	Dnssec      bool     `cql:"dnssec"`
 }

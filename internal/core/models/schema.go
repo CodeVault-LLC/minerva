@@ -1,7 +1,7 @@
 package models
 
 var CoreSchema = []string{`CREATE TABLE IF NOT EXISTS minerva.scans (
-    id TEXT PRIMARY KEY,
+    id UUID PRIMARY KEY,
 
     url TEXT,
     title TEXT,

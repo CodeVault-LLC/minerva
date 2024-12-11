@@ -13,6 +13,7 @@ import (
 	"github.com/codevault-llc/minerva/pkg/logger"
 	"github.com/codevault-llc/minerva/pkg/types"
 	"github.com/codevault-llc/minerva/pkg/utils"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
@@ -50,12 +51,7 @@ func (m *ContentModule) Execute(job generalEntities.JobModel, website *common.We
 			continue
 		}
 
-		if existingContent.Id != 0 {
-			err := repository.ContentRepository.IncrementAccessCount(existingContent.Id)
-			if err != nil {
-				logger.Log.Error("Failed to increment access count: %v", zap.Error(err))
-			}
-		} else {
+		if existingContent.Id == "" {
 			storageType := storage.DetermineStorageType(script.Content)
 			err = storage.UploadFile("content-bucket", hashedBody, []byte(script.Content), true)
 			if err != nil {
@@ -64,24 +60,26 @@ func (m *ContentModule) Execute(job generalEntities.JobModel, website *common.We
 			}
 
 			content := entities.ContentModel{
-				ScanId:         job.ScanID,
-				FileSize:       int64(script.FileSize),
-				FileType:       script.FileType,
-				Source:         script.Src,
-				StorageType:    storageType,
-				AccessCount:    1,
-				HashedBody:     hashedBody,
-				LastAccessedAt: time.Now(),
+				Id:          uuid.New().String(),
+				ScanId:      job.ScanID,
+				FileSize:    int64(script.FileSize),
+				FileType:    script.FileType,
+				Source:      script.Src,
+				StorageType: storageType,
+				HashedBody:  hashedBody,
+				CreatedAt:   time.Now(),
+				UpdatedAt:   time.Now(),
 			}
 
-			newContent, err := repository.ContentRepository.SaveContentResult(content)
+			err := repository.ContentRepository.SaveContentResult(content)
 			if err != nil {
 				logger.Log.Error("Failed to save content: %v", zap.Error(err))
 				continue
 			}
 
 			storageRecord := entities.ContentStorageModel{
-				ContentId:       newContent,
+				Id:              uuid.New().String(),
+				ContentId:       content.Id,
 				BucketName:      "content-bucket",
 				ObjectKey:       hashedBody,
 				Location:        storage.GetLocation("content-bucket", hashedBody),

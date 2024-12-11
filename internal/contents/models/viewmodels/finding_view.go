@@ -5,8 +5,8 @@ import (
 )
 
 type Finding struct {
-	ID     uint `json:"id"`
-	ScanID uint `json:"scan_id"`
+	ID     string `json:"id"`
+	ScanID string `json:"scan_id"`
 
 	RegexName        string `json:"regex_name"`
 	RegexDescription string `json:"regex_description"`

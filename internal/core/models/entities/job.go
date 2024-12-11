@@ -12,7 +12,7 @@ type JobModel struct {
 	URL       string
 	UserAgent string
 
-	ScanID uint
+	ScanID string
 
 	Status      JobStatus
 	CreatedAt   time.Time

@@ -4,7 +4,6 @@ import (
 	"github.com/codevault-llc/minerva/internal/network/models/repository"
 	"github.com/codevault-llc/minerva/pkg/logger"
 	"github.com/codevault-llc/minerva/pkg/responder"
-	"github.com/codevault-llc/minerva/pkg/utils"
 	"github.com/gofiber/fiber/v2"
 	"go.uber.org/zap"
 )
@@ -28,12 +27,7 @@ func RegisterNetworkRouter(router fiber.Router) error {
 func getScanNetwork(c *fiber.Ctx) error {
 	scanID := c.Params("scanID")
 
-	scanUint, err := utils.ParseUint(scanID)
-	if err != nil {
-		return responder.CreateError(responder.ErrInvalidRequest).Error
-	}
-
-	network, err := repository.NetworkRepository.GetScanNetwork(uint(scanUint))
+	network, err := repository.NetworkRepository.GetScanNetwork(scanID)
 	if err != nil {
 		logger.Log.Error("Failed to get scan network", zap.Error(err))
 		return responder.CreateError(responder.ErrDatabaseQueryFailed).Error

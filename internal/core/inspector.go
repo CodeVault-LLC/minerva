@@ -10,6 +10,7 @@ import (
 	"github.com/codevault-llc/minerva/internal/network"
 	"github.com/codevault-llc/minerva/pkg/logger"
 	"github.com/codevault-llc/minerva/pkg/utils"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
@@ -62,6 +63,7 @@ func (i *Inspector) performWebsiteScan(job *entities.JobModel) error {
 	}
 
 	scanModel := entities.ScanModel{
+		Id:         uuid.New().String(),
 		Url:        job.URL,
 		Title:      website.Title,
 		StatusCode: website.StatusCode,
@@ -69,15 +71,17 @@ func (i *Inspector) performWebsiteScan(job *entities.JobModel) error {
 		Sha256:     utils.SHA256(website.Url),
 		Sha1:       utils.SHA1(website.Url),
 		Md5:        utils.MD5(website.Url),
+		CreatedAt:  utils.GetCurrentTime(),
+		UpdatedAt:  utils.GetCurrentTime(),
 	}
 
-	scanId, err := repository.ScanRepository.SaveScanResult(job, scanModel)
+	job.ScanID = scanModel.Id
+
+	err = repository.ScanRepository.SaveScanResult(job, scanModel)
 	if err != nil {
 		logger.Log.Error("Failed to save scan result", zap.Error(err))
 		return err
 	}
-
-	job.ScanID = scanId
 
 	go func() {
 		for _, module := range i.modules {

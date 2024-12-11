@@ -17,8 +17,6 @@ type DNS struct {
 
 func ConvertDNS(dns entities.DnsModel) DNS {
 	return DNS{
-		ID: dns.Id,
-
 		CNAME:       dns.Cname,
 		ARecords:    dns.ARecords,
 		AAAARecords: dns.AAAARecords,

@@ -31,12 +31,7 @@ func RegisterContentRoutes(router fiber.Router) error {
 func getScanContents(c *fiber.Ctx) error {
 	scanID := c.Params("scanID")
 
-	scanUint, err := utils.ParseUint(scanID)
-	if err != nil {
-		return responder.CreateError(responder.ErrInvalidRequest).Error
-	}
-
-	contents, err := repository.ContentRepository.GetScanContents(uint(scanUint))
+	contents, err := repository.ContentRepository.GetScanContents(scanID)
 	if err != nil {
 		return responder.CreateError(responder.ErrDatabaseQueryFailed).Error
 	}
@@ -60,25 +55,14 @@ func getScanContents(c *fiber.Ctx) error {
 // @Failure 400 {object} responder.APIResponse{error=responder.APIError}
 // @Failure 404 {object} responder.APIResponse{error=responder.APIError}
 func getScanContent(c *fiber.Ctx) error {
-	scanID := c.Params("scanID")
 	contentID := c.Params("contentID")
 
-	_, err := utils.ParseUint(scanID)
-	if err != nil {
-		return responder.CreateError(responder.ErrInvalidRequest).Error
-	}
-
-	contentUint, err := utils.ParseUint(contentID)
-	if err != nil {
-		return responder.CreateError(responder.ErrInvalidRequest).Error
-	}
-
-	content, err := repository.ContentRepository.GetScanContent(uint(contentUint))
+	content, err := repository.ContentRepository.GetScanContent(contentID)
 	if err != nil {
 		return responder.CreateError(responder.ErrDatabaseQueryFailed).Error
 	}
 
-	if content.Id == 0 {
+	if content.Id == "" {
 		return responder.CreateError(responder.ErrResourceNotFound).Error
 	}
 
