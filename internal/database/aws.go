@@ -11,6 +11,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	smithyendpoints "github.com/aws/smithy-go/endpoints"
+	"github.com/codevault-llc/minerva/pkg/logger"
+	"go.uber.org/zap"
 )
 
 var AWS *s3.Client
@@ -64,26 +66,69 @@ func InitAWS() error {
 	return nil
 }
 
-// ensureBucketExists checks if a bucket exists and creates it if not.
+// ensureBucketExists checks if a bucket exists, creates it if not, and applies policies if necessary.
 func ensureBucketExists(bucketName string) error {
 	_, err := AWS.HeadBucket(context.TODO(), &s3.HeadBucketInput{
 		Bucket: aws.String(bucketName),
 	})
+
 	if err != nil {
 		var noSuchBucket *types.NotFound
 		if ok := errors.As(err, &noSuchBucket); ok {
-			// Create the bucket since it doesn't exist.
 			_, err = AWS.CreateBucket(context.TODO(), &s3.CreateBucketInput{
 				Bucket: aws.String(bucketName),
 			})
 			if err != nil {
 				return err
 			}
-			log.Printf("Bucket %s created successfully", bucketName)
 		} else {
-			// If it's a different error, return it.
 			return err
 		}
+	}
+
+	if bucketName == "content-bucket" {
+		if err := setPublicBucketPolicy(bucketName); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// setPublicBucketPolicy applies a public access policy to the specified bucket.
+func setPublicBucketPolicy(bucketName string) error {
+	desiredPolicy := `{
+		"Version": "2012-10-17",
+		"Statement": [
+			{
+				"Effect": "Allow",
+				"Principal": "*",
+				"Action": "s3:GetObject",
+				"Resource": "arn:aws:s3:::` + bucketName + `/*"
+			}
+		]
+	}`
+
+	// Check the current policy
+	currentPolicy, err := AWS.GetBucketPolicy(context.TODO(), &s3.GetBucketPolicyInput{
+		Bucket: aws.String(bucketName),
+	})
+	if err == nil {
+		// Compare existing policy with desired policy
+		if *currentPolicy.Policy == desiredPolicy {
+			return nil
+		}
+	} else {
+		logger.Log.Info("Failed to get bucket policy for", zap.String("bucket", bucketName), zap.Error(err))
+	}
+
+	// Apply the new policy
+	_, err = AWS.PutBucketPolicy(context.TODO(), &s3.PutBucketPolicyInput{
+		Bucket: aws.String(bucketName),
+		Policy: aws.String(desiredPolicy),
+	})
+	if err != nil {
+		return err
 	}
 
 	return nil

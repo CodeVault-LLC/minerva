@@ -31,7 +31,7 @@ func (m *ContentModule) Execute(job generalEntities.JobModel, website *common.We
 	for _, script := range website.Assets {
 		hashedBody := utils.SHA256(script.Content)
 
-		existingContent, err := repository.ContentRepository.FindContentByHash(hashedBody)
+		existingContentId, err := repository.ContentRepository.FindContentByHash(hashedBody)
 		if err != nil {
 			logger.Log.Error("Failed to find content by hash: %v", zap.Error(err))
 
@@ -51,9 +51,14 @@ func (m *ContentModule) Execute(job generalEntities.JobModel, website *common.We
 			continue
 		}
 
-		if existingContent.Id == "" {
-			storageType := storage.DetermineStorageType(script.Content)
-			err = storage.UploadFile("content-bucket", hashedBody, []byte(script.Content), true)
+		if existingContentId == "" {
+			originalFileName := script.Src
+			fileExtension := storage.GetFileExtension(originalFileName)
+			objectKey := storage.GenerateObjectKey(originalFileName)
+			sanitizedObjectKey := storage.SanitizeObjectKey(objectKey)
+			contentType := storage.GetContentType(fileExtension)
+
+			err = storage.UploadFile("content-bucket", sanitizedObjectKey, []byte(script.Content), contentType, true)
 			if err != nil {
 				logger.Log.Error("Failed to upload file: %v", zap.Error(err))
 				continue
@@ -65,8 +70,9 @@ func (m *ContentModule) Execute(job generalEntities.JobModel, website *common.We
 				FileSize:    int64(script.FileSize),
 				FileType:    script.FileType,
 				Source:      script.Src,
-				StorageType: storageType,
+				StorageType: storage.DetermineStorageType(script.Content),
 				HashedBody:  hashedBody,
+				Tags:        []string{},
 				CreatedAt:   time.Now(),
 				UpdatedAt:   time.Now(),
 			}
@@ -81,8 +87,8 @@ func (m *ContentModule) Execute(job generalEntities.JobModel, website *common.We
 				Id:              uuid.New().String(),
 				ContentId:       content.Id,
 				BucketName:      "content-bucket",
-				ObjectKey:       hashedBody,
-				Location:        storage.GetLocation("content-bucket", hashedBody),
+				ObjectKey:       sanitizedObjectKey,
+				Location:        storage.GetLocation("content-bucket", sanitizedObjectKey),
 				StorageEndpoint: storage.GetEndpoint("content-bucket"),
 				Encryption:      "AES256",
 			}

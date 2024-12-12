@@ -3,10 +3,14 @@ package storage
 import (
 	"bytes"
 	"context"
+	"regexp"
+	"strings"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/codevault-llc/minerva/internal/database"
+	"github.com/google/uuid"
 )
 
 // DetermineStorageType decides whether content should be in hot or cold storage.
@@ -17,25 +21,66 @@ func DetermineStorageType(content string) string {
 	return "cold"
 }
 
-func UploadFile(bucketName string, objectKey string, fileContents []byte, readable bool) error {
-	if readable {
-		_, err := database.AWS.PutObject(context.TODO(), &s3.PutObjectInput{
-			Bucket: &bucketName,
-			Key:    &objectKey,
-			Body:   bytes.NewReader(fileContents),
-			ACL:    types.ObjectCannedACLPublicRead,
-		})
-
-		return err
-	} else {
-		_, err := database.AWS.PutObject(context.TODO(), &s3.PutObjectInput{
-			Bucket: &bucketName,
-			Key:    &objectKey,
-			Body:   bytes.NewReader(fileContents),
-		})
-
-		return err
+// GetFileExtension returns the file extension of a given file name.
+func GetFileExtension(fileName string) string {
+	if fileName == "" {
+		return "txt"
 	}
+
+	parts := strings.Split(fileName, ".")
+	if len(parts) == 1 {
+		return "txt"
+	}
+
+	return parts[len(parts)-1]
+}
+
+// SanitizeObjectKey removes unsupported characters from the object key.
+func SanitizeObjectKey(key string) string {
+	key = strings.ReplaceAll(key, " ", "_")
+	re := regexp.MustCompile(`[^a-zA-Z0-9._/-]+`)
+	key = re.ReplaceAllString(key, "")
+	return key
+}
+
+func GetContentType(fileExtension string) string {
+	switch fileExtension {
+	case "jpg", "jpeg":
+		return "image/jpeg"
+	case "png":
+		return "image/png"
+	case "pdf":
+		return "application/pdf"
+	case "txt":
+		return "text/plain"
+	case "html":
+		return "text/html"
+	default:
+		return "application/octet-stream"
+	}
+}
+
+// GenerateObjectKey creates a unique object key with the file's original extension.
+func GenerateObjectKey(originalFileName string) string {
+	ext := GetFileExtension(originalFileName)
+	id := uuid.New().String()
+	return id + "." + ext
+}
+
+func UploadFile(bucketName string, objectKey string, fileContents []byte, contentType string, readable bool) error {
+	input := &s3.PutObjectInput{
+		Bucket:      &bucketName,
+		Key:         &objectKey,
+		Body:        bytes.NewReader(fileContents),
+		ContentType: aws.String(contentType),
+	}
+
+	if readable {
+		input.ACL = types.ObjectCannedACLPublicRead
+	}
+
+	_, err := database.AWS.PutObject(context.TODO(), input)
+	return err
 }
 
 func DownloadFile(bucketName string, objectKey string) ([]byte, error) {

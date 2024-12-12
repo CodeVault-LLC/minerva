@@ -46,7 +46,6 @@ func (m *NetworkModule) Execute(job generalEntities.JobModel, website *common.We
 
 	for _, mod := range m.modules {
 		wg.Add(1)
-		logger.Log.Info("Running module", zap.String("module", mod.Name()))
 		go func(mod common.MiniModule) {
 			defer wg.Done()
 			result, err := mod.Run(job)
@@ -85,72 +84,75 @@ func (m *NetworkModule) saveResults(scanID string, results map[string]interface{
 		logger.Log.Info("Whois record:", zap.Any("whois", whoisRecord.Administrative))
 	}
 
-	whoisModel := entities.WhoisModel{
-		Status: func() string {
-			if len(whoisRecord.Domain.Status) > 0 {
-				return whoisRecord.Domain.Status[0]
-			}
-			return ""
-		}(),
-		DomainName:  whoisRecord.Domain.Name,
-		Registrar:   utils.SafeString(whoisRecord.Registrar.Name),
-		Email:       utils.SafeString(whoisRecord.Registrant.Email),
-		Phone:       utils.SafeString(whoisRecord.Registrant.Phone),
-		NameServers: whoisRecord.Domain.NameServers,
+	var whoisModel entities.WhoisModel
+	if whoisRecord != (whoisparser.WhoisInfo{}) {
+		whoisModel = entities.WhoisModel{
+			Status: func() string {
+				if len(whoisRecord.Domain.Status) > 0 {
+					return whoisRecord.Domain.Status[0]
+				}
+				return ""
+			}(),
+			DomainName:  whoisRecord.Domain.Name,
+			Registrar:   utils.SafeString(whoisRecord.Registrar.Name),
+			Email:       utils.SafeString(whoisRecord.Registrant.Email),
+			Phone:       utils.SafeString(whoisRecord.Registrant.Phone),
+			NameServers: whoisRecord.Domain.NameServers,
 
-		RegistrantName:       utils.SafeString(whoisRecord.Registrant.Name),
-		RegistrantCity:       utils.SafeString(whoisRecord.Registrant.City),
-		RegistrantPostalCode: utils.SafeString(whoisRecord.Registrant.PostalCode),
-		RegistrantCountry:    utils.SafeString(whoisRecord.Registrant.Country),
-		RegistrantEmail:      utils.SafeString(whoisRecord.Registrant.Email),
-		RegistrantPhone:      utils.SafeString(whoisRecord.Registrant.Phone),
-		RegistrantOrg:        utils.SafeString(whoisRecord.Registrant.Organization),
-		AdminName: func() string {
-			if whoisRecord.Administrative != nil && whoisRecord.Administrative.Name != "" {
-				return whoisRecord.Administrative.Name
-			}
-			return ""
-		}(),
-		AdminEmail: func() string {
-			if whoisRecord.Administrative != nil {
-				return utils.SafeString(whoisRecord.Administrative.Email)
-			}
-			return ""
-		}(),
-		AdminPhone: func() string {
-			if whoisRecord.Administrative != nil {
-				return utils.SafeString(whoisRecord.Administrative.Phone)
-			}
-			return ""
-		}(),
-		AdminOrg: func() string {
-			if whoisRecord.Administrative != nil {
-				return utils.SafeString(whoisRecord.Administrative.Organization)
-			}
-			return ""
-		}(),
-		AdminCity: func() string {
-			if whoisRecord.Administrative != nil {
-				return utils.SafeString(whoisRecord.Administrative.City)
-			}
-			return ""
-		}(),
-		AdminPostalCode: func() string {
-			if whoisRecord.Administrative != nil {
-				return utils.SafeString(whoisRecord.Administrative.PostalCode)
-			}
-			return ""
-		}(),
-		AdminCountry: func() string {
-			if whoisRecord.Administrative != nil {
-				return utils.SafeString(whoisRecord.Administrative.Country)
-			}
-			return ""
-		}(),
+			RegistrantName:       utils.SafeString(whoisRecord.Registrant.Name),
+			RegistrantCity:       utils.SafeString(whoisRecord.Registrant.City),
+			RegistrantPostalCode: utils.SafeString(whoisRecord.Registrant.PostalCode),
+			RegistrantCountry:    utils.SafeString(whoisRecord.Registrant.Country),
+			RegistrantEmail:      utils.SafeString(whoisRecord.Registrant.Email),
+			RegistrantPhone:      utils.SafeString(whoisRecord.Registrant.Phone),
+			RegistrantOrg:        utils.SafeString(whoisRecord.Registrant.Organization),
+			AdminName: func() string {
+				if whoisRecord.Administrative != nil && whoisRecord.Administrative.Name != "" {
+					return whoisRecord.Administrative.Name
+				}
+				return ""
+			}(),
+			AdminEmail: func() string {
+				if whoisRecord.Administrative != nil {
+					return utils.SafeString(whoisRecord.Administrative.Email)
+				}
+				return ""
+			}(),
+			AdminPhone: func() string {
+				if whoisRecord.Administrative != nil {
+					return utils.SafeString(whoisRecord.Administrative.Phone)
+				}
+				return ""
+			}(),
+			AdminOrg: func() string {
+				if whoisRecord.Administrative != nil {
+					return utils.SafeString(whoisRecord.Administrative.Organization)
+				}
+				return ""
+			}(),
+			AdminCity: func() string {
+				if whoisRecord.Administrative != nil {
+					return utils.SafeString(whoisRecord.Administrative.City)
+				}
+				return ""
+			}(),
+			AdminPostalCode: func() string {
+				if whoisRecord.Administrative != nil {
+					return utils.SafeString(whoisRecord.Administrative.PostalCode)
+				}
+				return ""
+			}(),
+			AdminCountry: func() string {
+				if whoisRecord.Administrative != nil {
+					return utils.SafeString(whoisRecord.Administrative.Country)
+				}
+				return ""
+			}(),
 
-		Updated: whoisRecord.Domain.UpdatedDate,
-		Created: whoisRecord.Domain.CreatedDate,
-		Expires: whoisRecord.Domain.ExpirationDate,
+			Updated: whoisRecord.Domain.UpdatedDate,
+			Created: whoisRecord.Domain.CreatedDate,
+			Expires: whoisRecord.Domain.ExpirationDate,
+		}
 	}
 
 	certificates := results["Certificate"].([]*x509.Certificate)

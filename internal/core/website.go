@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"strings"
-	"time"
 
 	"github.com/codevault-llc/minerva/internal/common"
 	"github.com/codevault-llc/minerva/pkg/logger"
@@ -42,8 +41,7 @@ type WebsiteResponse struct {
 
 // FetchWebsite retrieves the website content and its network resources.
 func FetchWebsite(url, userAgent string) (*WebsiteResponse, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
-	defer cancel()
+	ctx := context.Background()
 
 	page, err := browser.Page(proto.TargetCreateTarget{URL: url})
 	if err != nil {
@@ -79,22 +77,22 @@ func FetchWebsite(url, userAgent string) (*WebsiteResponse, error) {
 					FileSize:   uint(len(c.Response.Body())),
 					FileType:   string(utils.ApplicationJavascript),
 				})
-			case proto.NetworkResourceTypeDocument:
-				if err := rod.Try(func() {
-					c.MustLoadResponse()
-				}); err != nil {
-					logger.Log.Error("Failed to load css response", zap.Error(err), zap.String("url", requestURL))
-				}
+			/*case proto.NetworkResourceTypeDocument:
+			if err := rod.Try(func() {
+				c.MustLoadResponse()
+			}); err != nil {
+				logger.Log.Error("Failed to load css response", zap.Error(err), zap.String("url", requestURL))
+			}
 
-				logger.Log.Info("Document request intercepted", zap.String("url", requestURL))
+			logger.Log.Info("Document request intercepted", zap.String("url", requestURL))
 
-				redirects = append(redirects, common.Redirect{
-					Url: requestURL,
-					Screenshot: common.Screenshot{
-						Content: string(page.MustWaitStable().MustScreenshotFullPage()),
-					},
-					StatusCode: c.Response.RawResponse.StatusCode,
-				})
+			redirects = append(redirects, common.Redirect{
+				Url: requestURL,
+				Screenshot: common.Screenshot{
+					Content: string(page.MustWaitStable().MustScreenshotFullPage()),
+				},
+				StatusCode: c.Response.RawResponse.StatusCode,
+			})*/
 			case proto.NetworkResourceTypeStylesheet:
 				if err := rod.Try(func() {
 					c.MustLoadResponse()
@@ -130,7 +128,7 @@ func FetchWebsite(url, userAgent string) (*WebsiteResponse, error) {
 					logger.Log.Error("Failed to load xhr response", zap.Error(err), zap.String("url", requestURL))
 				}
 
-				logger.Log.Info("XHR request intercepted", zap.String("url", requestURL), zap.String("data", string(c.Response.Body())))
+				//logger.Log.Info("XHR request intercepted", zap.String("url", requestURL), zap.String("data", string(c.Response.Body())))
 
 				networkFiles = append(networkFiles, common.FileRequest{
 					Src:        requestURL,

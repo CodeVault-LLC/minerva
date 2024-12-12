@@ -2,11 +2,13 @@ package repository
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/codevault-llc/minerva/internal/contents/models/entities"
 	"github.com/codevault-llc/minerva/internal/contents/models/viewmodels"
 	"github.com/codevault-llc/minerva/internal/database"
 	"github.com/codevault-llc/minerva/pkg/logger"
+	"github.com/gocql/gocql"
 	"go.uber.org/zap"
 )
 
@@ -23,31 +25,38 @@ var ContentRepository *ContentRepo
 func (repository *ContentRepo) SaveContentResult(content entities.ContentModel) error {
 	query := "INSERT INTO content (id, hashed_body, scan_id, source, file_size, file_type, storage_type, tags, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 
-	queryResult := repository.database.GetDatabase().Query(query, content.Id, content.HashedBody, content.ScanId, content.Source, content.FileSize, content.FileType, content.StorageType, content.Tags, content.CreatedAt, content.UpdatedAt)
-	err := queryResult.Exec()
+	tags, err := json.Marshal(content.Tags)
 	if err != nil {
+		logger.Log.Error("Failed to marshal tags", zap.Error(err))
+		return err
+	}
+
+	queryResult := repository.database.GetDatabase().Query(query, content.Id, content.HashedBody, content.ScanId, content.Source, content.FileSize, content.FileType, content.StorageType, tags, content.CreatedAt, content.UpdatedAt)
+	err = queryResult.Exec()
+	if err != nil {
+		logger.Log.Error("Failed to save content result", zap.Error(err))
 		return err
 	}
 
 	return nil
 }
 
-func (repository *ContentRepo) FindContentByHash(hashedBody string) (entities.ContentModel, error) {
+func (repository *ContentRepo) FindContentByHash(hashedBody string) (string, error) {
 	ctx := context.Background()
-	var contents []entities.ContentModel
+	var ids []gocql.UUID
 
 	query := "SELECT id FROM minerva.content WHERE hashed_body = ?"
-	err := repository.database.Select(ctx, query, &contents, hashedBody)
+	err := repository.database.Select(ctx, query, &ids, hashedBody)
 	if err != nil {
 		logger.Log.Error("Failed to fetch scan result", zap.Error(err))
-		return entities.ContentModel{}, err
+		return "", err
 	}
 
-	if len(contents) == 0 {
-		return entities.ContentModel{}, nil
+	if len(ids) == 0 {
+		return "", nil
 	}
 
-	return contents[0], nil
+	return ids[0].String(), nil
 }
 
 func (repository *ContentRepo) CreateContentStorage(storage entities.ContentStorageModel) error {

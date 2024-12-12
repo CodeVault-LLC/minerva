@@ -13,7 +13,6 @@ var ContentSchema = []string{
 		tags TEXT,
 		created_at TIMESTAMP,
 		updated_at TIMESTAMP,
-		deleted_at TIMESTAMP
 	);`,
 	`CREATE TABLE IF NOT EXISTS minerva.content_storage (
 		id UUID PRIMARY KEY,
@@ -43,7 +42,6 @@ var ContentSchema = []string{
 
 		created_at TIMESTAMP,
 		updated_at TIMESTAMP,
-		deleted_at TIMESTAMP
 	);`,
 	`CREATE INDEX IF NOT EXISTS idx_hashed_body ON minerva.content (hashed_body);`,
 	`CREATE INDEX IF NOT EXISTS idx_content_id ON minerva.content_storage (content_id);`,

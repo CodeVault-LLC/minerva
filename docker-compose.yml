@@ -18,6 +18,9 @@ services:
       - CASSANDRA_LISTEN_ADDRESS=cassandra-db
       - CASSANDRA_BROADCAST_ADDRESS=cassandra-db
       - CASSANDRA_SEEDS=cassandra-db
+      - CASSANDRA_PASSWORD_SEEDER=true
+      - CASSANDRA_USER=cassandra
+      - CASSANDRA_PASSWORD=cassandra
     volumes:
       - cassandra-data:/var/lib/cassandra
 

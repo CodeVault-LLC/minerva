@@ -103,58 +103,70 @@ func (db *Database) Select(ctx context.Context, query string, result interface{}
 	// Get the type of the slice element
 	sliceElemType := rv.Elem().Type().Elem()
 
-	// Build a mapping of field names to struct fields
-	fieldMap := make(map[string]int)
-	for i := 0; i < sliceElemType.NumField(); i++ {
-		field := sliceElemType.Field(i)
-		dbTag := field.Tag.Get("db")
-		if dbTag != "" {
-			fieldMap[dbTag] = i
+	// Check if the slice element type is a struct
+	if sliceElemType.Kind() == reflect.Struct {
+		// Build a mapping of field names to struct fields
+		fieldMap := make(map[string]int)
+		for i := 0; i < sliceElemType.NumField(); i++ {
+			field := sliceElemType.Field(i)
+			dbTag := field.Tag.Get("db")
+			if dbTag != "" {
+				fieldMap[dbTag] = i
+			}
 		}
-	}
 
-	// Iterate over rows returned by the query
-	for {
-		columns := iter.Columns()
-		row := reflect.New(sliceElemType).Elem()
-		fieldValues := make([]interface{}, len(columns))
+		// Iterate over rows returned by the query
+		for {
+			columns := iter.Columns()
+			row := reflect.New(sliceElemType).Elem()
+			fieldValues := make([]interface{}, len(columns))
 
-		// Map query columns to struct fields
-		for i, column := range columns {
-			if fieldIndex, ok := fieldMap[column.Name]; ok {
-				field := row.Field(fieldIndex)
+			// Map query columns to struct fields
+			for i, column := range columns {
+				if fieldIndex, ok := fieldMap[column.Name]; ok {
+					field := row.Field(fieldIndex)
 
-				switch field.Type() {
-				case reflect.TypeOf(time.Time{}):
-					var temp int64
+					switch field.Type() {
+					case reflect.TypeOf(time.Time{}):
+						var temp int64
+						fieldValues[i] = &temp
+					default:
+						fieldValues[i] = field.Addr().Interface()
+					}
+				} else {
+					// Placeholder for fields not in the struct
+					var temp interface{}
 					fieldValues[i] = &temp
-				default:
-					fieldValues[i] = field.Addr().Interface()
-				}
-			} else {
-				// Placeholder for fields not in the struct
-				var temp interface{}
-				fieldValues[i] = &temp
-			}
-		}
-
-		// Scan the row
-		if !iter.Scan(fieldValues...) {
-			break
-		}
-
-		// Convert timestamps if needed
-		for i, column := range columns {
-			if fieldIndex, ok := fieldMap[column.Name]; ok {
-				field := row.Field(fieldIndex)
-				if field.Type() == reflect.TypeOf(time.Time{}) {
-					intValue := *fieldValues[i].(*int64)
-					field.Set(reflect.ValueOf(time.Unix(intValue, 0)))
 				}
 			}
-		}
 
-		rv.Elem().Set(reflect.Append(rv.Elem(), row))
+			// Scan the row
+			if !iter.Scan(fieldValues...) {
+				break
+			}
+
+			// Convert timestamps if needed
+			for i, column := range columns {
+				if fieldIndex, ok := fieldMap[column.Name]; ok {
+					field := row.Field(fieldIndex)
+					if field.Type() == reflect.TypeOf(time.Time{}) {
+						intValue := *fieldValues[i].(*int64)
+						field.Set(reflect.ValueOf(time.Unix(intValue, 0)))
+					}
+				}
+			}
+
+			rv.Elem().Set(reflect.Append(rv.Elem(), row))
+		}
+	} else {
+		// Handle non-struct types (e.g., gocql.UUID)
+		for {
+			row := reflect.New(sliceElemType).Elem().Addr().Interface()
+			if !iter.Scan(row) {
+				break
+			}
+			rv.Elem().Set(reflect.Append(rv.Elem(), reflect.ValueOf(row).Elem()))
+		}
 	}
 
 	if err := iter.Close(); err != nil {
