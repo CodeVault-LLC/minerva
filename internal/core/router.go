@@ -9,6 +9,7 @@ import (
 	"github.com/codevault-llc/minerva/pkg/responder"
 	"github.com/codevault-llc/minerva/pkg/utils"
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 )
 
 func RegisterCoreRouter(router fiber.Router) error {
@@ -37,23 +38,24 @@ func CreateScanHandler(taskScheduler *TaskScheduler) fiber.Handler {
 		if err := json.Unmarshal(c.Body(), &scanRequest); err != nil {
 			return responder.CreateError(responder.ErrInvalidRequest).Error
 		}
+
 		if !utils.ValidateURL(scanRequest.URL) {
 			return responder.CreateError(responder.ErrInvalidRequest).Error
 		}
+
 		scanRequest.URL = utils.NormalizeURL(scanRequest.URL)
 
 		if utils.IsLocalURL(scanRequest.URL) {
 			return responder.CreateError(responder.ErrInvalidRequest).Error
 		}
 
-		// Set default User-Agent if not provided
 		userAgent := scanRequest.UserAgent
 		if userAgent == "" {
 			userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36"
 		}
 
-		// Step 3: Create Job and add to TaskScheduler
 		job := entities.JobModel{
+			ScanID:    uuid.New().String(),
 			ID:        utils.GenerateID(),
 			Type:      "WebsiteScan",
 			URL:       scanRequest.URL,
@@ -62,7 +64,6 @@ func CreateScanHandler(taskScheduler *TaskScheduler) fiber.Handler {
 		}
 		taskScheduler.AddJob(&job)
 
-		// Step 4: Return response while job is queued for processing
 		responder.WriteJSONResponse(c, responder.CreateSuccessResponse(viewmodels.ConvertJob(job), "Scan queued for processing"))
 		return nil
 	}

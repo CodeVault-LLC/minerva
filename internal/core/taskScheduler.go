@@ -12,9 +12,9 @@ import (
 
 // TaskScheduler manages job queueing, dispatching, and archiving
 type TaskScheduler struct {
-	queue        []*entities.JobModel // Task queue for pending jobs
-	archivedJobs []*entities.JobModel // Stores completed jobs for history
-	workerPool   chan struct{}        // Manages number of concurrent workers
+	queue        []*entities.JobModel
+	archivedJobs []*entities.JobModel
+	workerPool   chan struct{}
 	mu           sync.Mutex
 }
 
@@ -44,13 +44,13 @@ func (s *TaskScheduler) Start(inspector *Inspector) {
 			s.mu.Lock()
 			if len(s.queue) > 0 {
 				job := s.queue[0]
-				s.queue = s.queue[1:] // Remove the job from the queue
+				s.queue = s.queue[1:]
 				s.mu.Unlock()
 
-				s.workerPool <- struct{}{} // Block if max workers are busy
+				s.workerPool <- struct{}{}
 				go func(j *entities.JobModel) {
 					defer func() { <-s.workerPool }()
-					s.processJob(j, inspector) // Process the job
+					s.processJob(j, inspector)
 				}(job)
 			} else {
 				s.mu.Unlock()
@@ -63,9 +63,8 @@ func (s *TaskScheduler) Start(inspector *Inspector) {
 // processJob processes individual tasks, updates job status, and archives the job
 func (s *TaskScheduler) processJob(job *entities.JobModel, inspector *Inspector) {
 	job.Status = entities.Processing
-	err := inspector.Execute(job) // Call the relevant module based on Job.Type
+	err := inspector.Execute(job)
 
-	// Update job status based on execution result
 	if err != nil {
 		job.Status = entities.Failed
 		logger.Log.Error("Job execution failed", zap.Error(err))
@@ -73,8 +72,8 @@ func (s *TaskScheduler) processJob(job *entities.JobModel, inspector *Inspector)
 		job.Status = entities.Completed
 	}
 
-	s.updateJobStatus(job) // Update job status in the datastore
-	s.archiveJob(job)      // Move job to the archivedJobs list
+	s.updateJobStatus(job)
+	s.archiveJob(job)
 }
 
 // archiveJob moves completed jobs to the archivedJobs list

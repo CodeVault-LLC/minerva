@@ -128,8 +128,6 @@ func FetchWebsite(url, userAgent string) (*WebsiteResponse, error) {
 					logger.Log.Error("Failed to load xhr response", zap.Error(err), zap.String("url", requestURL))
 				}
 
-				//logger.Log.Info("XHR request intercepted", zap.String("url", requestURL), zap.String("data", string(c.Response.Body())))
-
 				networkFiles = append(networkFiles, common.FileRequest{
 					Src:        requestURL,
 					Content:    c.Response.Body(),
@@ -137,6 +135,12 @@ func FetchWebsite(url, userAgent string) (*WebsiteResponse, error) {
 					FileSize:   uint(len(c.Response.Body())),
 					FileType:   string(utils.XHR),
 				})
+			case proto.NetworkResourceTypeWebSocket:
+				if err := rod.Try(func() {
+					c.MustLoadResponse()
+				}); err != nil {
+					logger.Log.Error("Failed to load websocket response", zap.Error(err), zap.String("url", requestURL))
+				}
 			}
 		}
 

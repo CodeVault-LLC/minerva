@@ -10,7 +10,6 @@ import (
 	"github.com/codevault-llc/minerva/internal/network"
 	"github.com/codevault-llc/minerva/pkg/logger"
 	"github.com/codevault-llc/minerva/pkg/utils"
-	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
@@ -63,7 +62,7 @@ func (i *Inspector) performWebsiteScan(job *entities.JobModel) error {
 	}
 
 	scanModel := entities.ScanModel{
-		Id:         uuid.New().String(),
+		Id:         job.ScanID,
 		Url:        job.URL,
 		Title:      website.Title,
 		StatusCode: website.StatusCode,
