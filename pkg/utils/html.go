@@ -18,7 +18,6 @@ func ExtractTitle(doc *html.Node) string {
 
 // ProcessScriptNode extracts data from a script element.
 func ProcessScriptNode(node *html.Node) common.FileRequest {
-	// Handle inline script.
 	if node.FirstChild != nil && node.FirstChild.Type == html.TextNode {
 		return CreateFileRequest("inline-script", node.FirstChild.Data, "application/javascript")
 	}

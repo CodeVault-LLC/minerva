@@ -9,6 +9,7 @@ import (
 	"github.com/codevault-llc/minerva/internal/contents/models/entities"
 	repository "github.com/codevault-llc/minerva/internal/contents/models/repository"
 	generalEntities "github.com/codevault-llc/minerva/internal/core/models/entities"
+	"github.com/codevault-llc/minerva/internal/database"
 	"github.com/codevault-llc/minerva/internal/database/storage"
 	"github.com/codevault-llc/minerva/pkg/logger"
 	"github.com/codevault-llc/minerva/pkg/types"
@@ -19,11 +20,18 @@ import (
 
 type ContentModule struct {
 	runtimeLocation common.RuntimeLocation
+	repository      *repository.ContentRepo
+	findingRepo     *repository.FindingRepo
 }
 
-func NewContentModule(runtimeLocation common.RuntimeLocation) *ContentModule {
+func NewContentModule(runtimeLocation common.RuntimeLocation, db *database.Database) *ContentModule {
+	repository.ContentRepository = repository.NewContentRepo(db)
+	repository.FindingRepository = repository.NewFindingRepo(db)
+
 	return &ContentModule{
 		runtimeLocation: runtimeLocation,
+		repository:      repository.ContentRepository,
+		findingRepo:     repository.FindingRepository,
 	}
 }
 
@@ -31,7 +39,7 @@ func (m *ContentModule) Execute(job generalEntities.JobModel, website *common.We
 	for _, script := range website.Assets {
 		hashedBody := utils.SHA256(script.Content)
 
-		existingContentId, err := repository.ContentRepository.FindContentByHash(hashedBody)
+		existingContentId, err := m.repository.FindContentByHash(hashedBody)
 		if err != nil {
 			logger.Log.Error("Failed to find content by hash: %v", zap.Error(err))
 
@@ -43,7 +51,7 @@ func (m *ContentModule) Execute(job generalEntities.JobModel, website *common.We
 			}
 
 			findings := scanSecrets(jsFiles)
-			err := repository.FindingRepository.SaveFindingResult(job, findings)
+			err := m.findingRepo.SaveFindingResult(job, findings)
 			if err != nil {
 				logger.Log.Error("Failed to save finding result: %v", zap.Error(err))
 			}
@@ -77,7 +85,7 @@ func (m *ContentModule) Execute(job generalEntities.JobModel, website *common.We
 				UpdatedAt:   time.Now(),
 			}
 
-			err := repository.ContentRepository.SaveContentResult(content)
+			err := m.repository.SaveContentResult(content)
 			if err != nil {
 				logger.Log.Error("Failed to save content: %v", zap.Error(err))
 				continue
@@ -93,7 +101,7 @@ func (m *ContentModule) Execute(job generalEntities.JobModel, website *common.We
 				Encryption:      "AES256",
 			}
 
-			err = repository.ContentRepository.CreateContentStorage(storageRecord)
+			err = m.repository.CreateContentStorage(storageRecord)
 			if err != nil {
 				logger.Log.Error("Failed to save storage record: %v", zap.Error(err))
 				continue
@@ -109,7 +117,7 @@ func (m *ContentModule) Execute(job generalEntities.JobModel, website *common.We
 	}
 
 	findings := scanSecrets(jsFiles)
-	err := repository.FindingRepository.SaveFindingResult(job, findings)
+	err := m.findingRepo.SaveFindingResult(job, findings)
 	if err != nil {
 		logger.Log.Error("Failed to save finding result: %v", zap.Error(err))
 	}

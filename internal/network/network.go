@@ -7,6 +7,7 @@ import (
 
 	"github.com/codevault-llc/minerva/internal/common"
 	generalEntities "github.com/codevault-llc/minerva/internal/core/models/entities"
+	"github.com/codevault-llc/minerva/internal/database"
 	"github.com/codevault-llc/minerva/internal/network/models/entities"
 	"github.com/codevault-llc/minerva/internal/network/models/repository"
 	"github.com/codevault-llc/minerva/internal/network/modules"
@@ -21,9 +22,12 @@ import (
 type NetworkModule struct {
 	modules         []common.MiniModule
 	runtimeLocation common.RuntimeLocation
+	repository      *repository.NetworkRepo
 }
 
-func NewNetworkModule(runtimeLocation common.RuntimeLocation) *NetworkModule {
+func NewNetworkModule(runtimeLocation common.RuntimeLocation, db *database.Database) *NetworkModule {
+	repository.NetworkRepository = repository.NewNetworkRepository(db)
+
 	return &NetworkModule{
 		modules: []common.MiniModule{
 			&modules.IPLookupModule{},
@@ -34,6 +38,7 @@ func NewNetworkModule(runtimeLocation common.RuntimeLocation) *NetworkModule {
 			&modules.CertificateModule{},
 		},
 		runtimeLocation: runtimeLocation,
+		repository:      repository.NetworkRepository,
 	}
 }
 
@@ -171,7 +176,7 @@ func (m *NetworkModule) saveResults(scanID string, results map[string]interface{
 		UpdatedAt: utils.GetCurrentTime(),
 	}
 
-	err := repository.NetworkRepository.Create(scanID, networkModel)
+	err := m.repository.Create(scanID, networkModel)
 	if err != nil {
 		logger.Log.Error("Failed to create network: %v", zap.Error(err))
 		return err

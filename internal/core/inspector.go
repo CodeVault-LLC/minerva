@@ -7,6 +7,7 @@ import (
 	"github.com/codevault-llc/minerva/internal/contents"
 	"github.com/codevault-llc/minerva/internal/core/models/entities"
 	"github.com/codevault-llc/minerva/internal/core/models/repository"
+	"github.com/codevault-llc/minerva/internal/database"
 	"github.com/codevault-llc/minerva/internal/network"
 	"github.com/codevault-llc/minerva/pkg/logger"
 	"github.com/codevault-llc/minerva/pkg/utils"
@@ -20,10 +21,10 @@ type Inspector struct {
 var InspectorCore *Inspector
 
 // NewInspector initializes the Inspector with necessary dependencies
-func NewInspector() *Inspector {
+func NewInspector(db *database.Database) *Inspector {
 	inspector := &Inspector{modules: make(map[string]common.ScanModule)}
-	inspector.modules["network"] = network.NewNetworkModule(common.RuntimeLocationPostScan)
-	inspector.modules["content"] = contents.NewContentModule(common.RuntimeLocationPostScan)
+	inspector.modules["network"] = network.NewNetworkModule(common.RuntimeLocationPostScan, db)
+	inspector.modules["content"] = contents.NewContentModule(common.RuntimeLocationPostScan, db)
 	return inspector
 }
 

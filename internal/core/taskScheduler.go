@@ -80,6 +80,11 @@ func (s *TaskScheduler) processJob(job *entities.JobModel, inspector *Inspector)
 func (s *TaskScheduler) archiveJob(job *entities.JobModel) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
+	if len(s.archivedJobs) > 100 {
+		s.archivedJobs = s.archivedJobs[1:]
+	}
+
 	job.CompletedAt = time.Now()
 	s.archivedJobs = append(s.archivedJobs, job)
 }

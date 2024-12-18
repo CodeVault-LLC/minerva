@@ -6,11 +6,9 @@ import (
 	"time"
 
 	"github.com/codevault-llc/minerva/cmd/api"
-	contentRepository "github.com/codevault-llc/minerva/internal/contents/models/repository"
 	"github.com/codevault-llc/minerva/internal/core"
 	"github.com/codevault-llc/minerva/internal/core/models/repository"
 	"github.com/codevault-llc/minerva/internal/database"
-	networkRepository "github.com/codevault-llc/minerva/internal/network/models/repository"
 	"github.com/codevault-llc/minerva/internal/updater"
 	"github.com/codevault-llc/minerva/pkg/logger"
 	"github.com/joho/godotenv"
@@ -46,24 +44,18 @@ func main() {
 	}
 	log.Info("Connected to AWS")
 
-	SetupDatabases(db)
-	SetupScanning()
+	SetupScanning(db)
 
 	go updater.StartAutoUpdate(20 * time.Minute)
 	api.Start()
 }
 
-func SetupDatabases(db *database.Database) {
-	repository.ScanRepository = repository.NewScanRepository(db)
-	networkRepository.NetworkRepository = networkRepository.NewNetworkRepository(db)
-	contentRepository.ContentRepository = contentRepository.NewContentRepo(db)
-	contentRepository.FindingRepository = contentRepository.NewFindingRepo(db)
-}
-
-func SetupScanning() {
+func SetupScanning(db *database.Database) {
 	core.InitializeBrowser()
 
+	repository.ScanRepository = repository.NewScanRepository(db)
+
 	core.Scheduler = core.NewTaskScheduler(10)
-	core.InspectorCore = core.NewInspector()
+	core.InspectorCore = core.NewInspector(db)
 	core.Scheduler.Start(core.InspectorCore)
 }
