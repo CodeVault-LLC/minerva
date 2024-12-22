@@ -2,33 +2,24 @@ package config
 
 import (
 	_ "embed"
-	"encoding/json"
-	"fmt"
 	"os"
 
 	"github.com/codevault-llc/minerva/config/lists"
 	"github.com/codevault-llc/minerva/config/rules"
-	"github.com/codevault-llc/minerva/pkg/logger"
 	"github.com/codevault-llc/minerva/pkg/parsers"
 	"github.com/codevault-llc/minerva/pkg/types"
-	"github.com/xeipuuv/gojsonschema"
-	"go.uber.org/zap"
 )
 
 type InternalConfig struct {
-	Fingerprints []types.Fingerprint
-	Lists        map[string]types.Filter
-	Rules        map[string]types.Rule
+	Lists map[string]types.Filter
+	Rules map[string]types.Rule
+
+	FingerprintServiceAddress string
 }
 
 var Config = InternalConfig{}
 
 func NewConfig() (*InternalConfig, error) {
-	fingerprints, err := loadFingerprints()
-	if err != nil {
-		return nil, err
-	}
-
 	lists := make(map[string]types.Filter)
 	for _, list := range loadLists() {
 		lists[list.FilterID] = *list
@@ -40,73 +31,14 @@ func NewConfig() (*InternalConfig, error) {
 	}
 
 	config := &InternalConfig{
-		Fingerprints: fingerprints,
-		Lists:        lists,
-		Rules:        rules,
+		Lists: lists,
+		Rules: rules,
+
+		FingerprintServiceAddress: os.Getenv("FINGERPRINT_SERVICE_ADDRESS"),
 	}
 
 	Config = *config
 	return config, nil
-}
-
-type FingerprintData struct {
-	Entries []types.Fingerprint `json:"entries"`
-}
-
-func loadFingerprints() ([]types.Fingerprint, error) {
-	absPath, err := os.Getwd()
-	if err != nil {
-		logger.Log.Error("Error getting working directory", zap.Error(err))
-		return nil, fmt.Errorf("failed to get working directory: %w", err)
-	}
-
-	// Validate JSON schema
-	if err := validateJSONSchema(absPath+"/config/fingerprint/schema.json", absPath+"/config/fingerprint/fingerprints.json"); err != nil {
-		logger.Log.Error("JSON schema validation failed", zap.Error(err))
-		return nil, err
-	}
-
-	// Read and unmarshal fingerprints
-	data, err := loadFingerprintFile(absPath + "/config/fingerprint/fingerprints.json")
-	if err != nil {
-		logger.Log.Error("Failed to load fingerprints", zap.Error(err))
-		return nil, err
-	}
-
-	logger.Log.Info("Fingerprints loaded successfully", zap.Int("count", len(data.Entries)))
-	return data.Entries, nil
-}
-
-func validateJSONSchema(schemaPath, dataPath string) error {
-	schemaLoader := gojsonschema.NewReferenceLoader("file://" + schemaPath)
-	dataLoader := gojsonschema.NewReferenceLoader("file://" + dataPath)
-
-	result, err := gojsonschema.Validate(schemaLoader, dataLoader)
-	if err != nil {
-		return fmt.Errorf("JSON schema validation error: %w", err)
-	}
-	if !result.Valid() {
-		for _, desc := range result.Errors() {
-			logger.Log.Error("Schema validation error", zap.String("description", desc.Description()))
-		}
-		return fmt.Errorf("JSON schema validation failed")
-	}
-	return nil
-}
-
-func loadFingerprintFile(filePath string) (FingerprintData, error) {
-	var data FingerprintData
-
-	file, err := os.Open(filePath)
-	if err != nil {
-		return data, fmt.Errorf("failed to open fingerprints file: %w", err)
-	}
-	defer file.Close()
-
-	if err := json.NewDecoder(file).Decode(&data); err != nil {
-		return data, fmt.Errorf("failed to unmarshal fingerprints JSON: %w", err)
-	}
-	return data, nil
 }
 
 func loadLists() []*types.Filter {

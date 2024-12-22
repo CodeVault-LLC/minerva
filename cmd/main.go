@@ -10,6 +10,7 @@ import (
 	"github.com/codevault-llc/minerva/internal/core"
 	"github.com/codevault-llc/minerva/internal/core/models/repository"
 	"github.com/codevault-llc/minerva/internal/database"
+	"github.com/codevault-llc/minerva/internal/fingerprint"
 	"github.com/codevault-llc/minerva/internal/updater"
 	"github.com/codevault-llc/minerva/pkg/logger"
 	"github.com/joho/godotenv"
@@ -50,13 +51,29 @@ func main() {
 	}
 	log.Info("Connected to AWS")
 
-	SetupScanning(db)
+	setupScanning(db)
+
+	if err := setupServices(); err != nil {
+		log.Error("Error starting services", zap.Error(err))
+		os.Exit(1)
+	}
 
 	go updater.StartAutoUpdate(20 * time.Minute)
 	api.Start()
 }
 
-func SetupScanning(db *database.Database) {
+func setupServices() error {
+	fingerprintClient, err := fingerprint.NewClient(config.Config.FingerprintServiceAddress)
+	if err != nil {
+		return err
+	}
+
+	fingerprint.FingerprintClient = fingerprintClient
+
+	return nil
+}
+
+func setupScanning(db *database.Database) {
 	core.InitializeBrowser()
 
 	repository.ScanRepository = repository.NewScanRepository(db)

@@ -1,29 +1,31 @@
 package contents
 
 import (
+	"context"
 	"sync"
 	"time"
 
 	"github.com/codevault-llc/minerva/config"
 	"github.com/codevault-llc/minerva/internal/common"
-	"github.com/codevault-llc/minerva/internal/contents/fingerprint"
 	"github.com/codevault-llc/minerva/internal/contents/models/entities"
 	repository "github.com/codevault-llc/minerva/internal/contents/models/repository"
 	generalEntities "github.com/codevault-llc/minerva/internal/core/models/entities"
 	"github.com/codevault-llc/minerva/internal/database"
 	"github.com/codevault-llc/minerva/internal/database/storage"
+	"github.com/codevault-llc/minerva/internal/fingerprint"
 	"github.com/codevault-llc/minerva/pkg/logger"
 	"github.com/codevault-llc/minerva/pkg/types"
 	"github.com/codevault-llc/minerva/pkg/utils"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
+
+	pb "github.com/codevault-llc/minerva/proto"
 )
 
 type ContentModule struct {
 	runtimeLocation common.RuntimeLocation
 	repository      *repository.ContentRepo
 	findingRepo     *repository.FindingRepo
-	fingerprint     *fingerprint.FingerprintModule
 	fingerprintRepo *repository.FingerprintRepo
 }
 
@@ -36,7 +38,6 @@ func NewContentModule(runtimeLocation common.RuntimeLocation, db *database.Datab
 		runtimeLocation: runtimeLocation,
 		repository:      repository.ContentRepository,
 		findingRepo:     repository.FindingRepository,
-		fingerprint:     fingerprint.NewFingerprintModule(),
 		fingerprintRepo: repository.FingerprintRepository,
 	}
 }
@@ -72,6 +73,11 @@ func (m *ContentModule) Execute(job generalEntities.JobModel, website *common.We
 			sanitizedObjectKey := storage.SanitizeObjectKey(objectKey)
 			contentType := storage.GetContentType(fileExtension)
 
+			if len(sanitizedObjectKey) > 1024 {
+				sanitizedObjectKey = sanitizedObjectKey[:1024]
+			}
+
+			logger.Log.Info("Uploading file to storage", zap.String("objectKey", sanitizedObjectKey))
 			err = storage.UploadFile("content-bucket", sanitizedObjectKey, []byte(script.Content), contentType, true)
 			if err != nil {
 				logger.Log.Error("Failed to upload file: %v", zap.Error(err))
@@ -113,8 +119,28 @@ func (m *ContentModule) Execute(job generalEntities.JobModel, website *common.We
 				continue
 			}
 
-			foundFingerprints := m.fingerprint.Execute(script.Src)
-			err = m.fingerprintRepo.SaveFingerprintResult(content.Id, foundFingerprints)
+			foundFingerprints, err := fingerprint.FingerprintClient.MatchFingerprint(context.Background(), &pb.MatchFingerprintRequest{
+				Source: script.Src,
+			})
+
+			if err != nil {
+				logger.Log.Error("Failed to match fingerprint: %v", zap.Error(err))
+				continue
+			}
+
+			for _, fingerprint := range foundFingerprints.Matched {
+				fingerprintRecord := entities.FingerprintModel{
+					ContentId:     content.Id,
+					FingerprintId: fingerprint.Id,
+				}
+
+				err = m.fingerprintRepo.SaveFingerprintResult(fingerprintRecord)
+				if err != nil {
+					logger.Log.Error("Failed to save fingerprint result: %v", zap.Error(err))
+					continue
+				}
+			}
+
 			if err != nil {
 				logger.Log.Error("Failed to save fingerprint result: %v", zap.Error(err))
 				continue

@@ -33,29 +33,6 @@ func GenericScan(rule types.Rule, script common.FileRequest) []Match {
 	return result.Matches
 }
 
-func GenericScanFingerprint(rule types.Fingerprint, source string) []Match {
-	re, err := regexp.Compile(rule.Regex.String())
-	if err != nil {
-		log.Fatalf("Failed to compile regex: %v", err)
-	}
-
-	var result RegexReturn
-	result.Matches = make([]Match, 0)
-
-	matches := re.FindAllIndex([]byte(source), -1)
-
-	for _, match := range matches {
-		matchStr := source[match[0]:match[1]]
-
-		if matchStr != "" {
-			line := findMatchingLine(source, matchStr)
-			result.Matches = append(result.Matches, Match{Match: matchStr, Line: line, Source: source})
-		}
-	}
-
-	return result.Matches
-}
-
 // findMatchingLine returns the line containing the match in the content
 func findMatchingLine(content, match string) int {
 	lines := strings.Split(content, "\n")

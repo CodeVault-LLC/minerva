@@ -121,26 +121,27 @@ func FetchWebsite(url, userAgent string) (*WebsiteResponse, error) {
 					FileSize:   uint(len(c.Response.Body())),
 					FileType:   string(utils.Font),
 				})
-			case proto.NetworkResourceTypeXHR:
-				if err := rod.Try(func() {
-					c.MustLoadResponse()
-				}); err != nil {
-					logger.Log.Error("Failed to load xhr response", zap.Error(err), zap.String("url", requestURL))
-				}
+				/*case proto.NetworkResourceTypeXHR:
+					if err := rod.Try(func() {
+						c.MustLoadResponse()
+					}); err != nil {
+						logger.Log.Error("Failed to load xhr response", zap.Error(err), zap.String("url", requestURL))
+					}
 
-				networkFiles = append(networkFiles, common.FileRequest{
-					Src:        requestURL,
-					Content:    c.Response.Body(),
-					HashedBody: utils.SHA256(c.Response.Body()),
-					FileSize:   uint(len(c.Response.Body())),
-					FileType:   string(utils.XHR),
-				})
-			case proto.NetworkResourceTypeWebSocket:
-				if err := rod.Try(func() {
-					c.MustLoadResponse()
-				}); err != nil {
-					logger.Log.Error("Failed to load websocket response", zap.Error(err), zap.String("url", requestURL))
-				}
+					networkFiles = append(networkFiles, common.FileRequest{
+						Src:        requestURL,
+						Content:    c.Response.Body(),
+						HashedBody: utils.SHA256(c.Response.Body()),
+						FileSize:   uint(len(c.Response.Body())),
+						FileType:   string(utils.XHR),
+					})
+				case proto.NetworkResourceTypeWebSocket:
+					if err := rod.Try(func() {
+						c.MustLoadResponse()
+					}); err != nil {
+						logger.Log.Error("Failed to load websocket response", zap.Error(err), zap.String("url", requestURL))
+					}
+				*/
 			}
 		}
 

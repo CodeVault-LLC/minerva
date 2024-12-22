@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package fingerprint;
+
+option go_package = "./proto;fingerprint";
+
+service FingerprintService {
+    rpc AddFingerprint(AddFingerprintRequest) returns (AddFingerprintResponse);
+    rpc GetFingerprint(GetFingerprintRequest) returns (GetFingerprintResponse);
+    rpc MatchFingerprint(MatchFingerprintRequest) returns (MatchFingerprintResponse);
+}
+
+enum FingerprintType {
+    SCRIPT = 0;
+}
+
+message AddFingerprintRequest {
+    string name = 1;
+    string description = 2;
+    string pattern = 3;
+    FingerprintType type = 4;
+    repeated string keywords = 5;
+}
+
+message AddFingerprintResponse {
+    string id = 1;
+}
+
+message GetFingerprintRequest {
+    string id = 1;
+}
+
+message GetFingerprintResponse {
+    string id = 1;
+    string name = 2;
+    string description = 3;
+    string pattern = 4;
+    string type = 5;
+    repeated string keywords = 6;
+    string created_at = 7;
+    string updated_at = 8;
+}
+
+message MatchFingerprintRequest {
+    string source = 1;
+}
+
+message MatchFingerprintResponse {
+    repeated MatchedFingerprint matched = 1;
+}
+
+message MatchedFingerprint {
+    string id = 1;
+    string pattern = 2;
+}

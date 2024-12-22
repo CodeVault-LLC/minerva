@@ -3,6 +3,8 @@ package entities
 import (
 	"crypto/x509"
 	"time"
+
+	whoisparser "github.com/likexian/whois-parser"
 )
 
 type NetworkModel struct {
@@ -11,10 +13,10 @@ type NetworkModel struct {
 	IpAddresses []string `cql:"ip_addresses"`
 	IpRanges    []string `cql:"ip_ranges"`
 
-	HttpHeaders      []string            `cql:"http_headers"`
-	WhoisModel       WhoisModel          `cql:"whois"`
-	DnsModel         DnsModel            `cql:"dns"`
-	CertificateModel []*x509.Certificate `cql:"certificates"`
+	HttpHeaders      []string              `cql:"http_headers"`
+	WhoisModel       whoisparser.WhoisInfo `cql:"whois"`
+	DnsModel         DnsModel              `cql:"dns"`
+	CertificateModel []*x509.Certificate   `cql:"certificates"`
 
 	CreatedAt time.Time `cql:"created_at"`
 	UpdatedAt time.Time `cql:"updated_at"`

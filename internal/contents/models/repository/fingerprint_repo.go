@@ -19,31 +19,22 @@ func NewFingerprintRepo(database *database.Database) *FingerprintRepo {
 
 var FingerprintRepository *FingerprintRepo
 
-func (repository *FingerprintRepo) SaveFingerprintResult(contentId string, fingerprints []utils.RegexReturn) error {
-	for _, finding := range fingerprints {
-		for _, match := range finding.Matches {
-			finding := entities.FingerprintModel{
-				Id:        uuid.New().String(),
-				ContentId: contentId,
+func (repository *FingerprintRepo) SaveFingerprintResult(fingerprint entities.FingerprintModel) error {
+	finding := entities.FingerprintModel{
+		Id:            uuid.New().String(),
+		ContentId:     fingerprint.ContentId,
+		FingerprintId: fingerprint.Id,
 
-				Line:   match.Line,
-				Match:  match.Match,
-				Source: match.Source,
+		CreatedAt: utils.GetCurrentTime(),
+		UpdatedAt: utils.GetCurrentTime(),
+	}
 
-				FingerprintName: finding.Name,
-
-				CreatedAt: utils.GetCurrentTime(),
-				UpdatedAt: utils.GetCurrentTime(),
-			}
-
-			query := "INSERT INTO fingerprint (id, content_id, line, match, source, fingerprint_name, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
-			queryResult := repository.database.GetDatabase().Query(query, finding.Id, finding.ContentId, finding.Line, finding.Match, finding.Source, finding.FingerprintName, finding.CreatedAt, finding.UpdatedAt)
-			err := queryResult.Exec()
-			if err != nil {
-				logger.Log.Error("Failed to save finding", zap.Error(err))
-				return err
-			}
-		}
+	query := "INSERT INTO fingerprint (id, content_id, fingerprint_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?)"
+	queryResult := repository.database.Db.Query(query, finding.Id, finding.ContentId, finding.FingerprintId, finding.CreatedAt, finding.UpdatedAt)
+	err := queryResult.Exec()
+	if err != nil {
+		logger.Log.Error("Failed to save finding", zap.Error(err))
+		return err
 	}
 
 	return nil

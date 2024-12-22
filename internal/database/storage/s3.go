@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/codevault-llc/minerva/internal/database"
+	"github.com/codevault-llc/minerva/pkg/utils"
 	"github.com/google/uuid"
 )
 
@@ -21,6 +22,8 @@ func DetermineStorageType(content string) string {
 	return "cold"
 }
 
+var supportedFileExtensions = []string{"jpg", "jpeg", "png", "pdf", "txt", "html", "js", "mjs", "mp3", "mp4", "css", "scss"}
+
 // GetFileExtension returns the file extension of a given file name.
 func GetFileExtension(fileName string) string {
 	if fileName == "" {
@@ -29,6 +32,10 @@ func GetFileExtension(fileName string) string {
 
 	parts := strings.Split(fileName, ".")
 	if len(parts) == 1 {
+		return "txt"
+	}
+
+	if !utils.StringInSlice(parts[len(parts)-1], supportedFileExtensions) {
 		return "txt"
 	}
 

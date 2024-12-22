@@ -43,7 +43,7 @@ var ContentSchema = []string{
 		created_at TIMESTAMP,
 		updated_at TIMESTAMP,
 	);`,
-	`CREATE TABLE IF NOT EXISTS minerva.fingerprint (
+	`CREATE TABLE IF NOT EXISTS minerva.fingerprint (
 		id UUID PRIMARY KEY,
 		content_id TEXT,
 		fingerprint_name TEXT,
@@ -51,7 +51,7 @@ var ContentSchema = []string{
 		source TEXT,
 		line INT,
 		created_at TIMESTAMP,
-		updated_at TIMESTAMP
+		updated_at TIMESTAMP,
 	);`,
 	`CREATE INDEX IF NOT EXISTS idx_hashed_body ON minerva.content (hashed_body);`,
 	`CREATE INDEX IF NOT EXISTS idx_content_id ON minerva.content_storage (content_id);`,

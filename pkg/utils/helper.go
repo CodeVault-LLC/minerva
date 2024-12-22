@@ -12,6 +12,15 @@ import (
 	"golang.org/x/net/html"
 )
 
+func StringInSlice(a string, list []string) bool {
+	for _, b := range list {
+		if b == a {
+			return true
+		}
+	}
+	return false
+}
+
 func IPsToStrings(ips []net.IP) []string {
 	var result []string
 	for _, ip := range ips {
