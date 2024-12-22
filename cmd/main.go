@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/codevault-llc/minerva/cmd/api"
+	"github.com/codevault-llc/minerva/config"
 	"github.com/codevault-llc/minerva/internal/core"
 	"github.com/codevault-llc/minerva/internal/core/models/repository"
 	"github.com/codevault-llc/minerva/internal/database"
@@ -25,6 +26,11 @@ func main() {
 	err = godotenv.Load()
 	if err != nil {
 		log.Error("Error loading .env file", zap.Error(err))
+	}
+
+	_, err = config.NewConfig()
+	if err != nil {
+		log.Error("Error loading config", zap.Error(err))
 	}
 
 	db, err := database.NewDatabase()

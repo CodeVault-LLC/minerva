@@ -6,6 +6,7 @@ import (
 
 	"github.com/codevault-llc/minerva/config"
 	"github.com/codevault-llc/minerva/internal/common"
+	"github.com/codevault-llc/minerva/internal/contents/fingerprint"
 	"github.com/codevault-llc/minerva/internal/contents/models/entities"
 	repository "github.com/codevault-llc/minerva/internal/contents/models/repository"
 	generalEntities "github.com/codevault-llc/minerva/internal/core/models/entities"
@@ -22,16 +23,21 @@ type ContentModule struct {
 	runtimeLocation common.RuntimeLocation
 	repository      *repository.ContentRepo
 	findingRepo     *repository.FindingRepo
+	fingerprint     *fingerprint.FingerprintModule
+	fingerprintRepo *repository.FingerprintRepo
 }
 
 func NewContentModule(runtimeLocation common.RuntimeLocation, db *database.Database) *ContentModule {
 	repository.ContentRepository = repository.NewContentRepo(db)
 	repository.FindingRepository = repository.NewFindingRepo(db)
+	repository.FingerprintRepository = repository.NewFingerprintRepo(db)
 
 	return &ContentModule{
 		runtimeLocation: runtimeLocation,
 		repository:      repository.ContentRepository,
 		findingRepo:     repository.FindingRepository,
+		fingerprint:     fingerprint.NewFingerprintModule(),
+		fingerprintRepo: repository.FingerprintRepository,
 	}
 }
 
@@ -106,6 +112,13 @@ func (m *ContentModule) Execute(job generalEntities.JobModel, website *common.We
 				logger.Log.Error("Failed to save storage record: %v", zap.Error(err))
 				continue
 			}
+
+			foundFingerprints := m.fingerprint.Execute(script.Src)
+			err = m.fingerprintRepo.SaveFingerprintResult(content.Id, foundFingerprints)
+			if err != nil {
+				logger.Log.Error("Failed to save fingerprint result: %v", zap.Error(err))
+				continue
+			}
 		}
 	}
 
@@ -141,7 +154,7 @@ func scanSecrets(scripts []common.FileRequest) []utils.RegexReturn {
 
 	concurrencyLimit := make(chan struct{}, 10)
 
-	for _, rule := range config.ConfigRules {
+	for _, rule := range config.Config.Rules {
 		concurrencyLimit <- struct{}{}
 		wg.Add(1)
 
@@ -162,7 +175,7 @@ func scanSecrets(scripts []common.FileRequest) []utils.RegexReturn {
 				results = append(results, utils.RegexReturn{Name: rule.RuleID, Matches: scriptResults, Description: rule.Description})
 				mu.Unlock()
 			}
-		}(*rule)
+		}(rule)
 	}
 
 	wg.Wait()

@@ -1,0 +1,109 @@
+{
+  "entries": [
+    {
+      "name": "Google Analytics",
+      "description": "Google Analytics is a web analytics service offered by Google that tracks and reports website traffic.",
+      "regex": "www\\.google-analytics\\.com/(analytics|ga)\\.js",
+      "type": "script",
+      "keywords": ["google", "analytics", "google analytics"]
+    },
+    {
+      "name": "Google Tag Manager",
+      "description": "Google Tag Manager is a tag management system that allows you to quickly and easily update tags and code snippets on your website or mobile app.",
+      "regex": "www\\.googletagmanager\\.com/gtm\\.js",
+      "type": "script",
+      "keywords": ["google", "tag manager", "gtm"]
+    },
+    {
+      "name": "Facebook Pixel",
+      "description": "Facebook Pixel is an analytics tool that allows you to measure the effectiveness of your advertising by understanding the actions people take on your website.",
+      "regex": "connect\\.facebook\\.net/.*/fbevents\\.js",
+      "type": "script",
+      "keywords": ["facebook", "pixel", "analytics"]
+    },
+    {
+      "name": "Hotjar",
+      "description": "Hotjar is a behavior analytics and user feedback service that helps you understand the behavior of your users.",
+      "regex": "static\\.hotjar\\.com/c/hotjar-.*\\.js",
+      "type": "script",
+      "keywords": ["hotjar", "analytics", "user feedback"]
+    },
+    {
+      "name": "Google Ads Conversion Tracking",
+      "description": "Google Ads conversion tracking is a free tool that shows you what happens after a customer interacts with your ads.",
+      "regex": "www\\.googletagmanager\\.com/gtag/js\\?id=AW-.*",
+      "type": "script",
+      "keywords": ["google", "ads", "conversion tracking"]
+    },
+    {
+      "name": "Google Fonts",
+      "description": "Google Fonts is a library of web fonts that can be embedded on websites.",
+      "regex": "fonts\\.googleapis\\.com/.*",
+      "type": "stylesheet",
+      "keywords": ["google", "fonts", "web fonts"]
+    },
+    {
+      "name": "Bootstrap CDN",
+      "description": "Bootstrap is a popular CSS framework for developing responsive and mobile-first websites.",
+      "regex": "maxcdn\\.bootstrapcdn\\.com/bootstrap/.*",
+      "type": "stylesheet",
+      "keywords": ["bootstrap", "css", "cdn"]
+    },
+    {
+      "name": "Font Awesome",
+      "description": "Font Awesome is a popular library for adding scalable vector icons to web projects.",
+      "regex": "use\\.fontawesome\\.com/.*",
+      "type": "stylesheet",
+      "keywords": ["font awesome", "icons", "cdn"]
+    },
+    {
+      "name": "jQuery",
+      "description": "jQuery is a fast, small, and feature-rich JavaScript library.",
+      "regex": "code\\.jquery\\.com/jquery-.*\\.js",
+      "type": "script",
+      "keywords": ["jquery", "javascript", "library"]
+    },
+    {
+      "name": "Cloudflare CDN",
+      "description": "Cloudflare CDN provides performance and security for web content delivery.",
+      "regex": "cdnjs\\.cloudflare\\.com/ajax/libs/.*",
+      "type": "script",
+      "keywords": ["cloudflare", "cdn", "javascript", "css"]
+    },
+    {
+      "name": "Microsoft Clarity",
+      "description": "Microsoft Clarity is a user behavior analytics tool that helps improve user experiences on websites.",
+      "regex": "clarity\\.ms/clarity\\.js",
+      "type": "script",
+      "keywords": ["microsoft", "clarity", "analytics"]
+    },
+    {
+      "name": "Twitter Pixel",
+      "description": "Twitter Pixel is an analytics tool for tracking the effectiveness of ads on Twitter.",
+      "regex": "static\\.ads-twitter\\.com/uwt\\.js",
+      "type": "script",
+      "keywords": ["twitter", "pixel", "ads"]
+    },
+    {
+      "name": "LinkedIn Insights",
+      "description": "LinkedIn Insight Tag is a lightweight JavaScript tag for LinkedIn advertising and analytics.",
+      "regex": "snap\\.licdn\\.com/li.lms-analytics/insight\\.min\\.js",
+      "type": "script",
+      "keywords": ["linkedin", "insights", "analytics"]
+    },
+    {
+      "name": "YouTube Embed",
+      "description": "YouTube embed scripts for embedding YouTube videos in web pages.",
+      "regex": "www\\.youtube\\.com/embed/.*",
+      "type": "iframe",
+      "keywords": ["youtube", "embed", "videos"]
+    },
+    {
+      "name": "Vimeo Embed",
+      "description": "Vimeo embed scripts for embedding Vimeo videos in web pages.",
+      "regex": "player\\.vimeo\\.com/video/.*",
+      "type": "iframe",
+      "keywords": ["vimeo", "embed", "videos"]
+    }
+  ]
+}

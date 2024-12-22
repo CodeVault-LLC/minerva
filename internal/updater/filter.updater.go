@@ -158,7 +158,7 @@ func CompareValues(comparedValue string, valueType parsers.ListType) []types.Fil
 	pipe := database.Rdb.Pipeline()
 	cmds := make(map[string]*redis.BoolCmd)
 
-	for _, list := range config.ConfigLists {
+	for _, list := range config.Config.Lists {
 		for _, listType := range list.Types {
 			if listType == valueType {
 				key := fmt.Sprintf("%s:%s", list.FilterID, valueType)
@@ -173,7 +173,7 @@ func CompareValues(comparedValue string, valueType parsers.ListType) []types.Fil
 		return nil
 	}
 
-	for _, list := range config.ConfigLists {
+	for _, list := range config.Config.Lists {
 		if cmd, ok := cmds[list.FilterID]; ok {
 			exists, err := cmd.Result()
 			if err != nil {
@@ -181,7 +181,7 @@ func CompareValues(comparedValue string, valueType parsers.ListType) []types.Fil
 				continue
 			}
 			if exists {
-				matchingLists = append(matchingLists, *list)
+				matchingLists = append(matchingLists, list)
 			}
 		}
 	}

@@ -14,7 +14,7 @@ const (
 )
 
 func StartAutoUpdate(interval time.Duration) {
-	updateChan := make(chan *types.Filter, len(config.ConfigLists))
+	updateChan := make(chan *types.Filter, len(config.Config.Lists))
 	var wg sync.WaitGroup
 
 	// Start worker goroutines
@@ -23,8 +23,8 @@ func StartAutoUpdate(interval time.Duration) {
 		go updateWorker(updateChan, &wg) // Uncomment this line
 	}
 
-	for _, list := range config.ConfigLists {
-		updateChan <- list
+	for _, list := range config.Config.Lists {
+		updateChan <- &list
 	}
 
 	ticker := time.NewTicker(interval)
@@ -33,8 +33,8 @@ func StartAutoUpdate(interval time.Duration) {
 	for range ticker.C {
 		fmt.Println("Updating list")
 
-		for _, list := range config.ConfigLists {
-			updateChan <- list
+		for _, list := range config.Config.Lists {
+			updateChan <- &list
 		}
 	}
 
