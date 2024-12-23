@@ -45,12 +45,6 @@ func main() {
 	}
 	log.Info("Connected to redis")
 
-	err = database.InitAWS()
-	if err != nil {
-		log.Error("Error connecting to AWS %v", zap.Error(err))
-	}
-	log.Info("Connected to AWS")
-
 	setupScanning(db)
 
 	if err := setupServices(); err != nil {

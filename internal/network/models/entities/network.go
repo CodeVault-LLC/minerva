@@ -8,7 +8,8 @@ import (
 )
 
 type NetworkModel struct {
-	Id string `cql:"id"`
+	Id     string `cql:"id"`
+	ScanId string `cql:"scan_id"`
 
 	IpAddresses []string `cql:"ip_addresses"`
 	IpRanges    []string `cql:"ip_ranges"`

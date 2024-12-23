@@ -1,14 +1,15 @@
 package models
 
-var NetworkSchema = []string{`CREATE TABLE IF NOT EXISTS minerva.networks (
-	id UUID PRIMARY KEY,
-	scan_id TEXT,
-	ip_addresses TEXT,
-	ip_ranges TEXT,
-	http_headers TEXT,
-	dns TEXT,
-	whois TEXT,
-	certificates TEXT,
-	created_at TIMESTAMP,
-	updated_at TIMESTAMP
-);`}
+var NetworkSchema = []string{`CREATE TABLE IF NOT EXISTS networks (
+	id UUID DEFAULT generateUUIDv4(),
+	scan_id UUID,
+	ip_addresses String,
+	ip_ranges String,
+	http_headers String,
+	dns String,
+	whois String,
+	certificates String,
+	created_at DateTime DEFAULT now(),
+	updated_at DateTime DEFAULT now()
+) ENGINE = MergeTree()
+ORDER BY id;`}

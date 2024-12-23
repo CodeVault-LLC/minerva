@@ -9,8 +9,6 @@ type Scan struct {
 	Title      string `json:"title"`
 	StatusCode int    `json:"status_code"`
 
-	Status string `json:"status"`
-
 	Sha256 string `json:"sha256"`
 	SHA1   string `json:"sha1"`
 	MD5    string `json:"md5"`
@@ -27,7 +25,6 @@ func ConvertScan(scan entities.ScanModel) Scan {
 		Title:      scan.Title,
 		StatusCode: scan.StatusCode,
 
-		Status: string(scan.Status),
 		Sha256: scan.Sha256,
 		SHA1:   scan.Sha1,
 		MD5:    scan.Md5,

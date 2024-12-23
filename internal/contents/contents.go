@@ -3,7 +3,6 @@ package contents
 import (
 	"context"
 	"sync"
-	"time"
 
 	"github.com/codevault-llc/minerva/config"
 	"github.com/codevault-llc/minerva/internal/common"
@@ -11,7 +10,6 @@ import (
 	repository "github.com/codevault-llc/minerva/internal/contents/models/repository"
 	generalEntities "github.com/codevault-llc/minerva/internal/core/models/entities"
 	"github.com/codevault-llc/minerva/internal/database"
-	"github.com/codevault-llc/minerva/internal/database/storage"
 	"github.com/codevault-llc/minerva/internal/fingerprint"
 	"github.com/codevault-llc/minerva/pkg/logger"
 	"github.com/codevault-llc/minerva/pkg/types"
@@ -44,9 +42,9 @@ func NewContentModule(runtimeLocation common.RuntimeLocation, db *database.Datab
 
 func (m *ContentModule) Execute(job generalEntities.JobModel, website *common.WebsiteAnalysis) error {
 	for _, script := range website.Assets {
-		hashedBody := utils.SHA256(script.Content)
+		md5Data := utils.MD5(script.Src)
 
-		existingContentId, err := m.repository.FindContentByHash(hashedBody)
+		existingContentId, err := m.repository.FindContentByMd5(md5Data)
 		if err != nil {
 			logger.Log.Error("Failed to find content by hash: %v", zap.Error(err))
 
@@ -67,55 +65,21 @@ func (m *ContentModule) Execute(job generalEntities.JobModel, website *common.We
 		}
 
 		if existingContentId == "" {
-			originalFileName := script.Src
-			fileExtension := storage.GetFileExtension(originalFileName)
-			objectKey := storage.GenerateObjectKey(originalFileName)
-			sanitizedObjectKey := storage.SanitizeObjectKey(objectKey)
-			contentType := storage.GetContentType(fileExtension)
-
-			if len(sanitizedObjectKey) > 1024 {
-				sanitizedObjectKey = sanitizedObjectKey[:1024]
-			}
-
-			logger.Log.Info("Uploading file to storage", zap.String("objectKey", sanitizedObjectKey))
-			err = storage.UploadFile("content-bucket", sanitizedObjectKey, []byte(script.Content), contentType, true)
-			if err != nil {
-				logger.Log.Error("Failed to upload file: %v", zap.Error(err))
-				continue
-			}
-
 			content := entities.ContentModel{
-				Id:          uuid.New().String(),
-				ScanId:      job.ScanID,
-				FileSize:    int64(script.FileSize),
-				FileType:    script.FileType,
-				Source:      script.Src,
-				StorageType: storage.DetermineStorageType(script.Content),
-				HashedBody:  hashedBody,
-				Tags:        []string{},
-				CreatedAt:   time.Now(),
-				UpdatedAt:   time.Now(),
+				Id:       uuid.New().String(),
+				ScanId:   job.ScanID,
+				FileSize: int64(script.FileSize),
+				FileType: script.FileType,
+				Source:   script.Src,
+				Md5:      md5Data,
+				Sha1:     utils.SHA1(script.Src),
+				Sha256:   utils.SHA256(script.Src),
+				Tags:     []string{},
 			}
 
 			err := m.repository.SaveContentResult(content)
 			if err != nil {
 				logger.Log.Error("Failed to save content: %v", zap.Error(err))
-				continue
-			}
-
-			storageRecord := entities.ContentStorageModel{
-				Id:              uuid.New().String(),
-				ContentId:       content.Id,
-				BucketName:      "content-bucket",
-				ObjectKey:       sanitizedObjectKey,
-				Location:        storage.GetLocation("content-bucket", sanitizedObjectKey),
-				StorageEndpoint: storage.GetEndpoint("content-bucket"),
-				Encryption:      "AES256",
-			}
-
-			err = m.repository.CreateContentStorage(storageRecord)
-			if err != nil {
-				logger.Log.Error("Failed to save storage record: %v", zap.Error(err))
 				continue
 			}
 

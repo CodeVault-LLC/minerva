@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/codevault-llc/minerva/internal/core/models/entities"
-	"github.com/codevault-llc/minerva/internal/core/models/repository"
 	"github.com/codevault-llc/minerva/pkg/logger"
 	"go.uber.org/zap"
 )
@@ -92,10 +91,6 @@ func (s *TaskScheduler) archiveJob(job *entities.JobModel) {
 // updateJobStatus updates the status in DataStore
 func (s *TaskScheduler) updateJobStatus(job *entities.JobModel) {
 	job.UpdatedAt = time.Now()
-	err := repository.ScanRepository.CompleteScan(job.ScanID)
-	if err != nil {
-		logger.Log.Error("Failed to update job status", zap.Error(err))
-	}
 }
 
 // GetJob retrieves a job from the queue by ID

@@ -63,19 +63,15 @@ func (i *Inspector) performWebsiteScan(job *entities.JobModel) error {
 	}
 
 	scanModel := entities.ScanModel{
-		Id:         job.ScanID,
 		Url:        job.URL,
 		Title:      website.Title,
 		StatusCode: website.StatusCode,
-		Status:     entities.ScanStatusPending,
 		Sha256:     utils.SHA256(website.Url),
 		Sha1:       utils.SHA1(website.Url),
 		Md5:        utils.MD5(website.Url),
 		CreatedAt:  utils.GetCurrentTime(),
 		UpdatedAt:  utils.GetCurrentTime(),
 	}
-
-	job.ScanID = scanModel.Id
 
 	err = repository.ScanRepository.SaveScanResult(job, scanModel)
 	if err != nil {

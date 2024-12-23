@@ -11,62 +11,8 @@ import (
 )
 
 func RegisterContentRoutes(router fiber.Router) error {
-	router.Get("/contents/:scanID/", getScanContents)
 	router.Get("/findings/:scanID/", getScanFindings)
-	router.Get("/contents/:scanID/:contentID", getScanContent)
 
-	return nil
-}
-
-// @Summary Get scan contents
-// @Description Get scan contents
-// @Tags scans
-// @Accept json
-// @Produce json
-// @Param scanID path string true "Scan ID"
-// @Success 200 {array} responder.APIResponse{data=models.ContentResponse}
-// @Failure 400 {object} responder.APIResponse{error=responder.APIError}
-// @Failure 404 {object} responder.APIResponse{error=responder.APIError}
-// @Router /scans/{scanID}/contents [get]
-func getScanContents(c *fiber.Ctx) error {
-	scanID := c.Params("scanID")
-
-	contents, err := repository.ContentRepository.GetScanContents(scanID)
-	if err != nil {
-		return responder.CreateError(responder.ErrDatabaseQueryFailed).Error
-	}
-
-	if len(contents) == 0 {
-		return responder.CreateError(responder.ErrResourceNotFound).Error
-	}
-
-	responder.WriteJSONResponse(c, responder.CreateSuccessResponse(contents, "Successfully retrieved scan contents"))
-	return nil
-}
-
-// @Summary Get scan content
-// @Description Get scan content
-// @Tags scans
-// @Accept json
-// @Produce json
-// @Param scanID path string true "Scan ID"
-// @Param contentID path string true "Content ID"
-// @Success 200 {object} responder.APIResponse{data=models.ContentResponse}
-// @Failure 400 {object} responder.APIResponse{error=responder.APIError}
-// @Failure 404 {object} responder.APIResponse{error=responder.APIError}
-func getScanContent(c *fiber.Ctx) error {
-	contentID := c.Params("contentID")
-
-	content, err := repository.ContentRepository.GetScanContent(contentID)
-	if err != nil {
-		return responder.CreateError(responder.ErrDatabaseQueryFailed).Error
-	}
-
-	if content.Id == "" {
-		return responder.CreateError(responder.ErrResourceNotFound).Error
-	}
-
-	responder.WriteJSONResponse(c, responder.CreateSuccessResponse(viewmodels.ConvertSingleContent(content), "Successfully retrieved scan content"))
 	return nil
 }
 

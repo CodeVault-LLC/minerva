@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"context"
+
 	"github.com/codevault-llc/minerva/internal/contents/models/entities"
 	"github.com/codevault-llc/minerva/internal/database"
 	"github.com/codevault-llc/minerva/pkg/logger"
@@ -29,9 +31,10 @@ func (repository *FingerprintRepo) SaveFingerprintResult(fingerprint entities.Fi
 		UpdatedAt: utils.GetCurrentTime(),
 	}
 
+	ctx := context.Background()
+
 	query := "INSERT INTO fingerprint (id, content_id, fingerprint_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?)"
-	queryResult := repository.database.Db.Query(query, finding.Id, finding.ContentId, finding.FingerprintId, finding.CreatedAt, finding.UpdatedAt)
-	err := queryResult.Exec()
+	_, err := repository.database.Db.Query(ctx, query, finding.Id, finding.ContentId, finding.FingerprintId, finding.CreatedAt, finding.UpdatedAt)
 	if err != nil {
 		logger.Log.Error("Failed to save finding", zap.Error(err))
 		return err

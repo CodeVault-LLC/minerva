@@ -1,18 +1,17 @@
 package models
 
-var CoreSchema = []string{`CREATE TABLE IF NOT EXISTS minerva.scans (
-    id UUID PRIMARY KEY,
+var CoreSchema = []string{`CREATE TABLE IF NOT EXISTS scans (
+    id UUID DEFAULT generateUUIDv4(),
 
-    url TEXT,
-    title TEXT,
-    status_code INT,
+    url String,
+    title String,
+    status_code UInt16,
 
-    status TEXT,
+    sha256 String,
+    sha1 String,
+    md5 String,
 
-    sha256 TEXT,
-    sha1 TEXT,
-    md5 TEXT,
-
-    created_at TIMESTAMP,
-    updated_at TIMESTAMP
-);`}
+    created_at DateTime DEFAULT now(),
+    updated_at DateTime DEFAULT now()
+) ENGINE = MergeTree()
+ORDER BY id;`}

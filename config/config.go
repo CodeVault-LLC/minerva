@@ -15,6 +15,18 @@ type InternalConfig struct {
 	Rules map[string]types.Rule
 
 	FingerprintServiceAddress string
+	DatabaseAddr              string
+	DatabaseUser              string
+	DatabasePass              string
+	DatabaseName              string
+}
+
+func getEnv(key, fallback string) string {
+	value := os.Getenv(key)
+	if value == "" {
+		return fallback
+	}
+	return value
 }
 
 var Config = InternalConfig{}
@@ -35,6 +47,10 @@ func NewConfig() (*InternalConfig, error) {
 		Rules: rules,
 
 		FingerprintServiceAddress: os.Getenv("FINGERPRINT_SERVICE_ADDRESS"),
+		DatabaseAddr:              getEnv("DATABASE_ADDR", "localhost:9000"),
+		DatabaseUser:              getEnv("DATABASE_USER", "default"),
+		DatabasePass:              getEnv("DATABASE_PASS", ""),
+		DatabaseName:              getEnv("DATABASE_NAME", "minerva"),
 	}
 
 	Config = *config

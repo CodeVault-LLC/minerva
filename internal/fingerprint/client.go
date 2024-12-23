@@ -2,6 +2,7 @@ package fingerprint
 
 import (
 	"context"
+	"time"
 
 	"github.com/codevault-llc/minerva/pkg/logger"
 	pb "github.com/codevault-llc/minerva/proto"
@@ -17,7 +18,10 @@ var FingerprintClient *Client
 
 // NewClient initializes a new gRPC client for the Fingerprint Service.
 func NewClient(address string) (*Client, error) {
-	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	conn, err := grpc.DialContext(ctx, address, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		return nil, err
 	}

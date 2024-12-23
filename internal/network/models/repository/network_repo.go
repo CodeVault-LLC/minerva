@@ -26,7 +26,7 @@ func NewNetworkRepository(database *database.Database) *NetworkRepo {
 
 // NetworkRepositoryInterface is the interface for the NetworkRepository
 func (n *NetworkRepo) Create(scanId string, network entities.NetworkModel) error {
-	query := "INSERT INTO minerva.networks (id, scan_id, ip_addresses, ip_ranges, http_headers, dns, whois, certificates, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+	query := "INSERT INTO networks (id, scan_id, ip_addresses, ip_ranges, http_headers, dns, whois, certificates, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 
 	ipAddresses, err := json.Marshal(network.IpAddresses)
 	if err != nil {
@@ -64,34 +64,31 @@ func (n *NetworkRepo) Create(scanId string, network entities.NetworkModel) error
 		return err
 	}
 
-	queryResult := n.database.GetDatabase().Query(query, network.Id, scanId, string(ipAddresses), string(ipRanges), string(httpHeaders), string(dnsModel), string(whoisModel), string(certificates), network.CreatedAt, network.UpdatedAt)
-	err = queryResult.Exec()
+	ctx := context.Background()
+
+	err = n.database.GetDatabase().Exec(ctx, query, network.Id, scanId, string(ipAddresses), string(ipRanges), string(httpHeaders), string(dnsModel), string(whoisModel), string(certificates), network.CreatedAt, network.UpdatedAt)
 	if err != nil {
-		logger.Log.Error("Failed to execute query", zap.Error(err))
+		logger.Log.Error("Failed to insert network", zap.Error(err))
 		return err
 	}
 
 	return nil
 }
 
-type combinedNetwork struct {
-	entities.NetworkModel
-}
-
 func (n *NetworkRepo) GetScanNetwork(id string) (entities.NetworkModel, error) {
 	ctx := context.Background()
-	var combinedNetworks entities.NetworkModel
+	var networkModel entities.NetworkModel
 
 	query := "SELECT id, scan_id, ip_addresses, ip_ranges, http_headers, whois, dns, certificates, created_at, updated_at FROM networks WHERE id = ?"
-	err := n.database.Select(ctx, query, &combinedNetworks, id)
+	err := n.database.Db.QueryRow(ctx, query, id).Scan(&networkModel.Id, &networkModel.ScanId, &networkModel.IpAddresses, &networkModel.IpRanges, &networkModel.HttpHeaders, &networkModel.WhoisModel, &networkModel.DnsModel, &networkModel.CertificateModel, &networkModel.CreatedAt, &networkModel.UpdatedAt)
 	if err != nil {
 		logger.Log.Error("Failed to fetch scan result", zap.Error(err))
 		return entities.NetworkModel{}, err
 	}
 
-	if combinedNetworks.Id == "" {
+	if networkModel.Id == "" {
 		return entities.NetworkModel{}, errors.New("no scan result found")
 	}
 
-	return combinedNetworks, nil
+	return networkModel, nil
 }

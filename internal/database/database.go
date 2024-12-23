@@ -2,167 +2,126 @@ package database
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"reflect"
+	"log"
 	"time"
 
+	"github.com/ClickHouse/clickhouse-go/v2"
+	"github.com/codevault-llc/minerva/config"
 	contentSchema "github.com/codevault-llc/minerva/internal/contents/models"
 	coreSchema "github.com/codevault-llc/minerva/internal/core/models"
 	networkSchema "github.com/codevault-llc/minerva/internal/network/models"
 	"github.com/codevault-llc/minerva/pkg/logger"
-	"github.com/gocql/gocql"
-	"go.uber.org/zap"
 )
 
 type Database struct {
-	Db *gocql.Session
+	Db clickhouse.Conn
+}
+
+// validateDatabase checks if the ClickHouse database is accessible.
+func validateDatabase() error {
+	conn, err := clickhouse.Open(&clickhouse.Options{
+		Addr: []string{config.Config.DatabaseAddr},
+		Auth: clickhouse.Auth{
+			Username: config.Config.DatabaseUser,
+			Password: config.Config.DatabasePass,
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to connect to ClickHouse: %w", err)
+	}
+
+	if err := conn.Ping(context.Background()); err != nil {
+		return fmt.Errorf("failed to ping ClickHouse: %w", err)
+	}
+
+	if err := conn.Exec(context.Background(), fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s", config.Config.DatabaseName)); err != nil {
+		return fmt.Errorf("failed to create database: %w", err)
+	}
+
+	if err := conn.Close(); err != nil {
+		return fmt.Errorf("failed to close database connection: %w", err)
+	}
+
+	return nil
 }
 
 func NewDatabase() (*Database, error) {
-	cluster := gocql.NewCluster("127.0.0.1")
-	cluster.Consistency = gocql.Quorum
+	validateDatabase()
 
-	tempSession, err := cluster.CreateSession()
+	conn, err := clickhouse.Open(&clickhouse.Options{
+		Addr: []string{config.Config.DatabaseAddr},
+		Auth: clickhouse.Auth{
+			Database: config.Config.DatabaseName,
+			Username: config.Config.DatabaseUser,
+			Password: config.Config.DatabasePass,
+		},
+		ClientInfo: clickhouse.ClientInfo{
+			Products: []struct {
+				Name    string
+				Version string
+			}{
+				{Name: "codevault-fingerprint", Version: "0.1"},
+			},
+		},
+		// Disable TLS if not required
+		TLS: nil,
+		Settings: clickhouse.Settings{
+			"max_execution_time": 60,
+		},
+		DialTimeout: 10 * time.Second,
+		ReadTimeout: 10 * time.Second,
+		Debugf:      log.Printf,
+	})
 	if err != nil {
-		return nil, err
-	}
-	defer tempSession.Close()
-
-	err = createSchema(tempSession)
-	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to connect to ClickHouse: %w", err)
 	}
 
-	cluster.Keyspace = "minerva"
-	session, err := cluster.CreateSession()
-	if err != nil {
-		logger.Log.Error("Failed to create session", zap.Error(err))
-		return nil, err
+	// Ping the database to ensure the connection is established
+	if err := conn.Ping(context.Background()); err != nil {
+		return nil, fmt.Errorf("failed to ping ClickHouse: %w", err)
 	}
 
-	return &Database{Db: session}, nil
+	db := &Database{Db: conn}
+
+	if err := db.createSchema(); err != nil {
+		return nil, fmt.Errorf("failed to create schema: %w", err)
+	}
+
+	logger.Log.Info("Connected to ClickHouse")
+
+	return db, nil
 }
 
-func createSchema(session *gocql.Session) error {
-	err := createKeyspace(session)
-	if err != nil {
-		return fmt.Errorf("failed to create keyspace: %v", err)
-	}
+func (d *Database) createSchema() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 
 	for _, schema := range coreSchema.CoreSchema {
-		err = session.Query(schema).Exec()
-		if err != nil {
-			return fmt.Errorf("failed to create schema: %v", err)
+		if err := d.Db.Exec(ctx, schema); err != nil {
+			return fmt.Errorf("failed to create schema: %w", err)
 		}
 	}
 
 	for _, schema := range networkSchema.NetworkSchema {
-		err = session.Query(schema).Exec()
-		if err != nil {
-			return fmt.Errorf("failed to create schema: %v", err)
+		if err := d.Db.Exec(ctx, schema); err != nil {
+			return fmt.Errorf("failed to create schema: %w", err)
 		}
 	}
 
 	for _, schema := range contentSchema.ContentSchema {
-		err = session.Query(schema).Exec()
-		if err != nil {
-			return fmt.Errorf("failed to create schema: %v", err)
+		if err := d.Db.Exec(ctx, schema); err != nil {
+			return fmt.Errorf("failed to create schema: %w", err)
 		}
 	}
 
 	return nil
 }
 
-func createKeyspace(session *gocql.Session) error {
-	query := `
-	CREATE KEYSPACE IF NOT EXISTS minerva
-	WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};
-	`
-
-	return session.Query(query).Exec()
+func (d *Database) GetDatabase() clickhouse.Conn {
+	return d.Db
 }
 
 func (d *Database) Close() {
 	d.Db.Close()
-}
-
-func (d *Database) GetDatabase() *gocql.Session {
-	return d.Db
-}
-
-func (db *Database) Select(ctx context.Context, query string, result interface{}, args ...interface{}) error {
-	rv := reflect.ValueOf(result)
-	if rv.Kind() != reflect.Ptr || rv.Elem().Kind() != reflect.Slice {
-		return errors.New("result argument must be a pointer to a slice")
-	}
-
-	iter := db.Db.Query(query, args...).WithContext(ctx).Iter()
-	defer iter.Close()
-
-	sliceElemType := rv.Elem().Type().Elem()
-
-	if sliceElemType.Kind() == reflect.Struct {
-		fieldMap := make(map[string]int)
-		for i := 0; i < sliceElemType.NumField(); i++ {
-			field := sliceElemType.Field(i)
-			dbTag := field.Tag.Get("ctx")
-			if dbTag != "" {
-				fieldMap[dbTag] = i
-			}
-		}
-
-		for {
-			columns := iter.Columns()
-			row := reflect.New(sliceElemType).Elem()
-			fieldValues := make([]interface{}, len(columns))
-
-			for i, column := range columns {
-				if fieldIndex, ok := fieldMap[column.Name]; ok {
-					field := row.Field(fieldIndex)
-
-					switch field.Type() {
-					case reflect.TypeOf(time.Time{}):
-						var temp int64
-						fieldValues[i] = &temp
-					default:
-						fieldValues[i] = field.Addr().Interface()
-					}
-				} else {
-					var temp interface{}
-					fieldValues[i] = &temp
-				}
-			}
-
-			if !iter.Scan(fieldValues...) {
-				break
-			}
-
-			for i, column := range columns {
-				if fieldIndex, ok := fieldMap[column.Name]; ok {
-					field := row.Field(fieldIndex)
-					if field.Type() == reflect.TypeOf(time.Time{}) {
-						intValue := *fieldValues[i].(*int64)
-						field.Set(reflect.ValueOf(time.Unix(intValue, 0)))
-					}
-				}
-			}
-
-			rv.Elem().Set(reflect.Append(rv.Elem(), row))
-		}
-	} else {
-		for {
-			row := reflect.New(sliceElemType).Elem().Addr().Interface()
-			if !iter.Scan(row) {
-				break
-			}
-			rv.Elem().Set(reflect.Append(rv.Elem(), reflect.ValueOf(row).Elem()))
-		}
-	}
-
-	if err := iter.Close(); err != nil {
-		return err
-	}
-
-	return nil
 }

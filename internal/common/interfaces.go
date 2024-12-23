@@ -45,6 +45,7 @@ type FileRequest struct {
 	FileSize   uint   `json:"file_size"`
 	FileType   string `json:"file_type"`
 	Content    string `json:"content"`
+	Duration   int    `json:"duration"`
 }
 
 type Screenshot struct {

@@ -1,28 +1,16 @@
-version: "3"
-
-volumes:
-  cassandra-data:
-  cache-data:
-  minio-data:
+version: '3.8'
 
 services:
-  cassandra-db:
-    image: cassandra:latest
+  clickhouse-db:
+    image: yandex/clickhouse-server:latest
+    container_name: humblebrag-clickhouse
+    restart: always
     ports:
-      - "9042:9042"
-    environment:
-      - CASSANDRA_CLUSTER_NAME=MyCluster
-      - CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch
-      - CASSANDRA_DC=DC1
-      - CASSANDRA_RACK=Rack1
-      - CASSANDRA_LISTEN_ADDRESS=cassandra-db
-      - CASSANDRA_BROADCAST_ADDRESS=cassandra-db
-      - CASSANDRA_SEEDS=cassandra-db
-      - CASSANDRA_PASSWORD_SEEDER=true
-      - CASSANDRA_USER=cassandra
-      - CASSANDRA_PASSWORD=cassandra
+      - "8123:8123"
+      - "9000:9000"
     volumes:
-      - cassandra-data:/var/lib/cassandra
+      - clickhouse-data:/var/lib/clickhouse
+    platform: linux/amd64
 
   cache:
     image: redis:alpine
@@ -33,18 +21,10 @@ services:
     volumes:
       - cache-data:/data
 
-  minio:
-    image: minio/minio
-    ports:
-      - "9000:9000"
-      - "9001:9001"
-    environment:
-      MINIO_ROOT_USER: admin
-      MINIO_ROOT_PASSWORD: admin123
-    command: server /data
-    volumes:
-      - minio-data:/data
-
 networks:
   web_network:
     name: web_network
+
+volumes:
+  clickhouse-data:
+  cache-data:

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"strings"
+	"time"
 
 	"github.com/codevault-llc/minerva/internal/common"
 	"github.com/codevault-llc/minerva/pkg/logger"
@@ -64,6 +65,8 @@ func FetchWebsite(url, userAgent string) (*WebsiteResponse, error) {
 		handleRequest := func() {
 			switch c.Request.Type() {
 			case proto.NetworkResourceTypeScript:
+				startTime := time.Now()
+
 				if err := rod.Try(func() {
 					c.MustLoadResponse()
 				}); err != nil {
@@ -76,6 +79,7 @@ func FetchWebsite(url, userAgent string) (*WebsiteResponse, error) {
 					HashedBody: utils.SHA256(c.Response.Body()),
 					FileSize:   uint(len(c.Response.Body())),
 					FileType:   string(utils.ApplicationJavascript),
+					Duration:   int(time.Since(startTime).Milliseconds()),
 				})
 			/*case proto.NetworkResourceTypeDocument:
 			if err := rod.Try(func() {
@@ -94,6 +98,8 @@ func FetchWebsite(url, userAgent string) (*WebsiteResponse, error) {
 				StatusCode: c.Response.RawResponse.StatusCode,
 			})*/
 			case proto.NetworkResourceTypeStylesheet:
+				timeStart := time.Now()
+
 				if err := rod.Try(func() {
 					c.MustLoadResponse()
 				}); err != nil {
@@ -106,8 +112,11 @@ func FetchWebsite(url, userAgent string) (*WebsiteResponse, error) {
 					HashedBody: utils.SHA256(c.Response.Body()),
 					FileSize:   uint(len(c.Response.Body())),
 					FileType:   string(utils.TextCSS),
+					Duration:   int(time.Since(timeStart).Milliseconds()),
 				})
 			case proto.NetworkResourceTypeFont:
+				timeStart := time.Now()
+
 				if err := rod.Try(func() {
 					c.MustLoadResponse()
 				}); err != nil {
@@ -120,6 +129,7 @@ func FetchWebsite(url, userAgent string) (*WebsiteResponse, error) {
 					HashedBody: utils.SHA256(c.Response.Body()),
 					FileSize:   uint(len(c.Response.Body())),
 					FileType:   string(utils.Font),
+					Duration:   int(time.Since(timeStart).Milliseconds()),
 				})
 				/*case proto.NetworkResourceTypeXHR:
 					if err := rod.Try(func() {

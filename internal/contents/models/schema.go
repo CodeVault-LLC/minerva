@@ -1,63 +1,44 @@
 package schema
 
 var ContentSchema = []string{
-	`CREATE TABLE IF NOT EXISTS minerva.content (
-		id UUID PRIMARY KEY,
-		scan_id TEXT,
+	`CREATE TABLE IF NOT EXISTS content (
+		id UUID,
+		scan_id UUID,
+		file_size Int32,
+		file_type String,
+		source String,
+		md5 String,
+		sha1 String,
+		sha256 String,
+		duration Int32,
+		tags Array(String),
+		created_at DateTime DEFAULT now(),
+		updated_at DateTime DEFAULT now()
+	) ENGINE = MergeTree()
+	ORDER BY id;`,
+	`CREATE TABLE IF NOT EXISTS finding (
+		id UUID DEFAULT generateUUIDv4(),
+		scan_id UUID,
 
-		hashed_body TEXT,
-		source TEXT,
-		file_size BIGINT,
-		file_type TEXT,
-		storage_type TEXT,
-		tags TEXT,
-		created_at TIMESTAMP,
-		updated_at TIMESTAMP,
-	);`,
-	`CREATE TABLE IF NOT EXISTS minerva.content_storage (
-		id UUID PRIMARY KEY,
-		content_id TEXT,
-		bucket_name TEXT,
-		object_key TEXT,
-		location TEXT,
-		storage_endpoint TEXT,
-		encryption TEXT
-	);`,
-	`CREATE TABLE IF NOT EXISTS minerva.content_access_log (
-		id UUID PRIMARY KEY,
-		content_id TEXT,
-		accessed_at TIMESTAMP,
-		access_type TEXT,
-		ip_address TEXT
-	);`,
-	`CREATE TABLE IF NOT EXISTS minerva.finding (
-		id UUID PRIMARY KEY,
-		scan_id TEXT,
+		regex_name String,
+		regex_description String,
+		match String,
+		source String,
+		line Int32,
 
-		regex_name TEXT,
-		regex_description TEXT,
-		match TEXT,
-		source TEXT,
-		line INT,
-
-		created_at TIMESTAMP,
-		updated_at TIMESTAMP,
-	);`,
-	`CREATE TABLE IF NOT EXISTS minerva.fingerprint (
-		id UUID PRIMARY KEY,
-		content_id TEXT,
-		fingerprint_name TEXT,
-		match TEXT,
-		source TEXT,
-		line INT,
-		created_at TIMESTAMP,
-		updated_at TIMESTAMP,
-	);`,
-	`CREATE INDEX IF NOT EXISTS idx_hashed_body ON minerva.content (hashed_body);`,
-	`CREATE INDEX IF NOT EXISTS idx_content_id ON minerva.content_storage (content_id);`,
-	`CREATE INDEX IF NOT EXISTS idx_scan_id ON minerva.content (scan_id);`,
-	`CREATE INDEX IF NOT EXISTS idx_content_id ON minerva.finding (content_id);`,
-	`CREATE INDEX IF NOT EXISTS idx_scan_id ON minerva.finding (scan_id);`,
-	`CREATE INDEX IF NOT EXISTS idx_content_id ON minerva.fingerprint (content_id);`,
-	`CREATE INDEX IF NOT EXISTS idx_scan_id ON minerva.fingerprint (scan_id);`,
+		created_at DateTime DEFAULT now(),
+		updated_at DateTime DEFAULT now()
+	) ENGINE = MergeTree()
+	ORDER BY id;`,
+	`CREATE TABLE IF NOT EXISTS fingerprint (
+		id UUID DEFAULT generateUUIDv4(),
+		content_id UUID,
+		fingerprint_name String,
+		match String,
+		source String,
+		line Int32,
+		created_at DateTime DEFAULT now(),
+		updated_at DateTime DEFAULT now()
+	) ENGINE = MergeTree()
+	ORDER BY id;`,
 }
