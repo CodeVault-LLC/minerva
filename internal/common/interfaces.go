@@ -26,11 +26,10 @@ const (
 )
 
 type WebsiteAnalysis struct {
-	Url        string        `json:"url"`
-	Title      string        `json:"name"`
-	StatusCode int           `json:"status_code"`
-	Assets     []FileRequest `json:"files"`
-	Redirects  []Redirect    `json:"redirects"`
+	Url       string        `json:"url"`
+	Title     string        `json:"name"`
+	Assets    []FileRequest `json:"files"`
+	Redirects []Redirect    `json:"redirects"`
 }
 
 type Redirect struct {

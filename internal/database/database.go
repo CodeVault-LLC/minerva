@@ -69,9 +69,11 @@ func NewDatabase() (*Database, error) {
 		Settings: clickhouse.Settings{
 			"max_execution_time": 60,
 		},
-		DialTimeout: 10 * time.Second,
-		ReadTimeout: 10 * time.Second,
-		Debugf:      log.Printf,
+		DialTimeout:  30 * time.Second, // Increase dial timeout
+		ReadTimeout:  30 * time.Second, // Increase read timeout
+		MaxOpenConns: 100,              // Increase max open connections
+		MaxIdleConns: 10,               // Increase max idle connections
+		Debugf:       log.Printf,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to ClickHouse: %w", err)

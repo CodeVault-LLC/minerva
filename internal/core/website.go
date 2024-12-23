@@ -16,20 +16,24 @@ import (
 	"golang.org/x/net/html"
 )
 
-var browser *rod.Browser
+type PageAnalysis struct {
+	browser *rod.Browser
+	page    *rod.Page
+}
 
-// InitializeBrowser sets up the rod browser instance.
-func InitializeBrowser() {
-	if browser == nil {
-		browser = rod.New().MustConnect().NoDefaultDevice().MustIncognito()
+func NewPageAnalysis() *PageAnalysis {
+	browser := rod.New().MustConnect().NoDefaultDevice().MustIncognito()
+	page := browser.MustPage()
+
+	return &PageAnalysis{
+		browser: browser,
+		page:    page,
 	}
 }
 
-// CloseBrowser terminates the rod browser instance.
-func CloseBrowser() {
-	if browser != nil {
-		browser.MustClose()
-	}
+func (p *PageAnalysis) Close() {
+	p.page.Close()
+	p.browser.MustClose()
 }
 
 type WebsiteResponse struct {
@@ -38,137 +42,51 @@ type WebsiteResponse struct {
 	FinalHTML    string
 	ParsedHTML   *html.Node
 	WebsiteTitle string
+	StatusCode   int
 }
 
-// FetchWebsite retrieves the website content and its network resources.
-func FetchWebsite(url, userAgent string) (*WebsiteResponse, error) {
-	ctx := context.Background()
+func (p *PageAnalysis) FetchWebsite(url, userAgent string) (*WebsiteResponse, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
-	page, err := browser.Page(proto.TargetCreateTarget{URL: url})
+	go p.page.EachEvent(func(e *proto.NetworkResponseReceived) {
+		logger.Log.Info("Response received", zap.String("url", e.Response.URL), zap.String("type", string(e.Type)))
+		logger.Log.Info("Response body", zap.String("body", e.Response.))
+	})()
+
+	waitForPageLoadEvent := p.page.EachEvent(func(e *proto.PageLoadEventFired) (stop bool) {
+		return true
+	})
+	err := p.page.Navigate(url)
 	if err != nil {
+		p.logErrorHandling(err)
 		return nil, responder.CreateError(responder.ErrInvalidRequest).Error
 	}
-	defer page.Close()
+	waitForPageLoadEvent()
 
-	page.MustSetUserAgent(&proto.NetworkSetUserAgentOverride{
-		UserAgent: userAgent,
-	})
+	// Set a realistic User-Agent
+	if userAgent == "" {
+		userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
+	}
 
+	p.page.MustSetUserAgent(&proto.NetworkSetUserAgentOverride{UserAgent: userAgent})
+
+	// Initialize request interception
 	var redirects []common.Redirect
 	var networkFiles []common.FileRequest
+	//p.setupRequestInterception(p.page, &redirects, &networkFiles)
 
-	router := page.HijackRequests()
-
-	router.MustAdd("*.*", func(c *rod.Hijack) {
-		requestURL := c.Request.URL().String()
-
-		handleRequest := func() {
-			switch c.Request.Type() {
-			case proto.NetworkResourceTypeScript:
-				startTime := time.Now()
-
-				if err := rod.Try(func() {
-					c.MustLoadResponse()
-				}); err != nil {
-					logger.Log.Error("Failed to load script response", zap.Error(err), zap.String("url", requestURL))
-				}
-
-				networkFiles = append(networkFiles, common.FileRequest{
-					Src:        requestURL,
-					Content:    c.Response.Body(),
-					HashedBody: utils.SHA256(c.Response.Body()),
-					FileSize:   uint(len(c.Response.Body())),
-					FileType:   string(utils.ApplicationJavascript),
-					Duration:   int(time.Since(startTime).Milliseconds()),
-				})
-			/*case proto.NetworkResourceTypeDocument:
-			if err := rod.Try(func() {
-				c.MustLoadResponse()
-			}); err != nil {
-				logger.Log.Error("Failed to load css response", zap.Error(err), zap.String("url", requestURL))
-			}
-
-			logger.Log.Info("Document request intercepted", zap.String("url", requestURL))
-
-			redirects = append(redirects, common.Redirect{
-				Url: requestURL,
-				Screenshot: common.Screenshot{
-					Content: string(page.MustWaitStable().MustScreenshotFullPage()),
-				},
-				StatusCode: c.Response.RawResponse.StatusCode,
-			})*/
-			case proto.NetworkResourceTypeStylesheet:
-				timeStart := time.Now()
-
-				if err := rod.Try(func() {
-					c.MustLoadResponse()
-				}); err != nil {
-					logger.Log.Error("Failed to load css response", zap.Error(err), zap.String("url", requestURL))
-				}
-
-				networkFiles = append(networkFiles, common.FileRequest{
-					Src:        requestURL,
-					Content:    c.Response.Body(),
-					HashedBody: utils.SHA256(c.Response.Body()),
-					FileSize:   uint(len(c.Response.Body())),
-					FileType:   string(utils.TextCSS),
-					Duration:   int(time.Since(timeStart).Milliseconds()),
-				})
-			case proto.NetworkResourceTypeFont:
-				timeStart := time.Now()
-
-				if err := rod.Try(func() {
-					c.MustLoadResponse()
-				}); err != nil {
-					logger.Log.Error("Failed to load font response", zap.Error(err), zap.String("url", requestURL))
-				}
-
-				networkFiles = append(networkFiles, common.FileRequest{
-					Src:        requestURL,
-					Content:    c.Response.Body(),
-					HashedBody: utils.SHA256(c.Response.Body()),
-					FileSize:   uint(len(c.Response.Body())),
-					FileType:   string(utils.Font),
-					Duration:   int(time.Since(timeStart).Milliseconds()),
-				})
-				/*case proto.NetworkResourceTypeXHR:
-					if err := rod.Try(func() {
-						c.MustLoadResponse()
-					}); err != nil {
-						logger.Log.Error("Failed to load xhr response", zap.Error(err), zap.String("url", requestURL))
-					}
-
-					networkFiles = append(networkFiles, common.FileRequest{
-						Src:        requestURL,
-						Content:    c.Response.Body(),
-						HashedBody: utils.SHA256(c.Response.Body()),
-						FileSize:   uint(len(c.Response.Body())),
-						FileType:   string(utils.XHR),
-					})
-				case proto.NetworkResourceTypeWebSocket:
-					if err := rod.Try(func() {
-						c.MustLoadResponse()
-					}); err != nil {
-						logger.Log.Error("Failed to load websocket response", zap.Error(err), zap.String("url", requestURL))
-					}
-				*/
-			}
-		}
-
-		handleRequest()
-
-		c.ContinueRequest(&proto.FetchContinueRequest{})
-	})
-
-	go router.Run()
-
+	// Wait for page load
 	if err := rod.Try(func() {
-		page.Context(ctx).MustWaitLoad()
+		p.page.Context(ctx).MustWaitLoad()
 	}); err != nil {
 		return nil, errors.New("page load timeout or error: " + err.Error())
 	}
 
-	htmlContent, err := page.HTML()
+	// Allow lazy-loaded content to load
+	time.Sleep(3 * time.Second)
+
+	htmlContent, err := p.page.HTML()
 	if err != nil {
 		return nil, err
 	}
@@ -183,11 +101,68 @@ func FetchWebsite(url, userAgent string) (*WebsiteResponse, error) {
 		Files:      networkFiles,
 		FinalHTML:  htmlContent,
 		ParsedHTML: parsedHTML,
+		StatusCode: redirects[len(redirects)-1].StatusCode,
 	}, nil
 }
 
+// setupRequestInterception handles intercepted requests and categorizes responses.
+func (p *PageAnalysis) setupRequestInterception(page *rod.Page, redirects *[]common.Redirect, networkFiles *[]common.FileRequest) {
+	router := page.HijackRequests()
+
+	router.MustAdd("*", func(c *rod.Hijack) {
+		//logger.Log.Info("Request intercepted", zap.String("url", c.Request.URL().String()), zap.String("type", string(c.Request.Type())))
+		requestURL := c.Request.URL().String()
+
+		handleRequest := func() {
+			switch c.Request.Type() {
+			case proto.NetworkResourceTypeDocument:
+				if err := rod.Try(func() {
+					c.MustLoadResponse()
+				}); err != nil {
+					logger.Log.Error("Failed to load document response", zap.Error(err), zap.String("url", requestURL))
+				}
+				*redirects = append(*redirects, common.Redirect{
+					Url:        requestURL,
+					StatusCode: c.Response.RawResponse.StatusCode,
+				})
+			case proto.NetworkResourceTypeScript:
+				p.processResource(c, string(utils.ApplicationJavascript), requestURL, networkFiles)
+			case proto.NetworkResourceTypeStylesheet:
+				p.processResource(c, string(utils.TextCSS), requestURL, networkFiles)
+			case proto.NetworkResourceTypeFont:
+				p.processResource(c, string(utils.Font), requestURL, networkFiles)
+			case proto.NetworkResourceTypeXHR:
+				p.processResource(c, string(utils.XHR), requestURL, networkFiles)
+			}
+		}
+
+		handleRequest()
+		c.ContinueRequest(&proto.FetchContinueRequest{})
+	})
+
+	go router.Run()
+}
+
+// processResource handles intercepted resources, loads their responses, and appends them to the file list.
+func (p *PageAnalysis) processResource(c *rod.Hijack, fileType string, requestURL string, networkFiles *[]common.FileRequest) {
+	timeStart := time.Now()
+	if err := rod.Try(func() {
+		c.MustLoadResponse()
+	}); err != nil {
+		logger.Log.Error("Failed to load resource", zap.Error(err), zap.String("url", requestURL))
+	}
+	*networkFiles = append(*networkFiles, common.FileRequest{
+		Src:        requestURL,
+		Content:    c.Response.Body(),
+		HashedBody: utils.SHA256(c.Response.Body()),
+		FileSize:   uint(len(c.Response.Body())),
+		FileType:   fileType,
+		Duration:   int(time.Since(timeStart).Milliseconds()),
+	})
+}
+
 // AnalyzeHTML extracts scripts, styles, and metadata from the parsed HTML.
-func AnalyzeHTML(response *WebsiteResponse) (common.WebsiteAnalysis, error) {
+func (p *PageAnalysis) analyzeHTML(response *WebsiteResponse) (common.WebsiteAnalysis, error) {
 	var extractedFiles []common.FileRequest
 	title := utils.ExtractTitle(response.ParsedHTML)
 
@@ -209,10 +184,18 @@ func AnalyzeHTML(response *WebsiteResponse) (common.WebsiteAnalysis, error) {
 	extractedFiles = append(extractedFiles, response.Files...)
 
 	return common.WebsiteAnalysis{
-		Url:        response.FinalHTML,
-		Title:      title,
-		StatusCode: 200,
-		Assets:     extractedFiles,
-		Redirects:  response.Redirects,
+		Url:       response.FinalHTML,
+		Title:     title,
+		Assets:    extractedFiles,
+		Redirects: response.Redirects,
 	}, nil
+}
+
+// logErrorHandling logs errors for better debugging.
+func (p *PageAnalysis) logErrorHandling(err error) {
+	if strings.Contains(err.Error(), "net::ERR_NAME_NOT_RESOLVED") || strings.Contains(err.Error(), "net::ERR_CONNECTION_REFUSED") {
+		logger.Log.Error("Network error", zap.Error(err))
+	} else {
+		logger.Log.Error("Unknown error", zap.Error(err))
+	}
 }

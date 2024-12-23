@@ -68,11 +68,11 @@ func setupServices() error {
 }
 
 func setupScanning(db *database.Database) {
-	core.InitializeBrowser()
+	pageAnalysis := core.NewPageAnalysis()
 
 	repository.ScanRepository = repository.NewScanRepository(db)
 
 	core.Scheduler = core.NewTaskScheduler(10)
-	core.InspectorCore = core.NewInspector(db)
+	core.InspectorCore = core.NewInspector(db, pageAnalysis)
 	core.Scheduler.Start(core.InspectorCore)
 }

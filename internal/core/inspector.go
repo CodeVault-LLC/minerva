@@ -15,14 +15,15 @@ import (
 )
 
 type Inspector struct {
-	modules map[string]common.ScanModule
+	modules      map[string]common.ScanModule
+	pageAnalysis *PageAnalysis
 }
 
 var InspectorCore *Inspector
 
 // NewInspector initializes the Inspector with necessary dependencies
-func NewInspector(db *database.Database) *Inspector {
-	inspector := &Inspector{modules: make(map[string]common.ScanModule)}
+func NewInspector(db *database.Database, pageAnalysis *PageAnalysis) *Inspector {
+	inspector := &Inspector{modules: make(map[string]common.ScanModule), pageAnalysis: pageAnalysis}
 	inspector.modules["network"] = network.NewNetworkModule(common.RuntimeLocationPostScan, db)
 	inspector.modules["content"] = contents.NewContentModule(common.RuntimeLocationPostScan, db)
 	return inspector
@@ -51,12 +52,12 @@ func (i *Inspector) performWebsiteScan(job *entities.JobModel) error {
 		}
 	}()
 
-	requestedWebsite, err := FetchWebsite(job.URL, job.UserAgent)
+	requestedWebsite, err := i.pageAnalysis.FetchWebsite(job.URL, job.UserAgent)
 	if err != nil {
 		return err
 	}
 
-	website, err := AnalyzeHTML(requestedWebsite)
+	website, err := i.pageAnalysis.analyzeHTML(requestedWebsite)
 	if err != nil {
 		logger.Log.Error("Failed to analyze website: %v", zap.Error(err))
 		return err
@@ -65,7 +66,7 @@ func (i *Inspector) performWebsiteScan(job *entities.JobModel) error {
 	scanModel := entities.ScanModel{
 		Url:        job.URL,
 		Title:      website.Title,
-		StatusCode: website.StatusCode,
+		StatusCode: website.Redirects[len(website.Redirects)-1].StatusCode,
 		Sha256:     utils.SHA256(website.Url),
 		Sha1:       utils.SHA1(website.Url),
 		Md5:        utils.MD5(website.Url),
