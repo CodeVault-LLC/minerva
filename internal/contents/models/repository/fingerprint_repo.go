@@ -25,7 +25,7 @@ func (repository *FingerprintRepo) SaveFingerprintResult(fingerprint entities.Fi
 	finding := entities.FingerprintModel{
 		Id:            uuid.New().String(),
 		ContentId:     fingerprint.ContentId,
-		FingerprintId: fingerprint.Id,
+		FingerprintId: fingerprint.FingerprintId,
 
 		CreatedAt: utils.GetCurrentTime(),
 		UpdatedAt: utils.GetCurrentTime(),
@@ -34,7 +34,7 @@ func (repository *FingerprintRepo) SaveFingerprintResult(fingerprint entities.Fi
 	ctx := context.Background()
 
 	query := "INSERT INTO fingerprint (id, content_id, fingerprint_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?)"
-	_, err := repository.database.Db.Query(ctx, query, finding.Id, finding.ContentId, finding.FingerprintId, finding.CreatedAt, finding.UpdatedAt)
+	err := repository.database.Db.Exec(ctx, query, finding.Id, finding.ContentId, finding.FingerprintId, finding.CreatedAt, finding.UpdatedAt)
 	if err != nil {
 		logger.Log.Error("Failed to save finding", zap.Error(err))
 		return err

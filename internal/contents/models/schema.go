@@ -33,10 +33,7 @@ var ContentSchema = []string{
 	`CREATE TABLE IF NOT EXISTS fingerprint (
 		id UUID DEFAULT generateUUIDv4(),
 		content_id UUID,
-		fingerprint_name String,
-		match String,
-		source String,
-		line Int32,
+		fingerprint_id String,
 		created_at DateTime DEFAULT now(),
 		updated_at DateTime DEFAULT now()
 	) ENGINE = MergeTree()

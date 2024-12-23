@@ -65,8 +65,10 @@ func (m *ContentModule) Execute(job generalEntities.JobModel, website *common.We
 		}
 
 		if existingContentId == "" {
+			existingContentId = uuid.New().String()
+
 			content := entities.ContentModel{
-				Id:       uuid.New().String(),
+				Id:       existingContentId,
 				ScanId:   job.ScanID,
 				FileSize: int64(script.FileSize),
 				FileType: script.FileType,
@@ -82,32 +84,28 @@ func (m *ContentModule) Execute(job generalEntities.JobModel, website *common.We
 				logger.Log.Error("Failed to save content: %v", zap.Error(err))
 				continue
 			}
+		}
 
-			foundFingerprints, err := fingerprint.FingerprintClient.MatchFingerprint(context.Background(), &pb.MatchFingerprintRequest{
-				Source: script.Src,
-			})
+		foundFingerprints, err := fingerprint.FingerprintClient.MatchFingerprint(context.Background(), &pb.MatchFingerprintRequest{
+			Source: script.Src,
+		})
 
-			if err != nil {
-				logger.Log.Error("Failed to match fingerprint: %v", zap.Error(err))
-				continue
+		if err != nil {
+			logger.Log.Error("Failed to match fingerprint: %v", zap.Error(err))
+			continue
+		}
+
+		for _, fingerprint := range foundFingerprints.Matched {
+			logger.Log.Info("Matched fingerprint", zap.String("fingerprint_id", fingerprint.Id))
+
+			fingerprintRecord := entities.FingerprintModel{
+				ContentId:     existingContentId,
+				FingerprintId: fingerprint.Id,
 			}
 
-			for _, fingerprint := range foundFingerprints.Matched {
-				fingerprintRecord := entities.FingerprintModel{
-					ContentId:     content.Id,
-					FingerprintId: fingerprint.Id,
-				}
-
-				err = m.fingerprintRepo.SaveFingerprintResult(fingerprintRecord)
-				if err != nil {
-					logger.Log.Error("Failed to save fingerprint result: %v", zap.Error(err))
-					continue
-				}
-			}
-
+			err = m.fingerprintRepo.SaveFingerprintResult(fingerprintRecord)
 			if err != nil {
 				logger.Log.Error("Failed to save fingerprint result: %v", zap.Error(err))
-				continue
 			}
 		}
 	}
