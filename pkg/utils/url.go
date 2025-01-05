@@ -75,7 +75,6 @@ func ValidateURL(input string) bool {
 		return false
 	}
 
-	fmt.Println("Valid URL:", parsedURL.String())
 	return true
 }
 

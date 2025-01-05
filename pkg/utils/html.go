@@ -61,11 +61,10 @@ func ProcessFontNode(node *html.Node) common.FileRequest {
 // CreateFileRequest constructs a FileRequest with content details.
 func CreateFileRequest(src, content, fileType string) common.FileRequest {
 	return common.FileRequest{
-		Src:        src,
-		Content:    content,
-		HashedBody: SHA256(content),
-		FileSize:   uint(len(content)),
-		FileType:   fileType,
+		Src:      src,
+		Content:  content,
+		FileSize: uint(len(content)),
+		FileType: fileType,
 	}
 }
 

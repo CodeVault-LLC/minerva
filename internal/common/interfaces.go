@@ -40,7 +40,6 @@ type Redirect struct {
 
 type FileRequest struct {
 	Src        string `json:"src"`
-	HashedBody string `json:"hashed_body"`
 	FileSize   uint   `json:"file_size"`
 	FileType   string `json:"file_type"`
 	Content    string `json:"content"`

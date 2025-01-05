@@ -21,7 +21,6 @@ func TestGenericScan(t *testing.T) {
 	script := common.FileRequest{
 		Src:        "test",
 		Content:    content,
-		HashedBody: "test",
 		FileSize:   0,
 		FileType:   "text",
 	}
