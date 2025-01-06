@@ -39,11 +39,14 @@ type Redirect struct {
 }
 
 type FileRequest struct {
-	Src        string `json:"src"`
-	FileSize   uint   `json:"file_size"`
-	FileType   string `json:"file_type"`
-	Content    string `json:"content"`
-	Duration   int    `json:"duration"`
+	Src      string `json:"src"`
+	FileSize uint   `json:"file_size"`
+	FileType string `json:"file_type"`
+	Content  string `json:"content"`
+	Duration int    `json:"duration"`
+	Headers  string `json:"headers"`
+	Cookies  string `json:"cookies"`
+	Status   int    `json:"status"`
 }
 
 type Screenshot struct {

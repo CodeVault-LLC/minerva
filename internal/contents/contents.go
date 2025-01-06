@@ -50,7 +50,7 @@ func (m *ContentModule) Execute(job generalEntities.JobModel, website *common.We
 
 			var jsFiles []common.FileRequest
 			for _, asset := range website.Assets {
-				if asset.FileType == "application/javascript" {
+				if asset.FileType == string(utils.ApplicationJavascript) {
 					jsFiles = append(jsFiles, asset)
 				}
 			}

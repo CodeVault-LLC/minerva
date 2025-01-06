@@ -66,7 +66,7 @@ func (i *Inspector) performWebsiteScan(job *entities.JobModel) error {
 	scanModel := entities.ScanModel{
 		Url:        job.URL,
 		Title:      website.Title,
-		StatusCode: website.Redirects[len(website.Redirects)-1].StatusCode,
+		StatusCode: 200,
 		Sha256:     utils.SHA256(website.Url),
 		Sha1:       utils.SHA1(website.Url),
 		Md5:        utils.MD5(website.Url),

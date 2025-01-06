@@ -12,6 +12,8 @@ var ContentSchema = []string{
 		sha256 String,
 		duration Int32,
 		tags Array(String),
+		headers String,
+		cookies String,
 		created_at DateTime DEFAULT now(),
 		updated_at DateTime DEFAULT now()
 	) ENGINE = MergeTree()

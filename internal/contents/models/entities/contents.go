@@ -19,6 +19,9 @@ type ContentModel struct {
 
 	Tags []string `cql:"tags"`
 
+	Headers string `cql:"headers"`
+	Cookies string `cql:"cookies"`
+
 	CreatedAt time.Time `cql:"created_at"`
 	UpdatedAt time.Time `cql:"updated_at"`
 }

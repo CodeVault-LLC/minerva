@@ -1,6 +1,7 @@
 package core
 
 import (
+	"encoding/json"
 	"strings"
 	"sync"
 	"time"
@@ -46,6 +47,10 @@ type WebsiteResponse struct {
 type TrackerQueue struct {
 	src      string
 	fileType utils.FileType
+	headers  string
+	cookies  string
+	duration int
+	status   int
 }
 
 func (p *PageAnalysis) FetchWebsite(url, userAgent string) (*WebsiteResponse, error) {
@@ -54,12 +59,13 @@ func (p *PageAnalysis) FetchWebsite(url, userAgent string) (*WebsiteResponse, er
 	var redirects []common.Redirect
 	var networkFiles []common.FileRequest
 
-	addRequestID := func(id proto.NetworkRequestID, src string, fileType utils.FileType) {
+	addRequestID := func(id proto.NetworkRequestID, src string, fileType utils.FileType, status int) {
 		requestTrackerMutex.Lock()
 		defer requestTrackerMutex.Unlock()
 		requestTracker[id] = TrackerQueue{
 			src:      src,
 			fileType: fileType,
+			status:   status,
 		}
 	}
 
@@ -71,6 +77,9 @@ func (p *PageAnalysis) FetchWebsite(url, userAgent string) (*WebsiteResponse, er
 
 	var responseReceived proto.NetworkResponseReceived
 	_ = p.page.WaitEvent(&responseReceived)
+
+	var requestWillBeSent proto.NetworkRequestWillBeSentExtraInfo
+	_ = p.page.WaitEvent(&requestWillBeSent)
 
 	var dataReceived proto.NetworkDataReceived
 	_ = p.page.WaitEvent(&dataReceived)
@@ -95,9 +104,11 @@ func (p *PageAnalysis) FetchWebsite(url, userAgent string) (*WebsiteResponse, er
 				StatusCode: e.Response.Status,
 			})
 		case proto.NetworkResourceTypeStylesheet:
-			addRequestID(e.RequestID, e.Response.URL, utils.TextCSS)
+			addRequestID(e.RequestID, e.Response.URL, utils.TextCSS, e.Response.Status)
 		case proto.NetworkResourceTypeScript:
-			addRequestID(e.RequestID, e.Response.URL, utils.ApplicationJavascript)
+			addRequestID(e.RequestID, e.Response.URL, utils.ApplicationJavascript, e.Response.Status)
+		case proto.NetworkResourceTypeXHR:
+			addRequestID(e.RequestID, e.Response.URL, utils.XHR, e.Response.Status)
 		}
 	}, func(e *proto.NetworkDataReceived) {
 		logger.Log.Info("Data received", zap.String("requestId", string(e.RequestID)), zap.Int("length", e.DataLength))
@@ -109,19 +120,61 @@ func (p *PageAnalysis) FetchWebsite(url, userAgent string) (*WebsiteResponse, er
 		if exists {
 			networkFiles = append(networkFiles, common.FileRequest{
 				Src:      queue.src,
+				Headers:  queue.headers,
+				Cookies:  queue.cookies,
 				FileSize: uint(e.DataLength),
-				FileType: string(queue.fileType),
 				Content:  string(e.Data),
+				FileType: string(queue.fileType),
+				Duration: queue.duration,
+				Status:   queue.status,
 			})
+
 			removeRequestID(e.RequestID)
 		}
+	}, func(e *proto.NetworkRequestWillBeSentExtraInfo) {
+		logger.Log.Info("Request will be sent", zap.String("url", string(e.RequestID)))
+
+		requestTrackerMutex.Lock()
+		queue, exists := requestTracker[e.RequestID]
+		requestTrackerMutex.Unlock()
+
+		if exists {
+			logger.Log.Info("Request Headers", zap.Any("headers", e.Headers), zap.Any("cookies", e.AssociatedCookies))
+
+			headers := make(map[string]string)
+			headersJSON, err := json.Marshal(e.Headers)
+			if err != nil {
+				logger.Log.Error("Failed to marshal headers", zap.Error(err))
+				return
+			}
+			_ = json.Unmarshal(headersJSON, &headers)
+
+			cookies := make(map[string]string)
+			cookiesJSON, err := json.Marshal(e.AssociatedCookies)
+			if err != nil {
+				logger.Log.Error("Failed to marshal cookies", zap.Error(err))
+				return
+			}
+			_ = json.Unmarshal(cookiesJSON, &cookies)
+
+			requestTrackerMutex.Lock()
+			queue.headers = string(headersJSON)
+			queue.cookies = string(cookiesJSON)
+			queue.duration = int(e.ConnectTiming.RequestTime)
+
+			requestTracker[e.RequestID] = queue
+			requestTrackerMutex.Unlock()
+
+			removeRequestID(e.RequestID)
+		}
+
 	}, func(e *proto.NetworkLoadingFailed) {
 		logger.Log.Info("Loading failed", zap.String("type", string(e.Type)), zap.String("text", e.ErrorText))
+		removeRequestID(e.RequestID)
 	})()
 
 	time.Sleep(3 * time.Second)
 
-	// Generate the final response
 	htmlContent, err := p.page.HTML()
 	if err != nil {
 		return nil, err
@@ -141,7 +194,7 @@ func (p *PageAnalysis) FetchWebsite(url, userAgent string) (*WebsiteResponse, er
 		Files:      networkFiles,
 		FinalHTML:  htmlContent,
 		ParsedHTML: parsedHTML,
-		StatusCode: redirects[len(redirects)-1].StatusCode,
+		StatusCode: 200,
 	}, nil
 }
 
