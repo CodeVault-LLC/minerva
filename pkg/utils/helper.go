@@ -12,6 +12,14 @@ import (
 	"golang.org/x/net/html"
 )
 
+func ConvertMapToJSON(data map[string]interface{}) string {
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		fmt.Println("Failed to convert map to JSON string:", err)
+	}
+	return string(jsonData)
+}
+
 func StringInSlice(a string, list []string) bool {
 	for _, b := range list {
 		if b == a {

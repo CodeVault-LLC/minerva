@@ -22,10 +22,10 @@ func NewContentRepo(database *database.Database) *ContentRepo {
 var ContentRepository *ContentRepo
 
 func (repository *ContentRepo) SaveContentResult(content entities.ContentModel) error {
-	query := "INSERT INTO content (id, scan_id, file_size, file_type, source, md5, sha1, sha256, duration, tags) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+	query := "INSERT INTO content (id, scan_id, file_size, file_type, source, md5, sha1, sha256, duration, tags, headers) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 	ctx := context.Background()
 
-	err := repository.database.Db.Exec(ctx, query, content.Id, content.ScanId, content.FileSize, content.FileType, content.Source, content.Md5, content.Sha1, content.Sha256, content.Duration, content.Tags)
+	err := repository.database.Db.Exec(ctx, query, content.Id, content.ScanId, content.FileSize, content.FileType, content.Source, content.Md5, content.Sha1, content.Sha256, content.Duration, content.Tags, content.Headers)
 	if err != nil {
 		logger.Log.Error("Failed to save content result", zap.Error(err))
 		return err

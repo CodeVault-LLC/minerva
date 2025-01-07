@@ -77,6 +77,9 @@ func (m *ContentModule) Execute(job generalEntities.JobModel, website *common.We
 				Sha1:     utils.SHA1(script.Src),
 				Sha256:   utils.SHA256(script.Src),
 				Tags:     []string{},
+				Duration: script.Duration,
+				Headers:  script.Headers,
+				Cookies:  script.Cookies,
 			}
 
 			err := m.repository.SaveContentResult(content)

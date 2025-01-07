@@ -1,7 +1,6 @@
 package core
 
 import (
-	"encoding/json"
 	"strings"
 	"sync"
 	"time"
@@ -59,13 +58,23 @@ func (p *PageAnalysis) FetchWebsite(url, userAgent string) (*WebsiteResponse, er
 	var redirects []common.Redirect
 	var networkFiles []common.FileRequest
 
-	addRequestID := func(id proto.NetworkRequestID, src string, fileType utils.FileType, status int) {
+	addRequestID := func(id proto.NetworkRequestID, src string, fileType utils.FileType, clientHeaders string) {
 		requestTrackerMutex.Lock()
 		defer requestTrackerMutex.Unlock()
 		requestTracker[id] = TrackerQueue{
 			src:      src,
 			fileType: fileType,
-			status:   status,
+			headers:  clientHeaders,
+		}
+	}
+
+	editStatus := func(id proto.NetworkRequestID, status int) {
+		requestTrackerMutex.Lock()
+		defer requestTrackerMutex.Unlock()
+		queue, exists := requestTracker[id]
+		if exists {
+			queue.status = status
+			requestTracker[id] = queue
 		}
 	}
 
@@ -75,11 +84,14 @@ func (p *PageAnalysis) FetchWebsite(url, userAgent string) (*WebsiteResponse, er
 		delete(requestTracker, id)
 	}
 
+	var requestWillBeSent proto.NetworkRequestWillBeSent
+	_ = p.page.WaitEvent(&requestWillBeSent)
+
+	var requestWillBeSentExtraInfo proto.NetworkRequestWillBeSentExtraInfo
+	_ = p.page.WaitEvent(&requestWillBeSentExtraInfo)
+
 	var responseReceived proto.NetworkResponseReceived
 	_ = p.page.WaitEvent(&responseReceived)
-
-	var requestWillBeSent proto.NetworkRequestWillBeSentExtraInfo
-	_ = p.page.WaitEvent(&requestWillBeSent)
 
 	var dataReceived proto.NetworkDataReceived
 	_ = p.page.WaitEvent(&dataReceived)
@@ -87,29 +99,41 @@ func (p *PageAnalysis) FetchWebsite(url, userAgent string) (*WebsiteResponse, er
 	var loadingFailed proto.NetworkLoadingFailed
 	_ = p.page.WaitEvent(&loadingFailed)
 
-	p.page.MustNavigate(url)
-
 	if userAgent == "" {
 		userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
 	}
-	p.page.MustSetUserAgent(&proto.NetworkSetUserAgentOverride{UserAgent: userAgent})
 
-	go p.page.EachEvent(func(e *proto.NetworkResponseReceived) {
-		logger.Log.Info("Response received", zap.String("url", e.Response.URL), zap.Int("status", e.Response.Status))
+	p.page.MustSetUserAgent(&proto.NetworkSetUserAgentOverride{UserAgent: userAgent})
+	p.page.MustNavigate(url)
+
+	go p.page.EachEvent(func(e *proto.NetworkRequestWillBeSent) {
+		logger.Log.Info("Request will be sent", zap.String("url", e.Request.URL), zap.String("type", string(e.Type)))
+
+		headers := make(map[string]interface{})
+		for k, v := range e.Request.Headers {
+			headers[k] = v.String()
+		}
+
+		headersString := utils.ConvertMapToJSON(headers)
 
 		switch e.Type {
 		case proto.NetworkResourceTypeDocument:
 			redirects = append(redirects, common.Redirect{
-				Url:        e.Response.URL,
-				StatusCode: e.Response.Status,
+				Url:        e.Request.URL,
+				StatusCode: 200,
 			})
+
 		case proto.NetworkResourceTypeStylesheet:
-			addRequestID(e.RequestID, e.Response.URL, utils.TextCSS, e.Response.Status)
+			addRequestID(e.RequestID, e.Request.URL, utils.TextCSS, headersString)
 		case proto.NetworkResourceTypeScript:
-			addRequestID(e.RequestID, e.Response.URL, utils.ApplicationJavascript, e.Response.Status)
+			addRequestID(e.RequestID, e.Request.URL, utils.ApplicationJavascript, headersString)
 		case proto.NetworkResourceTypeXHR:
-			addRequestID(e.RequestID, e.Response.URL, utils.XHR, e.Response.Status)
+			addRequestID(e.RequestID, e.Request.URL, utils.XHR, headersString)
 		}
+	}, func(e *proto.NetworkResponseReceived) {
+		logger.Log.Info("Response received", zap.String("url", e.Response.URL), zap.Int("status", e.Response.Status))
+
+		editStatus(e.RequestID, e.Response.Status)
 	}, func(e *proto.NetworkDataReceived) {
 		logger.Log.Info("Data received", zap.String("requestId", string(e.RequestID)), zap.Int("length", e.DataLength))
 
@@ -133,43 +157,9 @@ func (p *PageAnalysis) FetchWebsite(url, userAgent string) (*WebsiteResponse, er
 		}
 	}, func(e *proto.NetworkRequestWillBeSentExtraInfo) {
 		logger.Log.Info("Request will be sent", zap.String("url", string(e.RequestID)))
-
-		requestTrackerMutex.Lock()
-		queue, exists := requestTracker[e.RequestID]
-		requestTrackerMutex.Unlock()
-
-		if exists {
-			logger.Log.Info("Request Headers", zap.Any("headers", e.Headers), zap.Any("cookies", e.AssociatedCookies))
-
-			headers := make(map[string]string)
-			headersJSON, err := json.Marshal(e.Headers)
-			if err != nil {
-				logger.Log.Error("Failed to marshal headers", zap.Error(err))
-				return
-			}
-			_ = json.Unmarshal(headersJSON, &headers)
-
-			cookies := make(map[string]string)
-			cookiesJSON, err := json.Marshal(e.AssociatedCookies)
-			if err != nil {
-				logger.Log.Error("Failed to marshal cookies", zap.Error(err))
-				return
-			}
-			_ = json.Unmarshal(cookiesJSON, &cookies)
-
-			requestTrackerMutex.Lock()
-			queue.headers = string(headersJSON)
-			queue.cookies = string(cookiesJSON)
-			queue.duration = int(e.ConnectTiming.RequestTime)
-
-			requestTracker[e.RequestID] = queue
-			requestTrackerMutex.Unlock()
-
-			removeRequestID(e.RequestID)
-		}
-
 	}, func(e *proto.NetworkLoadingFailed) {
 		logger.Log.Info("Loading failed", zap.String("type", string(e.Type)), zap.String("text", e.ErrorText))
+
 		removeRequestID(e.RequestID)
 	})()
 

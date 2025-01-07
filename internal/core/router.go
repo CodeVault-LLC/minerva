@@ -1,15 +1,16 @@
 package core
 
 import (
-	"encoding/json"
-
+	"github.com/buger/jsonparser"
 	"github.com/codevault-llc/minerva/internal/core/models/entities"
 	"github.com/codevault-llc/minerva/internal/core/models/repository"
 	"github.com/codevault-llc/minerva/internal/core/models/viewmodels"
+	"github.com/codevault-llc/minerva/pkg/logger"
 	"github.com/codevault-llc/minerva/pkg/responder"
 	"github.com/codevault-llc/minerva/pkg/utils"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 )
 
 func RegisterCoreRouter(router fiber.Router) error {
@@ -35,25 +36,31 @@ func RegisterCoreRouter(router fiber.Router) error {
 func CreateScanHandler(taskScheduler *TaskScheduler) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		var scanRequest viewmodels.ScanRequest
-		if err := json.Unmarshal(c.Body(), &scanRequest); err != nil {
+		logger.Log.Info("Body", zap.String("body", string(c.Body())))
+
+		if err := jsonparser.ObjectEach(c.Body(), func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
+			switch string(key) {
+			case "url":
+				scanRequest.URL = string(value)
+			case "user_agent":
+				scanRequest.UserAgent = string(value)
+			}
+			return nil
+		}); err != nil {
 			return responder.CreateError(responder.ErrInvalidRequest).Error
 		}
 
 		if !utils.ValidateURL(scanRequest.URL) {
 			return responder.CreateError(responder.ErrInvalidRequest).Error
 		}
-
 		scanRequest.URL = utils.NormalizeURL(scanRequest.URL)
-
 		if utils.IsLocalURL(scanRequest.URL) {
 			return responder.CreateError(responder.ErrInvalidRequest).Error
 		}
-
 		userAgent := scanRequest.UserAgent
 		if userAgent == "" {
 			userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36"
 		}
-
 		job := entities.JobModel{
 			ScanID:    uuid.New().String(),
 			ID:        utils.GenerateID(),
@@ -63,7 +70,6 @@ func CreateScanHandler(taskScheduler *TaskScheduler) fiber.Handler {
 			Status:    entities.Queued,
 		}
 		taskScheduler.AddJob(&job)
-
 		responder.WriteJSONResponse(c, responder.CreateSuccessResponse(viewmodels.ConvertJob(job), "Scan queued for processing"))
 		return nil
 	}
