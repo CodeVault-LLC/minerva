@@ -78,6 +78,20 @@ func (p *PageAnalysis) FetchWebsite(url, userAgent string) (*WebsiteResponse, er
 		}
 	}
 
+	editRequest := func(id proto.NetworkRequestID, headers string, cookies string) {
+		requestTrackerMutex.Lock()
+		defer requestTrackerMutex.Unlock()
+		queue, exists := requestTracker[id]
+		if exists {
+			if len(headers) > 0 {
+				queue.headers = headers
+			}
+
+			queue.cookies = cookies
+			requestTracker[id] = queue
+		}
+	}
+
 	removeRequestID := func(id proto.NetworkRequestID) {
 		requestTrackerMutex.Lock()
 		defer requestTrackerMutex.Unlock()
@@ -157,6 +171,22 @@ func (p *PageAnalysis) FetchWebsite(url, userAgent string) (*WebsiteResponse, er
 		}
 	}, func(e *proto.NetworkRequestWillBeSentExtraInfo) {
 		logger.Log.Info("Request will be sent", zap.String("url", string(e.RequestID)))
+
+		headers := make(map[string]interface{})
+		for k, v := range e.Headers {
+			headers[k] = v.String()
+		}
+
+		headersString := utils.ConvertMapToJSON(headers)
+
+		cookies := make(map[string]interface{})
+		for k, v := range e.Headers {
+			cookies[k] = v.String()
+		}
+
+		cookiesString := utils.ConvertMapToJSON(cookies)
+		editRequest(e.RequestID, headersString, cookiesString)
+
 	}, func(e *proto.NetworkLoadingFailed) {
 		logger.Log.Info("Loading failed", zap.String("type", string(e.Type)), zap.String("text", e.ErrorText))
 

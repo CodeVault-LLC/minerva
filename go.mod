@@ -6,6 +6,7 @@ toolchain go1.23.2
 
 require (
 	github.com/ClickHouse/clickhouse-go/v2 v2.30.0
+	github.com/buger/jsonparser v1.1.1
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/go-rod/rod v0.116.2
 	github.com/gofiber/fiber/v2 v2.52.5
@@ -26,7 +27,6 @@ require (
 require (
 	github.com/ClickHouse/ch-go v0.61.5 // indirect
 	github.com/andybalholm/brotli v1.1.1 // indirect
-	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect

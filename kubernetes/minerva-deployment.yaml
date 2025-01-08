@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minerva-deployment
+  namespace: minerva-namespace
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: minerva
+  template:
+    metadata:
+      labels:
+        app: minerva
+    spec:
+      containers:
+      - name: minerva
+        image: minerva:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: FINGERPRINT_SERVICE_URL
+          value: "http://fingerprint-service:4000" # Fingerprint service URL
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: minerva-service
+  namespace: minerva-namespace
+spec:
+  selector:
+    app: minerva
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 3000
+  type: ClusterIP
