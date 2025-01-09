@@ -65,8 +65,7 @@ func createErrorResponse(code string, description string, statusCode int) APIRes
 func WriteJSONResponse(c *fiber.Ctx, apiResponse APIResponse) {
 	if apiResponse.Data != nil {
 		dataType := reflect.TypeOf(apiResponse.Data)
-
-		if strings.Contains(dataType.String(), "entities") {
+		if dataType != nil && strings.Contains(dataType.String(), "entities") {
 			logger.Log.Error("Failed to write JSON response", zap.Error(fmt.Errorf("Data type is not supported")))
 			WriteJSONResponse(c, createErrorResponse("internal_server_error", "An internal server error occurred.", http.StatusInternalServerError))
 			return
